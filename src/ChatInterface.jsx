@@ -1,32 +1,34 @@
 // ABOUTME: Chat interface for AI tool interaction
 // ABOUTME: Provides text input and sends messages to backend
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { sendMessage, clearConversation } from './api';
 
 function ChatInterface({ nodes, edges }) {
   const [message, setMessage] = useState('');
-  const isInitialized = useRef(false);
-
-  // Clear conversation history on mount (start fresh session)
-  useEffect(() => {
-    if (!isInitialized.current) {
-      clearConversation().catch(error => {
-        console.warn('Failed to clear conversation on init:', error);
-      });
-      isInitialized.current = true;
-    }
-  }, []);
+  const isFirstMessage = useRef(true);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Check for /resume command
-    if (message.trim() === '/resume') {
-      console.log('📜 Resuming previous conversation...');
-      // Just log for now - history already exists
-      setMessage('');
-      return;
+    // Handle first message of the session
+    if (isFirstMessage.current) {
+      isFirstMessage.current = false;
+
+      // If first message is /resume, keep history and continue
+      if (message.trim() === '/resume') {
+        console.log('📜 Resuming previous conversation...');
+        setMessage('');
+        return;
+      }
+
+      // Otherwise, clear history and start fresh
+      try {
+        await clearConversation();
+        console.log('🆕 Starting new conversation (history cleared)');
+      } catch (error) {
+        console.warn('Failed to clear conversation:', error);
+      }
     }
 
     try {

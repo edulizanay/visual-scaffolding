@@ -176,3 +176,12 @@
   - Simple implementation: no session IDs, just manual control
   - ✅ Phase 5 complete - ready for real LLM integration!
 
+### 3:45 PM
+- BUG FIX: Session management logic was backwards
+  - Problem: History was cleared on mount, so /resume couldn't access it
+  - Solution: Only clear on first message IF it's not /resume
+  - Logic now:
+    - First message = "/resume" → Keep history, continue conversation
+    - First message = anything else → Clear history, start fresh
+  - Updated ChatInterface.jsx to track isFirstMessage instead of clearing on mount
+
