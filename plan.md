@@ -76,7 +76,85 @@ server/
 
 ---
 
-## Phase 4: Future Work (Not Yet)
+## Phase 4: Tool Execution Layer (TDD)
+**Goal:** Execute parsed tool calls against flow.json
+
+### Files Modified:
+- [x] `server/server.js` - Added tool execution functions
+  - executeTool(toolName, params) - Main dispatcher
+  - executeToolCalls(toolCalls) - Batch executor
+  - 6 helper functions for each tool operation
+- [x] `tests/toolExecution.test.js` - 17 comprehensive tests (17/17 passing)
+
+### Decision Log:
+- [x] Keep tool execution in server.js instead of separate toolExecutor.js (avoid over-engineering)
+- [x] Changed FLOW_DATA_PATH to getFlowPath() for dynamic resolution (same fix as conversationService)
+- [x] Made server.listen() conditional on NODE_ENV !== 'test'
+
+---
+
+## Phase 5: Session Management & LLM Response Format
+**Goal:** Handle conversation sessions and align with Claude API format
+
+### Session Management:
+- [ ] Detect "/resume" command in chat to load previous history
+- [ ] Otherwise, start fresh (clear history on new session)
+- [ ] Update ChatInterface.jsx to handle "/resume" command
+- [ ] Update conversationService to support session initialization
+
+### LLM Response Format Update:
+**Current format (wrong):**
+```
+<response>
+addNode(label="Login", description="Auth page")
+addNode(label="Home")
+</response>
+```
+
+**Claude API format (correct):**
+```json
+{
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_01A09q90qw90lq917835lq9",
+      "name": "addNode",
+      "input": {
+        "label": "Login",
+        "description": "Auth page"
+      }
+    },
+    {
+      "type": "tool_use",
+      "id": "toolu_01B12r91rw91mr928946mr0",
+      "name": "addNode",
+      "input": {
+        "label": "Home"
+      }
+    }
+  ]
+}
+```
+
+### Files to Modify:
+- [ ] Move SYSTEM_PROMPT from `server/llm/prompts.js` into `server/llm/llmService.js`
+- [ ] Delete `server/llm/prompts.js` (no longer needed)
+- [ ] Update SYSTEM_PROMPT to match Claude's tool_use format
+- [ ] Simplify `parseToolCalls()` to extract and parse JSON array from content
+- [ ] Update tests for new format
+- [ ] Show parse errors in frontend (don't fail silently)
+
+### Mock Testing Endpoint:
+- [ ] Create `POST /api/test/mock-llm` endpoint
+- [ ] Takes mock LLM response (Claude format)
+- [ ] Parses using parseToolCalls()
+- [ ] Executes using executeToolCalls()
+- [ ] Returns: parsed data + execution results + updated flow state
+- [ ] Test with 2-3 mock responses to validate end-to-end
+
+---
+
+## Phase 6: Future Work (Not Yet)
 
 ### LLM API Integration:
 - [ ] Integrate Anthropic Claude API
@@ -84,15 +162,8 @@ server/
 - [ ] Receive and parse LLM response
 - [ ] Save assistant message to conversation.json
 
-### Tool Execution:
-- [ ] Execute tool calls returned by LLM
-- [ ] Validate tool parameters
-- [ ] Update flow.json based on tool calls
-- [ ] Handle errors gracefully
-
 ### E2E Testing:
-- [ ] Full conversation flow tests
-- [ ] Tool execution tests
+- [ ] Full conversation flow tests with real LLM
 - [ ] Error handling tests
 
 ---

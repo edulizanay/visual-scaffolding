@@ -1,51 +1,49 @@
 {
   "nodes": [
     {
-      "id": "1",
+      "id": "1759664721403-zx9xxvkb1",
+      "type": "default",
       "position": {
-        "x": -123.5,
-        "y": 21.5
+        "x": 0,
+        "y": 0
       },
       "data": {
-        "label": "Test!",
-        "description": "First node"
+        "label": "Login",
+        "description": "User authentication"
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
-      "id": "2",
+      "id": "1759664721404-njifetd62",
+      "type": "default",
       "position": {
         "x": 200,
         "y": 0
       },
       "data": {
-        "label": "Node 2",
-        "description": "Handles visuals for auth path"
+        "label": "Home"
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
-        "height": 72
-      },
-      "selected": false
+        "height": 57
+      }
     },
     {
-      "id": "3",
+      "id": "1759664721404-6ihs9bo8v",
+      "type": "default",
       "position": {
-        "x": 423.1828476686842,
-        "y": 8.280529618263245
+        "x": 395.17537426477224,
+        "y": -91.6678889693268
       },
       "data": {
-        "label": "Test3!",
-        "description": "Third node"
+        "label": "Dashboard"
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -55,47 +53,20 @@
       },
       "selected": false,
       "dragging": false
-    },
-    {
-      "id": "1759658209593",
-      "position": {
-        "x": 623.1828476686842,
-        "y": 8.280529618263245
-      },
-      "data": {
-        "label": "Test!",
-        "description": ""
-      },
-      "sourcePosition": "right",
-      "targetPosition": "left",
-      "measured": {
-        "width": 150,
-        "height": 38
-      },
-      "selected": true
     }
   ],
   "edges": [
     {
-      "id": "e1-2",
-      "source": "1",
-      "target": "2",
-      "type": "smoothstep",
-      "selected": false
+      "id": "edge-1",
+      "source": "1759664721403-zx9xxvkb1",
+      "target": "1759664721404-njifetd62"
     },
     {
-      "id": "e2-3",
-      "source": "2",
-      "target": "3",
+      "source": "1759664721404-njifetd62",
+      "target": "1759664721404-6ihs9bo8v",
       "type": "smoothstep",
-      "animated": false
-    },
-    {
-      "id": "e3-1759658209593",
-      "source": "3",
-      "target": "1759658209593",
-      "type": "smoothstep",
-      "data": {}
+      "data": {},
+      "id": "xy-edge__1759664721404-njifetd62-1759664721404-6ihs9bo8v"
     }
   ]
 }

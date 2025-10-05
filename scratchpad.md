@@ -135,3 +135,21 @@
 - ✅ All 17 tests passing!
 - Tools are now fully tested and ready for LLM integration
 
+### 3:00 PM
+- DECISION: Session management approach
+  - Type "/resume" in chat to continue previous conversation history -- add a placeholder in the cahtbar to guide the user
+  - Otherwise, start fresh (clear history on each new session)
+  - Simple approach: no session IDs, just manual control via command
+- DECISION: LLM response format (researched Claude API docs)
+  - Claude returns tool calls as array of content blocks
+  - Each block: `{type: "tool_use", id: "toolu_1", name: "toolName", input: {...}}`
+  - Will update our format to match Claude's standard
+- DECISION: Error handling for malformed JSON
+  - Show parse errors in frontend so user can debug
+  - Don't fail silently - surface issues clearly
+- DECISION: Code organization
+  - Move SYSTEM_PROMPT from prompts.js into llmService.js (simpler)
+  - Simplify parseToolCalls to just extract and parse JSON
+- TODO: Create mock testing endpoint to validate structure
+- TODO: Update plan.md with these decisions
+
