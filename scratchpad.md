@@ -249,22 +249,38 @@
 6. ✅ All toolExecution tests still pass (18/18)
 7. ⏳ Ready for E2E testing
 
-### Critical Bug Fix - Auto-Save Pollution
-- **PROBLEM**: User reported undo going back too many times, lost original flow
-- **ROOT CAUSE**: Frontend auto-save (every 500ms on drag) was creating snapshots
-  - Dragging one node = 20+ snapshots
-  - History polluted with micro-changes instead of intentional actions
-- **INVESTIGATION**:
-  - Checked history.json - saw 45+ states, many just position changes
-  - Flow: Drag node → auto-save → POST /api/flow → writeFlow() → pushSnapshot()
-- **FIX APPLIED**:
-  1. Modified POST /api/flow to accept `?skipSnapshot=true` query param
-  2. Modified saveFlow() in api.js to default skipSnapshot=true for auto-saves
-  3. LLM tool executions still create snapshots (skipSnapshot=false by default)
-  4. Undo/redo operations use skipSnapshot=true to avoid snapshot loops
-- **RESULT**:
-  - ✅ Manual drag/edit = NO snapshot (just saves to disk)
-  - ✅ LLM actions (addNode, etc.) = YES snapshot (intentional changes)
-  - ✅ Undo/redo = NO snapshot (navigating history)
-- **RECOVERY**: Restored original flow.json from git, reset history.json to clean state
+### Critical Bug Fix - Missing Initial Snapshot + Stale History
+
+#### First Attempt (WRONG DIAGNOSIS)
+- **Initial thought**: Auto-save pollution from drag events
+- **Fix applied**: Skip snapshots for auto-saves
+- **User pushback**: "You didn't understand the real problem"
+
+#### Deep Root Cause Analysis (CORRECT)
+User reported: "Created a node, undid multiple times, ended up with only 1 node (not my original 5), couldn't redo back"
+
+**What actually happened:**
+1. User had original 5-node flow (VERIFY, Home, Child of VERIFY, stupid, awesome)
+2. History had 50 snapshots from my earlier testing (junk data)
+3. **None of the 50 snapshots contained the user's original flow**
+4. When user clicked Undo, it went through 50 junk snapshots
+5. User's original flow was GONE forever (never snapshotted)
+
+**Three ROOT CAUSES:**
+1. **No initial snapshot on server start** - When server starts, current flow.json is never captured
+2. **Stale history persists** - My test snapshots survived server restarts
+3. **Wrong currentIndex** - Undo goes backward through old junk, not "before my changes"
+
+#### THE REAL FIX
+- Added `initializeHistory(currentFlow)` on server startup
+- Every server restart now:
+  1. Clears all old history
+  2. Reads current flow.json
+  3. Creates initial snapshot at index 0
+- **Result**: First Undo ALWAYS returns to "the state when server started"
+- Auto-save fix is STILL good (prevents drag pollution going forward)
+
+#### Tests Added
+- initializeHistory() clears old history + creates snapshot (16/16 passing)
+- Server startup logs "History initialized with current flow state"
 

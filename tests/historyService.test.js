@@ -9,7 +9,8 @@ import {
   canUndo,
   canRedo,
   getHistoryStatus,
-  clearHistory
+  clearHistory,
+  initializeHistory
 } from '../server/historyService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -219,6 +220,32 @@ describe('historyService', () => {
       expect(status.currentIndex).toBe(-1);
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
+    });
+  });
+
+  describe('initializeHistory', () => {
+    it('should clear history and create initial snapshot', async () => {
+      const initialFlow = { nodes: [{ id: 'initial' }], edges: [] };
+
+      await initializeHistory(initialFlow);
+
+      const status = await getHistoryStatus();
+      expect(status.snapshotCount).toBe(1);
+      expect(status.currentIndex).toBe(0);
+      expect(status.canUndo).toBe(false);
+      expect(status.canRedo).toBe(false);
+    });
+
+    it('should clear old history before initializing', async () => {
+      const oldState = { nodes: [{ id: 'old' }], edges: [] };
+      const newState = { nodes: [{ id: 'new' }], edges: [] };
+
+      await pushSnapshot(oldState);
+      await initializeHistory(newState);
+
+      const status = await getHistoryStatus();
+      expect(status.snapshotCount).toBe(1);
+      expect(status.currentIndex).toBe(0);
     });
   });
 });

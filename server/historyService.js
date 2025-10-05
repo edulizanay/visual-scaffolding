@@ -107,3 +107,8 @@ export async function getHistoryStatus() {
 export async function clearHistory() {
   await writeHistory(DEFAULT_HISTORY);
 }
+
+export async function initializeHistory(currentFlow) {
+  await clearHistory();
+  await pushSnapshot(currentFlow);
+}

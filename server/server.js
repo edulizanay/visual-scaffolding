@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
 import { buildLLMContext, parseToolCalls, callGroqAPI } from './llm/llmService.js';
-import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus } from './historyService.js';
+import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -480,8 +480,17 @@ async function executeDeleteEdge(params) {
 
 // Only start server if not imported for testing
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
+
+    // Initialize history with current flow state
+    try {
+      const currentFlow = await readFlow();
+      await initializeHistory(currentFlow);
+      console.log('History initialized with current flow state');
+    } catch (error) {
+      console.error('Failed to initialize history:', error);
+    }
   });
 }
 
