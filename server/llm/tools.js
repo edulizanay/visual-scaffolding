@@ -8,7 +8,7 @@
 export const toolDefinitions = [
   {
     name: 'addNode',
-    description: 'Creates a new node in the flow. If parentNodeId is provided, automatically creates an edge from parent to the new node.',
+    description: 'Creates a new node. If parentNodeId is provided, automatically creates an edge from parent to the new node. If the user asks for a label on the edge you can include it in the same call',
     parameters: {
       type: 'object',
       properties: {
@@ -23,6 +23,10 @@ export const toolDefinitions = [
         parentNodeId: {
           type: 'string',
           description: 'Optional ID of parent node. If provided, creates edge from parent to new node',
+        },
+        edgeLabel: {
+          type: 'string',
+          description: 'Optional label for the auto-created edge. ONLY use if: (1) user explicitly requests an edge label, OR (2) there is a meaningful relationship to describe. Leave empty for unlabeled edges.',
         },
       },
       required: ['label'],
@@ -70,7 +74,7 @@ export const toolDefinitions = [
   },
   {
     name: 'deleteNode',
-    description: 'Deletes a node from the flow. All edges connected to this node (incoming and outgoing) are removed. Child nodes become orphaned.',
+    description: 'Deletes a node. All edges connected to this node (incoming and outgoing) are removed. Child nodes become orphaned.',
     parameters: {
       type: 'object',
       properties: {

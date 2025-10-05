@@ -59,6 +59,19 @@ describe('executeTool - addNode', () => {
     expect(flow.edges[0].target).toBe(child.nodeId);
   });
 
+  it('should create a labeled edge when edgeLabel is provided', async () => {
+    const parent = await executeTool('addNode', { label: 'Home' });
+    const child = await executeTool('addNode', {
+      label: 'Login',
+      parentNodeId: parent.nodeId,
+      edgeLabel: 'Navigate'
+    });
+
+    const flow = await loadFlow();
+    expect(flow.edges).toHaveLength(1);
+    expect(flow.edges[0].data.label).toBe('Navigate');
+  });
+
   it('should fail when label is missing', async () => {
     const result = await executeTool('addNode', {});
     expect(result.success).toBe(false);
@@ -151,7 +164,7 @@ describe('executeTool - addEdge', () => {
     });
 
     const flow = await loadFlow();
-    expect(flow.edges[0].label).toBe('Navigate');
+    expect(flow.edges[0].data.label).toBe('Navigate');
   });
 
   it('should fail when source node does not exist', async () => {

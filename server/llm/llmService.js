@@ -1,13 +1,41 @@
 // ABOUTME: LLM service for building context and parsing responses
 // ABOUTME: Combines flow state, conversation history, and tools for LLM requests
-import { promises as fs } from 'fs';
+import { promises as fs, readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { getHistory } from '../conversationService.js';
 import { toolDefinitions } from './tools.js';
+import Groq from 'groq-sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env file manually
+const envPath = join(__dirname, '..', '..', '.env');
+try {
+  const envContent = readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const match = line.match(/^([^=:#]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      const value = match[2].trim();
+      process.env[key] = value;
+    }
+  });
+} catch (error) {
+  console.warn('Could not load .env file:', error.message);
+}
+
+// Initialize Groq client lazily
+let groq = null;
+function getGroqClient() {
+  if (!groq) {
+    groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY
+    });
+  }
+  return groq;
+}
 
 const SYSTEM_PROMPT = `You are a UI helper for React Flow graph structures.
 The user is building a flow diagram with nodes and edges.
@@ -138,4 +166,60 @@ export function parseToolCalls(llmResponse) {
     toolCalls,
     parseError, // Include error if parsing failed
   };
+}
+
+/**
+ * Call Groq API with the LLM context
+ * Converts our context format to Groq messages format and streams the response
+ */
+export async function callGroqAPI(llmContext) {
+  const { systemPrompt, userMessage, flowState, conversationHistory, availableTools } = llmContext;
+
+  // Format tools for the context message
+  const toolsText = availableTools.map(tool =>
+    `${tool.name}: ${tool.description}\nParameters: ${JSON.stringify(tool.parameters, null, 2)}`
+  ).join('\n\n');
+
+  // Build the user message with full context
+  const contextMessage = `Current Flow State:
+${JSON.stringify(flowState, null, 2)}
+
+Available Tools:
+${toolsText}
+
+User Request: ${userMessage}`;
+
+  // Convert conversation history to Groq messages format
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    })),
+    { role: 'user', content: contextMessage }
+  ];
+
+  // Call Groq API with streaming
+  const groqClient = getGroqClient();
+  const completion = await groqClient.chat.completions.create({
+    model: 'openai/gpt-oss-120b',
+    messages,
+    temperature: 1,
+    max_completion_tokens: 8192,
+    top_p: 1,
+    reasoning_effort: 'medium',
+    stream: true,
+    stop: null
+  });
+
+  // Collect the streamed response
+  let fullResponse = '';
+  for await (const chunk of completion) {
+    const content = chunk.choices[0]?.delta?.content || '';
+    fullResponse += content;
+    // Optionally log chunks for debugging
+    // process.stdout.write(content);
+  }
+
+  return fullResponse;
 }

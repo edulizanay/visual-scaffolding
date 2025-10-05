@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { sendMessage, clearConversation } from './api';
 
-function ChatInterface({ nodes, edges }) {
+function ChatInterface({ onFlowUpdate }) {
   const [message, setMessage] = useState('');
   const isFirstMessage = useRef(true);
 
@@ -33,13 +33,19 @@ function ChatInterface({ nodes, edges }) {
 
     try {
       const response = await sendMessage(message);
-      console.log('✅ Message saved to conversation.json:', response);
-      console.log('📂 Check server/data/conversation.json to see the message');
+      console.log('✅ AI Response:', response);
+
+      // Update the flow visualization if the AI made changes
+      if (response.updatedFlow) {
+        onFlowUpdate(response.updatedFlow);
+        console.log('🔄 Flow updated with AI changes');
+      }
+
       setMessage('');
     } catch (error) {
       console.error('❌ Failed to send message:', error);
     }
-  }, [message]);
+  }, [message, onFlowUpdate]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -65,7 +71,7 @@ function ChatInterface({ nodes, edges }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a command (e.g., 'add a login node') or '/resume' to continue previous session..."
+          placeholder="Type a command or '/resume' to continue previous session..."
           style={{
             flex: 1,
             padding: '8px 12px',

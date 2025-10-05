@@ -185,3 +185,43 @@
     - First message = anything else → Clear history, start fresh
   - Updated ChatInterface.jsx to track isFirstMessage instead of clearing on mount
 
+### 4:00 PM
+- DECISION: Use Groq instead of Anthropic Claude
+  - Model: `openai/gpt-oss-120b`
+  - Reason: Edu's preference for this specific model
+  - Will keep Groq client code in llmService.js (not separate file)
+- IMPLEMENTATION: Phase 6 setup started
+  - Created .env file with GROQ_API_KEY placeholder
+  - Updated .gitignore to exclude:
+    - .env files
+    - server/data/conversation.json
+    - tests/test-data/
+  - Installed groq-sdk package (npm install groq-sdk)
+  - Simplified ChatInterface placeholder text
+- NEXT: Add callGroqAPI() function to llmService.js
+- NEXT: Test basic Groq connection
+- NEXT: Wire Groq to POST /api/conversation/message endpoint
+
+### [Session Continued - 2025-10-05]
+
+### Edge Label Bug Fix
+- **PROBLEM DISCOVERED**: Edge labels not rendering in UI despite backend storing them
+- **ROOT CAUSE**: Backend stored labels as `edge.label`, but ReactFlow expects `edge.data.label`
+  - ReactFlow convention: All custom data goes in `.data` object (like `node.data.label`)
+  - Frontend already followed this convention (App.jsx:81, Edge.jsx:17,91)
+  - Backend was breaking the convention in 3 places
+- **INVESTIGATION**:
+  - First test: LLM didn't use new `edgeLabel` parameter (still trying old updateEdge approach)
+  - Realized server hadn't restarted after adding `edgeLabel` parameter
+  - After restart, tested with curl - edge created but label didn't render
+  - Checked Edge.jsx - confirmed it reads from `data.label` not direct `.label`
+  - Checked App.jsx - confirmed updateEdgeLabel uses `edge.data.label`
+  - Confirmed this is ReactFlow's documented best practice
+- **FIX APPLIED**:
+  1. executeAddNode (server.js:293): Changed `newEdge.label = edgeLabel` → `newEdge.data = { label: edgeLabel }`
+  2. executeAddEdge (server.js:376): Changed `newEdge.label = label` → `newEdge.data = { label }`
+  3. executeUpdateEdge (server.js:403): Changed `edge.label = label` → `edge.data.label = label` (with safety check for missing data object)
+  4. Updated tests (toolExecution.test.js:72,167): Changed assertions from `edge.label` → `edge.data.label`
+- **RESULT**: ✅ All 18 tests passing, server restarted, edge labels now follow ReactFlow convention
+- **KEY LEARNING**: Backend data structure must match frontend expectations - ReactFlow uses `.data` for custom properties
+

@@ -4,11 +4,11 @@
       "id": "1759664721403-zx9xxvkb1",
       "type": "default",
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -286.704927602849,
+        "y": -274.46968036740816
       },
       "data": {
-        "label": "Login",
+        "label": "VERIFY",
         "description": "User authentication"
       },
       "sourcePosition": "right",
@@ -16,14 +16,16 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "selected": true,
+      "dragging": false
     },
     {
       "id": "1759664721404-njifetd62",
       "type": "default",
       "position": {
-        "x": 200,
-        "y": 0
+        "x": -50.714111856015336,
+        "y": -372.4006153586371
       },
       "data": {
         "label": "Home"
@@ -33,17 +35,58 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "selected": false,
+      "dragging": false
     },
     {
-      "id": "1759664721404-6ihs9bo8v",
+      "id": "1759669777036-16lksfo9x",
       "type": "default",
       "position": {
-        "x": 395.17537426477224,
-        "y": -91.6678889693268
+        "x": -49.94707412075195,
+        "y": -196.30314728261033
       },
       "data": {
-        "label": "Dashboard"
+        "label": "Child of VERIFY",
+        "description": "Automatically linked to VERIFY node"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 72
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "1759670419284-8nvs46ks8",
+      "type": "default",
+      "position": {
+        "x": 340.61153351216586,
+        "y": -116.26207010548596
+      },
+      "data": {
+        "label": "stupid"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "1759670419286-4770e0sas",
+      "type": "default",
+      "position": {
+        "x": 342.4281283575641,
+        "y": -273.39752423243186
+      },
+      "data": {
+        "label": "awesome"
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -59,14 +102,30 @@
     {
       "id": "edge-1",
       "source": "1759664721403-zx9xxvkb1",
-      "target": "1759664721404-njifetd62"
+      "target": "1759664721404-njifetd62",
+      "selected": false
     },
     {
-      "source": "1759664721404-njifetd62",
-      "target": "1759664721404-6ihs9bo8v",
-      "type": "smoothstep",
-      "data": {},
-      "id": "xy-edge__1759664721404-njifetd62-1759664721404-6ihs9bo8v"
+      "id": "1759669777036-2hzc3o0ry",
+      "source": "1759664721403-zx9xxvkb1",
+      "target": "1759669777036-16lksfo9x",
+      "selected": false
+    },
+    {
+      "id": "1759670419284-sk5ghhke2",
+      "source": "1759669777036-16lksfo9x",
+      "target": "1759670419284-8nvs46ks8",
+      "selected": false,
+      "data": {
+        "label": "this is a test"
+      }
+    },
+    {
+      "id": "1759670716730-02zwe883c",
+      "source": "1759669777036-16lksfo9x",
+      "target": "1759670419286-4770e0sas",
+      "label": "this is a test",
+      "selected": false
     }
   ]
 }

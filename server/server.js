@@ -5,8 +5,8 @@ import cors from 'cors';
 import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { addUserMessage, getHistory, clearHistory } from './conversationService.js';
-import { buildLLMContext, parseToolCalls } from './llm/llmService.js';
+import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
+import { buildLLMContext, parseToolCalls, callGroqAPI } from './llm/llmService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -97,15 +97,38 @@ app.post('/api/conversation/message', async (req, res) => {
     // Build complete LLM context
     const llmContext = await buildLLMContext(message);
 
-    // Log to console for debugging
-    console.log('\n=== LLM REQUEST CONTEXT ===');
-    console.log(JSON.stringify(llmContext, null, 2));
-    console.log('===========================\n');
+    // Call Groq API
+    const llmResponse = await callGroqAPI(llmContext);
 
-    // Return context to frontend
+    // Parse LLM response
+    const parsed = parseToolCalls(llmResponse);
+
+    // Handle parse errors
+    if (parsed.parseError) {
+      return res.json({
+        success: false,
+        parseError: parsed.parseError,
+        thinking: parsed.thinking,
+        response: llmResponse
+      });
+    }
+
+    // Execute tool calls
+    const executionResults = await executeToolCalls(parsed.toolCalls);
+
+    // Save assistant message to conversation
+    await addAssistantMessage(llmResponse, parsed.toolCalls);
+
+    // Get updated flow state
+    const updatedFlow = await readFlow();
+
+    // Return results
     res.json({
       success: true,
-      llmContext
+      thinking: parsed.thinking,
+      toolCalls: parsed.toolCalls,
+      execution: executionResults,
+      updatedFlow
     });
   } catch (error) {
     console.error('Error processing message:', error);
@@ -227,7 +250,7 @@ function generateId() {
 
 // addNode: Creates a new node, optionally with edge to parent
 async function executeAddNode(params) {
-  const { label, description, parentNodeId } = params;
+  const { label, description, parentNodeId, edgeLabel } = params;
 
   if (!label) {
     return { success: false, error: 'label is required' };
@@ -260,11 +283,17 @@ async function executeAddNode(params) {
   // Create edge if parent specified
   if (parentNodeId) {
     const edgeId = generateId();
-    flow.edges.push({
+    const newEdge = {
       id: edgeId,
       source: parentNodeId,
       target: nodeId
-    });
+    };
+
+    if (edgeLabel) {
+      newEdge.data = { label: edgeLabel };
+    }
+
+    flow.edges.push(newEdge);
   }
 
   await writeFlow(flow);
@@ -344,7 +373,7 @@ async function executeAddEdge(params) {
   };
 
   if (label) {
-    newEdge.label = label;
+    newEdge.data = { label };
   }
 
   flow.edges.push(newEdge);
@@ -368,7 +397,10 @@ async function executeUpdateEdge(params) {
     return { success: false, error: `Edge ${edgeId} not found` };
   }
 
-  edge.label = label;
+  if (!edge.data) {
+    edge.data = {};
+  }
+  edge.data.label = label;
 
   await writeFlow(flow);
   return { success: true };

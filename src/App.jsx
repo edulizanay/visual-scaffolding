@@ -147,6 +147,19 @@ function App() {
     [setNodes, setEdges, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
   );
 
+  const handleFlowUpdate = useCallback((updatedFlow) => {
+    if (!updatedFlow) return;
+
+    const nodesWithPosition = updatedFlow.nodes.map(node => ({
+      ...node,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+    }));
+
+    setNodes(nodesWithPosition);
+    setEdges(updatedFlow.edges);
+  }, [setNodes, setEdges]);
+
   if (isLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', color: 'white' }}>Loading...</div>;
   }
@@ -169,7 +182,7 @@ function App() {
         <MiniMap />
         <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
-      <ChatInterface nodes={nodes} edges={edges} />
+      <ChatInterface onFlowUpdate={handleFlowUpdate} />
     </div>
   );
 }
