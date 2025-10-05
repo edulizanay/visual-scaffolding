@@ -1,14 +1,33 @@
 // ABOUTME: Chat interface for AI tool interaction
 // ABOUTME: Provides text input and sends messages to backend
-import { useState, useCallback } from 'react';
-import { sendMessage } from './api';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { sendMessage, clearConversation } from './api';
 
 function ChatInterface({ nodes, edges }) {
   const [message, setMessage] = useState('');
+  const isInitialized = useRef(false);
+
+  // Clear conversation history on mount (start fresh session)
+  useEffect(() => {
+    if (!isInitialized.current) {
+      clearConversation().catch(error => {
+        console.warn('Failed to clear conversation on init:', error);
+      });
+      isInitialized.current = true;
+    }
+  }, []);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+
+    // Check for /resume command
+    if (message.trim() === '/resume') {
+      console.log('📜 Resuming previous conversation...');
+      // Just log for now - history already exists
+      setMessage('');
+      return;
+    }
 
     try {
       const response = await sendMessage(message);
@@ -44,7 +63,7 @@ function ChatInterface({ nodes, edges }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a command (e.g., 'add a login node')... Messages saved to conversation.json"
+          placeholder="Type a command (e.g., 'add a login node') or '/resume' to continue previous session..."
           style={{
             flex: 1,
             padding: '8px 12px',

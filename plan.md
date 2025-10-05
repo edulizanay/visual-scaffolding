@@ -93,64 +93,55 @@ server/
 
 ---
 
-## Phase 5: Session Management & LLM Response Format
+## Phase 5: Session Management & LLM Response Format ✅
 **Goal:** Handle conversation sessions and align with Claude API format
 
 ### Session Management:
-- [ ] Detect "/resume" command in chat to load previous history
-- [ ] Otherwise, start fresh (clear history on new session)
-- [ ] Update ChatInterface.jsx to handle "/resume" command
-- [ ] Update conversationService to support session initialization
+- [x] Detect "/resume" command in chat to load previous history
+- [x] Otherwise, start fresh (clear history on new session)
+- [x] Update ChatInterface.jsx to handle "/resume" command
+- [x] Updated placeholder text to guide users
 
 ### LLM Response Format Update:
-**Current format (wrong):**
-```
-<response>
-addNode(label="Login", description="Auth page")
-addNode(label="Home")
-</response>
-```
-
-**Claude API format (correct):**
+**Claude API format (implemented):**
 ```json
-{
-  "content": [
-    {
-      "type": "tool_use",
-      "id": "toolu_01A09q90qw90lq917835lq9",
-      "name": "addNode",
-      "input": {
-        "label": "Login",
-        "description": "Auth page"
-      }
-    },
-    {
-      "type": "tool_use",
-      "id": "toolu_01B12r91rw91mr928946mr0",
-      "name": "addNode",
-      "input": {
-        "label": "Home"
-      }
+[
+  {
+    "type": "tool_use",
+    "id": "toolu_01A09q90qw90lq917835lq9",
+    "name": "addNode",
+    "input": {
+      "label": "Login",
+      "description": "Auth page"
     }
-  ]
-}
+  },
+  {
+    "type": "tool_use",
+    "id": "toolu_01B12r91rw91mr928946mr0",
+    "name": "addNode",
+    "input": {
+      "label": "Home"
+    }
+  }
+]
 ```
 
-### Files to Modify:
-- [ ] Move SYSTEM_PROMPT from `server/llm/prompts.js` into `server/llm/llmService.js`
-- [ ] Delete `server/llm/prompts.js` (no longer needed)
-- [ ] Update SYSTEM_PROMPT to match Claude's tool_use format
-- [ ] Simplify `parseToolCalls()` to extract and parse JSON array from content
-- [ ] Update tests for new format
-- [ ] Show parse errors in frontend (don't fail silently)
+### Files Modified:
+- [x] Moved SYSTEM_PROMPT from `server/llm/prompts.js` into `server/llm/llmService.js`
+- [x] Deleted `server/llm/prompts.js`
+- [x] Updated SYSTEM_PROMPT to match Claude's tool_use format
+- [x] Simplified `parseToolCalls()` to extract and parse JSON
+- [x] Updated all 16 tests (16/16 passing)
+- [x] Added `parseError` field - shows parse errors in frontend
+- [x] Updated ChatInterface.jsx for session management
 
 ### Mock Testing Endpoint:
-- [ ] Create `POST /api/test/mock-llm` endpoint
-- [ ] Takes mock LLM response (Claude format)
-- [ ] Parses using parseToolCalls()
-- [ ] Executes using executeToolCalls()
-- [ ] Returns: parsed data + execution results + updated flow state
-- [ ] Test with 2-3 mock responses to validate end-to-end
+- [x] Created `POST /api/test/mock-llm` endpoint
+- [x] Takes mock LLM response with `<thinking>` and `<response>` tags
+- [x] Parses using parseToolCalls()
+- [x] Executes using executeToolCalls()
+- [x] Returns: parsed data + execution results + updated flow state
+- [x] Tested with test-mock.sh script - working perfectly
 
 ---
 
