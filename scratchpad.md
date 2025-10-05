@@ -225,3 +225,27 @@
 - **RESULT**: ✅ All 18 tests passing, server restarted, edge labels now follow ReactFlow convention
 - **KEY LEARNING**: Backend data structure must match frontend expectations - ReactFlow uses `.data` for custom properties
 
+### [Undo/Redo Feature - 2025-10-05]
+
+### Feature Implementation - Undo/Redo
+- **BRANCH**: feature/undo-redo
+- **GOAL**: Add undo/redo buttons that work for ALL flow changes (LLM + manual)
+- **APPROACH**: Snapshot-based history system (max 50 states)
+
+### Implementation Complete
+1. ✅ Created server/historyService.js
+   - pushSnapshot(), undo(), redo(), canUndo(), canRedo(), getHistoryStatus()
+   - Stores in server/data/history.json
+   - Max 50 snapshots, truncates future on new action after undo
+2. ✅ All 14 historyService tests passing
+3. ✅ Modified server.js:
+   - writeFlow() now calls pushSnapshot() (with skipSnapshot flag to avoid loops)
+   - Added 3 endpoints: POST /api/flow/undo, POST /api/flow/redo, GET /api/flow/history-status
+4. ✅ Added 3 API functions to src/api.js: undoFlow(), redoFlow(), getHistoryStatus()
+5. ✅ Added UI to App.jsx:
+   - Two buttons in top-right corner (← Undo, Redo →)
+   - Auto-disable when can't undo/redo
+   - Poll status every 1s to update button states
+6. ✅ All toolExecution tests still pass (18/18)
+7. ⏳ Ready for E2E testing
+

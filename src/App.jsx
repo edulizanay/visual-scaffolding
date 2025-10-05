@@ -14,13 +14,15 @@ import {
 import '@xyflow/react/dist/style.css';
 import Node from './Node';
 import Edge from './Edge';
-import { loadFlow, saveFlow } from './api';
+import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api';
 import ChatInterface from './ChatInterface';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   useEffect(() => {
     const fetchFlow = async () => {
@@ -160,12 +162,93 @@ function App() {
     setEdges(updatedFlow.edges);
   }, [setNodes, setEdges]);
 
+  const updateHistoryStatus = useCallback(async () => {
+    try {
+      const status = await getHistoryStatus();
+      setCanUndo(status.canUndo);
+      setCanRedo(status.canRedo);
+    } catch (error) {
+      console.error('Failed to get history status:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateHistoryStatus();
+    const interval = setInterval(updateHistoryStatus, 1000);
+    return () => clearInterval(interval);
+  }, [updateHistoryStatus]);
+
+  const handleUndo = useCallback(async () => {
+    try {
+      const result = await undoFlow();
+      if (result.success && result.flow) {
+        handleFlowUpdate(result.flow);
+        await updateHistoryStatus();
+      }
+    } catch (error) {
+      console.error('Failed to undo:', error);
+    }
+  }, [handleFlowUpdate, updateHistoryStatus]);
+
+  const handleRedo = useCallback(async () => {
+    try {
+      const result = await redoFlow();
+      if (result.success && result.flow) {
+        handleFlowUpdate(result.flow);
+        await updateHistoryStatus();
+      }
+    } catch (error) {
+      console.error('Failed to redo:', error);
+    }
+  }, [handleFlowUpdate, updateHistoryStatus]);
+
   if (isLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', color: 'white' }}>Loading...</div>;
   }
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
+      <div style={{
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        zIndex: 1000,
+        display: 'flex',
+        gap: 10
+      }}>
+        <button
+          onClick={handleUndo}
+          disabled={!canUndo}
+          style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            cursor: canUndo ? 'pointer' : 'not-allowed',
+            opacity: canUndo ? 1 : 0.5,
+            backgroundColor: '#333',
+            color: 'white',
+            border: '1px solid #555',
+            borderRadius: '4px'
+          }}
+        >
+          ← Undo
+        </button>
+        <button
+          onClick={handleRedo}
+          disabled={!canRedo}
+          style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            cursor: canRedo ? 'pointer' : 'not-allowed',
+            opacity: canRedo ? 1 : 0.5,
+            backgroundColor: '#333',
+            color: 'white',
+            border: '1px solid #555',
+            borderRadius: '4px'
+          }}
+        >
+          Redo →
+        </button>
+      </div>
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edgesWithHandlers}
