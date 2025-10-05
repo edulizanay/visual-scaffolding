@@ -2,7 +2,6 @@
 // ABOUTME: Uses react-d3-tree to display a collapsible folder/file structure
 import React from 'react'
 import Tree from 'react-d3-tree'
-import './App.css'
 
 const treeData = {
   name: 'Root',
@@ -81,7 +80,7 @@ const renderCustomNode = ({ nodeDatum, toggleNode }) => {
         textAnchor="middle"
         style={{
           fontSize: '14px',
-          fontWeight: '500',
+          fontWeight: 'normal',
           pointerEvents: 'none'
         }}
       >
@@ -93,7 +92,23 @@ const renderCustomNode = ({ nodeDatum, toggleNode }) => {
 
 function App() {
   return (
-    <div className="App">
+    <>
+      <style>{`
+        body {
+          margin: 0;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #root {
+          width: 100vw;
+          height: 100vh;
+          background: #ffffff;
+        }
+        .rd3t-link {
+          stroke: #cbd5e1;
+          stroke-width: 2px;
+          fill: none;
+        }
+      `}</style>
       <Tree
         data={treeData}
         orientation="horizontal"
@@ -102,9 +117,10 @@ function App() {
         separation={{ siblings: 1.5, nonSiblings: 2 }}
         nodeSize={{ x: 200, y: 100 }}
         renderCustomNodeElement={renderCustomNode}
-        pathClassFunc={() => 'custom-link'}
+        transitionDuration={500}
+        enableLegacyTransitions
       />
-    </div>
+    </>
   )
 }
 
