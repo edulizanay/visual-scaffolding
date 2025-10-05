@@ -107,6 +107,7 @@ function App() {
           stroke: #cbd5e1;
           stroke-width: 2px;
           fill: none;
+          transition: d 0.5s ease-in-out, opacity 0.5s ease-in-out;
         }
       `}</style>
       <Tree
@@ -118,7 +119,6 @@ function App() {
         nodeSize={{ x: 200, y: 100 }}
         renderCustomNodeElement={renderCustomNode}
         transitionDuration={500}
-        enableLegacyTransitions
       />
     </>
   )
