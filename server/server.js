@@ -13,7 +13,11 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const FLOW_DATA_PATH = process.env.FLOW_DATA_PATH || join(__dirname, 'data', 'flow.json');
+
+// Dynamically resolve path for testability
+function getFlowPath() {
+  return process.env.FLOW_DATA_PATH || join(__dirname, 'data', 'flow.json');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -25,7 +29,7 @@ const DEFAULT_FLOW = {
 
 async function readFlow() {
   try {
-    const data = await fs.readFile(FLOW_DATA_PATH, 'utf-8');
+    const data = await fs.readFile(getFlowPath(), 'utf-8');
     return JSON.parse(data);
   } catch (error) {
     if (error.code === 'ENOENT') {
@@ -36,9 +40,10 @@ async function readFlow() {
 }
 
 async function writeFlow(flowData) {
-  const dataDir = dirname(FLOW_DATA_PATH);
+  const flowPath = getFlowPath();
+  const dataDir = dirname(flowPath);
   await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(FLOW_DATA_PATH, JSON.stringify(flowData, null, 2));
+  await fs.writeFile(flowPath, JSON.stringify(flowData, null, 2));
 }
 
 function validateFlow(data) {
@@ -133,8 +138,225 @@ app.delete('/api/conversation/history', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// ==================== Tool Execution Functions ====================
+
+export async function executeTool(toolName, params) {
+  try {
+    switch (toolName) {
+      case 'addNode':
+        return await executeAddNode(params);
+      case 'updateNode':
+        return await executeUpdateNode(params);
+      case 'deleteNode':
+        return await executeDeleteNode(params);
+      case 'addEdge':
+        return await executeAddEdge(params);
+      case 'updateEdge':
+        return await executeUpdateEdge(params);
+      case 'deleteEdge':
+        return await executeDeleteEdge(params);
+      case 'undo':
+      case 'redo':
+        return { success: false, error: `${toolName} is not yet implemented` };
+      default:
+        return { success: false, error: `Unknown tool: ${toolName}` };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function executeToolCalls(toolCalls) {
+  const results = [];
+  for (const { name, params } of toolCalls) {
+    const result = await executeTool(name, params);
+    results.push(result);
+  }
+  return results;
+}
+
+// Helper: Generate unique ID
+function generateId() {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// addNode: Creates a new node, optionally with edge to parent
+async function executeAddNode(params) {
+  const { label, description, parentNodeId } = params;
+
+  if (!label) {
+    return { success: false, error: 'label is required' };
+  }
+
+  const flow = await readFlow();
+
+  // If parentNodeId provided, verify it exists
+  if (parentNodeId) {
+    const parentExists = flow.nodes.some(n => n.id === parentNodeId);
+    if (!parentExists) {
+      return { success: false, error: `Parent node ${parentNodeId} not found` };
+    }
+  }
+
+  const nodeId = generateId();
+  const newNode = {
+    id: nodeId,
+    type: 'default',
+    position: { x: 0, y: 0 },
+    data: { label }
+  };
+
+  if (description) {
+    newNode.data.description = description;
+  }
+
+  flow.nodes.push(newNode);
+
+  // Create edge if parent specified
+  if (parentNodeId) {
+    const edgeId = generateId();
+    flow.edges.push({
+      id: edgeId,
+      source: parentNodeId,
+      target: nodeId
+    });
+  }
+
+  await writeFlow(flow);
+  return { success: true, nodeId };
+}
+
+// updateNode: Updates node properties
+async function executeUpdateNode(params) {
+  const { nodeId, label, description, position } = params;
+
+  if (!nodeId) {
+    return { success: false, error: 'nodeId is required' };
+  }
+
+  const flow = await readFlow();
+  const node = flow.nodes.find(n => n.id === nodeId);
+
+  if (!node) {
+    return { success: false, error: `Node ${nodeId} not found` };
+  }
+
+  if (label !== undefined) node.data.label = label;
+  if (description !== undefined) node.data.description = description;
+  if (position !== undefined) node.position = position;
+
+  await writeFlow(flow);
+  return { success: true };
+}
+
+// deleteNode: Removes node and all connected edges
+async function executeDeleteNode(params) {
+  const { nodeId } = params;
+
+  if (!nodeId) {
+    return { success: false, error: 'nodeId is required' };
+  }
+
+  const flow = await readFlow();
+  const nodeIndex = flow.nodes.findIndex(n => n.id === nodeId);
+
+  if (nodeIndex === -1) {
+    return { success: false, error: `Node ${nodeId} not found` };
+  }
+
+  flow.nodes.splice(nodeIndex, 1);
+  flow.edges = flow.edges.filter(e => e.source !== nodeId && e.target !== nodeId);
+
+  await writeFlow(flow);
+  return { success: true };
+}
+
+// addEdge: Creates edge between two nodes
+async function executeAddEdge(params) {
+  const { sourceNodeId, targetNodeId, label } = params;
+
+  if (!sourceNodeId || !targetNodeId) {
+    return { success: false, error: 'sourceNodeId and targetNodeId are required' };
+  }
+
+  const flow = await readFlow();
+
+  const sourceExists = flow.nodes.some(n => n.id === sourceNodeId);
+  const targetExists = flow.nodes.some(n => n.id === targetNodeId);
+
+  if (!sourceExists) {
+    return { success: false, error: `Source node ${sourceNodeId} not found` };
+  }
+  if (!targetExists) {
+    return { success: false, error: `Target node ${targetNodeId} not found` };
+  }
+
+  const edgeId = generateId();
+  const newEdge = {
+    id: edgeId,
+    source: sourceNodeId,
+    target: targetNodeId
+  };
+
+  if (label) {
+    newEdge.label = label;
+  }
+
+  flow.edges.push(newEdge);
+
+  await writeFlow(flow);
+  return { success: true, edgeId };
+}
+
+// updateEdge: Updates edge label
+async function executeUpdateEdge(params) {
+  const { edgeId, label } = params;
+
+  if (!edgeId || !label) {
+    return { success: false, error: 'edgeId and label are required' };
+  }
+
+  const flow = await readFlow();
+  const edge = flow.edges.find(e => e.id === edgeId);
+
+  if (!edge) {
+    return { success: false, error: `Edge ${edgeId} not found` };
+  }
+
+  edge.label = label;
+
+  await writeFlow(flow);
+  return { success: true };
+}
+
+// deleteEdge: Removes edge
+async function executeDeleteEdge(params) {
+  const { edgeId } = params;
+
+  if (!edgeId) {
+    return { success: false, error: 'edgeId is required' };
+  }
+
+  const flow = await readFlow();
+  const edgeIndex = flow.edges.findIndex(e => e.id === edgeId);
+
+  if (edgeIndex === -1) {
+    return { success: false, error: `Edge ${edgeId} not found` };
+  }
+
+  flow.edges.splice(edgeIndex, 1);
+
+  await writeFlow(flow);
+  return { success: true };
+}
+
+// ==================== Server Startup ====================
+
+// Only start server if not imported for testing
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;

@@ -116,3 +116,22 @@
 - ✅ conversation.json updated with new user message
 - Phase 3 complete and tested!
 
+### 2:30 PM
+- DECISION: Tool execution logic stays in server.js (not separate toolExecutor.js)
+- Rationale: Keeping it simple, avoiding over-engineering for current scope
+- Note: May revisit if tool execution becomes complex or needs reuse elsewhere
+- Writing tests for tool execution functions within server.js
+
+### 2:45 PM
+- Created tests/toolExecution.test.js with 17 comprehensive test cases
+- Tests cover all 8 tools: addNode, updateNode, deleteNode, addEdge, updateEdge, deleteEdge, undo, redo
+- Implemented tool execution functions in server.js:
+  - executeTool(toolName, params) - executes single tool
+  - executeToolCalls(toolCalls) - batch execution
+  - 6 helper functions for each tool operation
+- Fixed FLOW_DATA_PATH constant issue (same as conversationService fix)
+- Changed to getFlowPath() function for dynamic path resolution
+- Fixed server.listen() to only run when NODE_ENV !== 'test'
+- ✅ All 17 tests passing!
+- Tools are now fully tested and ready for LLM integration
+
