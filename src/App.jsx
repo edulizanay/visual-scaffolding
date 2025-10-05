@@ -15,6 +15,7 @@ import '@xyflow/react/dist/style.css';
 import Node from './Node';
 import Edge from './Edge';
 import { loadFlow, saveFlow } from './api';
+import ChatInterface from './ChatInterface';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -168,6 +169,7 @@ function App() {
         <MiniMap />
         <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
+      <ChatInterface nodes={nodes} edges={edges} />
     </div>
   );
 }
