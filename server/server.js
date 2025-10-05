@@ -5,6 +5,8 @@ import cors from 'cors';
 import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { addUserMessage, getHistory, clearHistory } from './conversationService.js';
+import { buildLLMContext } from './llm/llmService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -72,6 +74,62 @@ app.post('/api/flow', async (req, res) => {
   } catch (error) {
     console.error('Error saving flow:', error);
     res.status(500).json({ error: 'Failed to save flow data' });
+  }
+});
+
+// Conversation endpoints
+app.post('/api/conversation/message', async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required and must be a string' });
+    }
+
+    // Save user message to conversation history
+    await addUserMessage(message);
+
+    // Build complete LLM context
+    const llmContext = await buildLLMContext(message);
+
+    // Log to console for debugging
+    console.log('\n=== LLM REQUEST CONTEXT ===');
+    console.log(JSON.stringify(llmContext, null, 2));
+    console.log('===========================\n');
+
+    // Return context to frontend
+    res.json({
+      success: true,
+      llmContext
+    });
+  } catch (error) {
+    console.error('Error processing message:', error);
+    res.status(500).json({ error: 'Failed to process message' });
+  }
+});
+
+app.get('/api/conversation/debug', async (req, res) => {
+  try {
+    const history = await getHistory();
+    res.json({
+      history,
+      messageCount: history.length,
+      oldestTimestamp: history.length > 0 ? history[0].timestamp : null,
+      newestTimestamp: history.length > 0 ? history[history.length - 1].timestamp : null,
+    });
+  } catch (error) {
+    console.error('Error fetching conversation:', error);
+    res.status(500).json({ error: 'Failed to fetch conversation' });
+  }
+});
+
+app.delete('/api/conversation/history', async (req, res) => {
+  try {
+    await clearHistory();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error clearing history:', error);
+    res.status(500).json({ error: 'Failed to clear history' });
   }
 });
 

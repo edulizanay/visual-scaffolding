@@ -34,7 +34,7 @@ export const toolDefinitions = [
   },
   {
     name: 'updateNode',
-    description: 'Updates properties of an existing node. At least one property (label or description) must be provided.',
+    description: 'Updates properties of an existing node. At least one property (label, description, or position) must be provided.',
     parameters: {
       type: 'object',
       properties: {
@@ -49,6 +49,20 @@ export const toolDefinitions = [
         description: {
           type: 'string',
           description: 'New description for the node',
+        },
+        position: {
+          type: 'object',
+          description: 'New position for the node',
+          properties: {
+            x: {
+              type: 'number',
+              description: 'X coordinate',
+            },
+            y: {
+              type: 'number',
+              description: 'Y coordinate',
+            },
+          },
         },
       },
       required: ['nodeId'],

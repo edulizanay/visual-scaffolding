@@ -1,18 +1,24 @@
 // ABOUTME: Chat interface for AI tool interaction
-// ABOUTME: Provides text input and logs what would be sent to LLM
+// ABOUTME: Provides text input and sends messages to backend
 import { useState, useCallback } from 'react';
-import { logLLMRequest } from './flowTools';
+import { sendMessage } from './api';
 
 function ChatInterface({ nodes, edges }) {
   const [message, setMessage] = useState('');
 
-  const handleSubmit = useCallback((e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    logLLMRequest(message, nodes, edges);
-    setMessage('');
-  }, [message, nodes, edges]);
+    try {
+      const response = await sendMessage(message);
+      console.log('✅ Message saved to conversation.json:', response);
+      console.log('📂 Check server/data/conversation.json to see the message');
+      setMessage('');
+    } catch (error) {
+      console.error('❌ Failed to send message:', error);
+    }
+  }, [message]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -38,7 +44,7 @@ function ChatInterface({ nodes, edges }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a command (e.g., 'add a login node')... Check console after sending."
+          placeholder="Type a command (e.g., 'add a login node')... Messages saved to conversation.json"
           style={{
             flex: 1,
             padding: '8px 12px',
