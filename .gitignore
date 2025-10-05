@@ -31,3 +31,4 @@ tests/test-data/
 *.njsproj
 *.sln
 *.sw?
+server/data/history.json
