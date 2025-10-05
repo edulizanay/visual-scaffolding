@@ -18,6 +18,45 @@ const DEFAULT_HISTORY = {
   currentIndex: -1
 };
 
+function cleanSnapshot(flowState) {
+  return {
+    nodes: flowState.nodes.map(node => {
+      const cleanNode = {
+        id: node.id
+      };
+
+      if (node.position) {
+        cleanNode.position = node.position;
+      }
+
+      if (node.data) {
+        cleanNode.data = {};
+        if (node.data.label !== undefined) {
+          cleanNode.data.label = node.data.label;
+        }
+        if (node.data.description !== undefined) {
+          cleanNode.data.description = node.data.description;
+        }
+      }
+
+      return cleanNode;
+    }),
+    edges: flowState.edges.map(edge => {
+      const cleanEdge = {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target
+      };
+
+      if (edge.data?.label !== undefined) {
+        cleanEdge.data = { label: edge.data.label };
+      }
+
+      return cleanEdge;
+    })
+  };
+}
+
 async function readHistory() {
   try {
     const data = await fs.readFile(getHistoryPath(), 'utf-8');
@@ -38,6 +77,7 @@ async function writeHistory(historyData) {
 }
 
 export async function pushSnapshot(flowState) {
+  const cleanState = cleanSnapshot(flowState);
   const history = await readHistory();
 
   // If we're not at the end, truncate future states
@@ -46,7 +86,7 @@ export async function pushSnapshot(flowState) {
   }
 
   // Add new state
-  history.states.push(flowState);
+  history.states.push(cleanState);
   history.currentIndex = history.states.length - 1;
 
   // Limit snapshots

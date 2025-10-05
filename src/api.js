@@ -15,7 +15,7 @@ export const loadFlow = async () => {
   }
 };
 
-export const saveFlow = async (nodes, edges, skipSnapshot = true) => {
+export const saveFlow = async (nodes, edges, skipSnapshot = false) => {
   try {
     const url = skipSnapshot
       ? `${API_BASE_URL}/flow?skipSnapshot=true`
