@@ -15,9 +15,13 @@ export const loadFlow = async () => {
   }
 };
 
-export const saveFlow = async (nodes, edges) => {
+export const saveFlow = async (nodes, edges, skipSnapshot = true) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/flow`, {
+    const url = skipSnapshot
+      ? `${API_BASE_URL}/flow?skipSnapshot=true`
+      : `${API_BASE_URL}/flow`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

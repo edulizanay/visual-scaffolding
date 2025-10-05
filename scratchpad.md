@@ -249,3 +249,22 @@
 6. ✅ All toolExecution tests still pass (18/18)
 7. ⏳ Ready for E2E testing
 
+### Critical Bug Fix - Auto-Save Pollution
+- **PROBLEM**: User reported undo going back too many times, lost original flow
+- **ROOT CAUSE**: Frontend auto-save (every 500ms on drag) was creating snapshots
+  - Dragging one node = 20+ snapshots
+  - History polluted with micro-changes instead of intentional actions
+- **INVESTIGATION**:
+  - Checked history.json - saw 45+ states, many just position changes
+  - Flow: Drag node → auto-save → POST /api/flow → writeFlow() → pushSnapshot()
+- **FIX APPLIED**:
+  1. Modified POST /api/flow to accept `?skipSnapshot=true` query param
+  2. Modified saveFlow() in api.js to default skipSnapshot=true for auto-saves
+  3. LLM tool executions still create snapshots (skipSnapshot=false by default)
+  4. Undo/redo operations use skipSnapshot=true to avoid snapshot loops
+- **RESULT**:
+  - ✅ Manual drag/edit = NO snapshot (just saves to disk)
+  - ✅ LLM actions (addNode, etc.) = YES snapshot (intentional changes)
+  - ✅ Undo/redo = NO snapshot (navigating history)
+- **RECOVERY**: Restored original flow.json from git, reset history.json to clean state
+

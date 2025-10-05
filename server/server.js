@@ -74,12 +74,13 @@ app.get('/api/flow', async (req, res) => {
 app.post('/api/flow', async (req, res) => {
   try {
     const flowData = req.body;
+    const skipSnapshot = req.query.skipSnapshot === 'true';
 
     if (!validateFlow(flowData)) {
       return res.status(400).json({ error: 'Invalid flow data structure' });
     }
 
-    await writeFlow(flowData);
+    await writeFlow(flowData, skipSnapshot);
     res.json({ success: true });
   } catch (error) {
     console.error('Error saving flow:', error);
