@@ -137,7 +137,7 @@
 
 ### 3:00 PM
 - DECISION: Session management approach
-  - Type "/resume" in chat to continue previous conversation history -- add a placeholder in the cahtbar to guide the user
+  - Type "/resume" in chat to continue previous conversation history -- add a placeholder in the chatbar to guide the user
   - Otherwise, start fresh (clear history on each new session)
   - Simple approach: no session IDs, just manual control via command
 - DECISION: LLM response format (researched Claude API docs)
@@ -150,6 +150,22 @@
 - DECISION: Code organization
   - Move SYSTEM_PROMPT from prompts.js into llmService.js (simpler)
   - Simplify parseToolCalls to just extract and parse JSON
-- TODO: Create mock testing endpoint to validate structure
-- TODO: Update plan.md with these decisions
+
+### 3:15 PM
+- IMPLEMENTATION: Updated to Claude API format
+  - Moved SYSTEM_PROMPT from server/llm/prompts.js into llmService.js
+  - Deleted prompts.js (no longer needed)
+  - Updated SYSTEM_PROMPT with Claude tool_use format example
+  - Simplified parseToolCalls() to just extract and parse JSON
+  - Added parseError field to return parse failures to frontend
+  - Updated all 16 tests in llmService.test.js (16/16 passing)
+- IMPLEMENTATION: Mock testing endpoint
+  - Created POST /api/test/mock-llm endpoint
+  - Takes llmResponse string (with <thinking> and <response> tags)
+  - Parses using parseToolCalls()
+  - Executes using executeToolCalls()
+  - Returns: parsed data, execution results, updated flow state
+  - ✅ Tested with test-mock.sh script - works perfectly!
+  - Returns parse errors to frontend when JSON is malformed
+- NEXT: Add /resume command for session management
 

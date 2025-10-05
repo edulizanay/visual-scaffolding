@@ -138,7 +138,7 @@ describe('llmService', () => {
 User wants a login node. I'll use addNode.
 </thinking>
 <response>
-addNode(label="Login")
+[{"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "Login"}}]
 </response>
       `;
 
@@ -154,7 +154,7 @@ addNode(label="Login")
 Creating a node
 </thinking>
 <response>
-addNode(label="Login", description="User authentication")
+[{"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "Login", "description": "User authentication"}}]
 </response>
       `;
 
@@ -168,13 +168,14 @@ addNode(label="Login", description="User authentication")
       const llmResponse = `
 <thinking>Test</thinking>
 <response>
-addNode(label="Login", description="Auth page")
+[{"type": "tool_use", "id": "toolu_01A", "name": "addNode", "input": {"label": "Login", "description": "Auth page"}}]
 </response>
       `;
 
       const result = parseToolCalls(llmResponse);
 
       expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].id).toBe('toolu_01A');
       expect(result.toolCalls[0].name).toBe('addNode');
       expect(result.toolCalls[0].params).toEqual({
         label: 'Login',
@@ -186,8 +187,10 @@ addNode(label="Login", description="Auth page")
       const llmResponse = `
 <thinking>Creating two nodes</thinking>
 <response>
-addNode(label="Login")
-addNode(label="Dashboard", parentNodeId="1")
+[
+  {"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "Login"}},
+  {"type": "tool_use", "id": "toolu_02", "name": "addNode", "input": {"label": "Dashboard", "parentNodeId": "1"}}
+]
 </response>
       `;
 
@@ -199,22 +202,40 @@ addNode(label="Dashboard", parentNodeId="1")
       expect(result.toolCalls[1].params.parentNodeId).toBe('1');
     });
 
-    test('handles malformed response gracefully', () => {
+    test('handles malformed JSON gracefully', () => {
+      const llmResponse = `
+<thinking>Test</thinking>
+<response>
+{not valid json}
+</response>
+      `;
+
+      const result = parseToolCalls(llmResponse);
+
+      // Should not throw, should return error
+      expect(result).toBeDefined();
+      expect(result.toolCalls).toHaveLength(0);
+      expect(result.parseError).toBeDefined();
+      expect(result.parseError).toContain('Failed to parse');
+    });
+
+    test('handles completely malformed response gracefully', () => {
       const llmResponse = 'This is not properly formatted';
 
       const result = parseToolCalls(llmResponse);
 
       // Should not throw, should return empty or default structure
       expect(result).toBeDefined();
-      expect(result.thinking).toBeDefined();
-      expect(result.content).toBeDefined();
-      expect(result.toolCalls).toBeDefined();
+      expect(result.thinking).toBe('');
+      expect(result.content).toBe('');
+      expect(result.toolCalls).toHaveLength(0);
+      expect(result.parseError).toBeNull();
     });
 
     test('handles missing thinking tags', () => {
       const llmResponse = `
 <response>
-addNode(label="Test")
+[{"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "Test"}}]
 </response>
       `;
 
@@ -236,6 +257,20 @@ Just thinking, no action
       expect(result.thinking).toContain('Just thinking');
       expect(result.content).toBe('');
       expect(result.toolCalls).toHaveLength(0);
+    });
+
+    test('handles single object instead of array', () => {
+      const llmResponse = `
+<thinking>Single call</thinking>
+<response>
+{"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "Test"}}
+</response>
+      `;
+
+      const result = parseToolCalls(llmResponse);
+
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].name).toBe('addNode');
     });
   });
 });

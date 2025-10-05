@@ -5,10 +5,54 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { getHistory } from '../conversationService.js';
 import { toolDefinitions } from './tools.js';
-import { SYSTEM_PROMPT } from './prompts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const SYSTEM_PROMPT = `You are a UI helper for React Flow graph structures.
+The user is building a flow diagram with nodes and edges.
+
+Your role:
+1. Review the conversation history to understand context
+2. Look at the current flow state (nodes and edges)
+3. Use the available tools to help the user achieve their objective
+
+Response format:
+- First, output your thinking process in <thinking> tags
+- Then, output your tool calls as a JSON array in <response> tags
+- Each tool call must have: type, id, name, and input
+- Follow this exact structure:
+
+<thinking>
+Your reasoning about what tools to use and why.
+</thinking>
+<response>
+[
+  {
+    "type": "tool_use",
+    "id": "toolu_01A09q90qw90lq917835lq9",
+    "name": "addNode",
+    "input": {
+      "label": "Login",
+      "description": "User authentication page"
+    }
+  },
+  {
+    "type": "tool_use",
+    "id": "toolu_01B10r01rw01mr018017mr1",
+    "name": "addNode",
+    "input": {
+      "label": "Home"
+    }
+  }
+]
+</response>
+
+Important:
+- The "id" can be any unique string (e.g., "toolu_" followed by random characters)
+- The "input" object contains the parameters for the tool
+- You can call multiple tools in a single response
+- Available tools and their schemas will be provided in each request`;
 
 function getFlowPath() {
   return process.env.FLOW_DATA_PATH || join(__dirname, '../data', 'flow.json');
@@ -48,10 +92,10 @@ export async function buildLLMContext(userMessage) {
 
 /**
  * Parse LLM response to extract thinking and tool calls
- * Expects format:
+ * Expects Claude API format:
  * <thinking>reasoning here</thinking>
  * <response>
- * toolName(param="value")
+ * [{"type": "tool_use", "id": "...", "name": "...", "input": {...}}]
  * </response>
  */
 export function parseToolCalls(llmResponse) {
@@ -63,56 +107,28 @@ export function parseToolCalls(llmResponse) {
   const responseMatch = llmResponse.match(/<response>([\s\S]*?)<\/response>/);
   const content = responseMatch ? responseMatch[1].trim() : '';
 
-  // Parse tool calls from response
-  const toolCalls = [];
+  let toolCalls = [];
+  let parseError = null;
 
   if (content) {
-    // Split by newlines and parse each line
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    try {
+      // Parse as JSON array
+      const parsed = JSON.parse(content);
 
-    for (const line of lines) {
-      // Match pattern: toolName(param1="value1", param2="value2")
-      const toolMatch = line.match(/^(\w+)\((.*)\)$/);
+      // Ensure it's an array
+      const toolUseBlocks = Array.isArray(parsed) ? parsed : [parsed];
 
-      if (toolMatch) {
-        const toolName = toolMatch[1];
-        const paramsString = toolMatch[2];
-
-        // Parse parameters
-        const params = {};
-
-        if (paramsString.trim()) {
-          // Match param="value" or param='value' or param=value
-          const paramMatches = paramsString.matchAll(/(\w+)=(?:"([^"]*)"|'([^']*)'|([^,\s]+))/g);
-
-          for (const match of paramMatches) {
-            const paramName = match[1];
-            const quotedValue = match[2] || match[3]; // Quoted strings
-            const unquotedValue = match[4]; // Unquoted values
-
-            let paramValue;
-
-            if (quotedValue !== undefined) {
-              // If it was quoted, keep as string
-              paramValue = quotedValue;
-            } else {
-              // Unquoted - try to parse as JSON types
-              if (unquotedValue === 'true') paramValue = true;
-              else if (unquotedValue === 'false') paramValue = false;
-              else if (unquotedValue === 'null') paramValue = null;
-              else if (!isNaN(unquotedValue) && unquotedValue !== '') paramValue = Number(unquotedValue);
-              else paramValue = unquotedValue;
-            }
-
-            params[paramName] = paramValue;
-          }
-        }
-
-        toolCalls.push({
-          name: toolName,
-          params,
-        });
-      }
+      // Convert Claude format to our internal format
+      toolCalls = toolUseBlocks.map(block => ({
+        id: block.id,
+        name: block.name,
+        params: block.input || {}
+      }));
+    } catch (error) {
+      // If JSON parsing fails, capture the error
+      parseError = `Failed to parse tool calls: ${error.message}`;
+      console.error(parseError);
+      console.error('Content:', content);
     }
   }
 
@@ -120,5 +136,6 @@ export function parseToolCalls(llmResponse) {
     thinking,
     content,
     toolCalls,
+    parseError, // Include error if parsing failed
   };
 }
