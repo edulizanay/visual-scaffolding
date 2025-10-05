@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
 import { buildLLMContext, parseToolCalls, callGroqAPI } from './llm/llmService.js';
+import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,11 +40,15 @@ async function readFlow() {
   }
 }
 
-async function writeFlow(flowData) {
+async function writeFlow(flowData, skipSnapshot = false) {
   const flowPath = getFlowPath();
   const dataDir = dirname(flowPath);
   await fs.mkdir(dataDir, { recursive: true });
   await fs.writeFile(flowPath, JSON.stringify(flowData, null, 2));
+
+  if (!skipSnapshot) {
+    await pushSnapshot(flowData);
+  }
 }
 
 function validateFlow(data) {
@@ -69,12 +74,13 @@ app.get('/api/flow', async (req, res) => {
 app.post('/api/flow', async (req, res) => {
   try {
     const flowData = req.body;
+    const skipSnapshot = req.query.skipSnapshot === 'true';
 
     if (!validateFlow(flowData)) {
       return res.status(400).json({ error: 'Invalid flow data structure' });
     }
 
-    await writeFlow(flowData);
+    await writeFlow(flowData, skipSnapshot);
     res.json({ success: true });
   } catch (error) {
     console.error('Error saving flow:', error);
@@ -158,6 +164,49 @@ app.delete('/api/conversation/history', async (req, res) => {
   } catch (error) {
     console.error('Error clearing history:', error);
     res.status(500).json({ error: 'Failed to clear history' });
+  }
+});
+
+// Flow history endpoints
+app.post('/api/flow/undo', async (req, res) => {
+  try {
+    const previousState = await historyUndo();
+
+    if (!previousState) {
+      return res.json({ success: false, message: 'Nothing to undo' });
+    }
+
+    await writeFlow(previousState, true); // Skip snapshot to avoid creating new state
+    res.json({ success: true, flow: previousState });
+  } catch (error) {
+    console.error('Error undoing:', error);
+    res.status(500).json({ error: 'Failed to undo' });
+  }
+});
+
+app.post('/api/flow/redo', async (req, res) => {
+  try {
+    const nextState = await historyRedo();
+
+    if (!nextState) {
+      return res.json({ success: false, message: 'Nothing to redo' });
+    }
+
+    await writeFlow(nextState, true); // Skip snapshot to avoid creating new state
+    res.json({ success: true, flow: nextState });
+  } catch (error) {
+    console.error('Error redoing:', error);
+    res.status(500).json({ error: 'Failed to redo' });
+  }
+});
+
+app.get('/api/flow/history-status', async (req, res) => {
+  try {
+    const status = await getHistoryStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting history status:', error);
+    res.status(500).json({ error: 'Failed to get history status' });
   }
 });
 
@@ -431,8 +480,17 @@ async function executeDeleteEdge(params) {
 
 // Only start server if not imported for testing
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
+
+    // Initialize history with current flow state
+    try {
+      const currentFlow = await readFlow();
+      await initializeHistory(currentFlow);
+      console.log('History initialized with current flow state');
+    } catch (error) {
+      console.error('Failed to initialize history:', error);
+    }
   });
 }
 

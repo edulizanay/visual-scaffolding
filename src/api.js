@@ -15,9 +15,13 @@ export const loadFlow = async () => {
   }
 };
 
-export const saveFlow = async (nodes, edges) => {
+export const saveFlow = async (nodes, edges, skipSnapshot = true) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/flow`, {
+    const url = skipSnapshot
+      ? `${API_BASE_URL}/flow?skipSnapshot=true`
+      : `${API_BASE_URL}/flow`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,6 +81,49 @@ export const clearConversation = async () => {
     return await response.json();
   } catch (error) {
     console.error('Error clearing conversation:', error);
+    throw error;
+  }
+};
+
+export const undoFlow = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/flow/undo`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to undo');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error undoing:', error);
+    throw error;
+  }
+};
+
+export const redoFlow = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/flow/redo`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to redo');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error redoing:', error);
+    throw error;
+  }
+};
+
+export const getHistoryStatus = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/flow/history-status`);
+    if (!response.ok) {
+      throw new Error('Failed to get history status');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting history status:', error);
     throw error;
   }
 };
