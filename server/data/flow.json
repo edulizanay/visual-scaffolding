@@ -1,0 +1,101 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "position": {
+        "x": -123.5,
+        "y": 21.5
+      },
+      "data": {
+        "label": "Test!",
+        "description": "First node"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "2",
+      "position": {
+        "x": 200,
+        "y": 0
+      },
+      "data": {
+        "label": "Node 2",
+        "description": "Handles visuals for auth path"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 72
+      },
+      "selected": false
+    },
+    {
+      "id": "3",
+      "position": {
+        "x": 423.1828476686842,
+        "y": 8.280529618263245
+      },
+      "data": {
+        "label": "Test3!",
+        "description": "Third node"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "1759658209593",
+      "position": {
+        "x": 623.1828476686842,
+        "y": 8.280529618263245
+      },
+      "data": {
+        "label": "Test!",
+        "description": ""
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 38
+      },
+      "selected": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1-2",
+      "source": "1",
+      "target": "2",
+      "type": "smoothstep",
+      "selected": false
+    },
+    {
+      "id": "e2-3",
+      "source": "2",
+      "target": "3",
+      "type": "smoothstep",
+      "animated": false
+    },
+    {
+      "id": "e3-1759658209593",
+      "source": "3",
+      "target": "1759658209593",
+      "type": "smoothstep",
+      "data": {}
+    }
+  ]
+}
