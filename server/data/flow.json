@@ -2,10 +2,9 @@
   "nodes": [
     {
       "id": "manuel",
-      "type": "default",
       "position": {
         "x": 0,
-        "y": 202
+        "y": 96
       },
       "data": {
         "label": "Manuel",
@@ -16,16 +15,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "alicia",
-      "type": "default",
       "position": {
         "x": 0,
-        "y": 288
+        "y": 182
       },
       "data": {
         "label": "Alicia",
@@ -36,16 +32,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "sergio",
-      "type": "default",
       "position": {
         "x": 0,
-        "y": 374
+        "y": 268
       },
       "data": {
         "label": "Sergio",
@@ -56,16 +49,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "elsa",
-      "type": "default",
       "position": {
         "x": 0,
-        "y": 460
+        "y": 354
       },
       "data": {
         "label": "Elsa",
@@ -76,16 +66,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "eduardo-dad",
-      "type": "default",
       "position": {
         "x": 222,
-        "y": 268
+        "y": 139
       },
       "data": {
         "label": "Eduardo",
@@ -96,16 +83,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "jessica-mom",
-      "type": "default",
       "position": {
         "x": 222,
-        "y": 440
+        "y": 311
       },
       "data": {
         "label": "Jessica",
@@ -116,36 +100,30 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "eduardo-jr",
-      "type": "default",
       "position": {
         "x": 444,
-        "y": 96
+        "y": 0
       },
       "data": {
-        "label": "Eduardo Jr.",
-        "description": "Child 1"
+        "label": "Eduardo Jr.1",
+        "description": "Child 123"
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
-        "height": 58
-      },
-      "selected": false,
-      "dragging": false
+        "height": 57
+      }
     },
     {
       "id": "maria-jesus",
-      "type": "default",
       "position": {
         "x": 444,
-        "y": 215
+        "y": 96
       },
       "data": {
         "label": "Maria Jesus",
@@ -156,16 +134,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "tomas",
-      "type": "default",
       "position": {
         "x": 444,
-        "y": 344
+        "y": 225
       },
       "data": {
         "label": "Tomas",
@@ -176,16 +151,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "joaquin",
-      "type": "default",
       "position": {
         "x": 444,
-        "y": 450
+        "y": 354
       },
       "data": {
         "label": "Joaquin",
@@ -196,16 +168,13 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "damien",
-      "type": "default",
       "position": {
         "x": 444,
-        "y": 546
+        "y": 450
       },
       "data": {
         "label": "Damien",
@@ -216,9 +185,39 @@
       "measured": {
         "width": 150,
         "height": 57
+      }
+    },
+    {
+      "id": "1759720977826-0gcrc9ud2",
+      "position": {
+        "x": 666,
+        "y": 43
       },
-      "selected": false,
-      "dragging": false
+      "data": {
+        "label": "Antonia"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
+    },
+    {
+      "id": "1759728678512-y3q7astgs",
+      "position": {
+        "x": 666,
+        "y": 129
+      },
+      "data": {
+        "label": "Noemi"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
     }
   ],
   "edges": [
@@ -332,6 +331,22 @@
       "target": "damien",
       "data": {
         "label": "parent of"
+      }
+    },
+    {
+      "id": "1759720977826-4k2m3zm1r",
+      "source": "maria-jesus",
+      "target": "1759720977826-0gcrc9ud2",
+      "data": {
+        "label": "son of"
+      }
+    },
+    {
+      "id": "1759728678512-vkfxxo9si",
+      "source": "maria-jesus",
+      "target": "1759728678512-y3q7astgs",
+      "data": {
+        "label": "son of"
       }
     }
   ]

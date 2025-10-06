@@ -1,6 +1,6 @@
 // ABOUTME: Main application component with React Flow canvas
 // ABOUTME: Loads flow from backend and auto-saves changes
-import { useCallback, useMemo, useEffect, useState } from 'react';
+import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -81,6 +81,11 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [canUndo, setCanUndo] = useState(false);
   const [toast, setToast] = useState(null); // 'undo' | 'redo' | null
+  const reactFlowInstance = useRef(null);
+
+  const onInit = useCallback((instance) => {
+    reactFlowInstance.current = instance;
+  }, []);
 
   useEffect(() => {
     const fetchFlow = async () => {
@@ -218,6 +223,11 @@ function App() {
               );
               setNodes(layoutedNodes);
               setEdges(layoutedEdges);
+
+              // Center viewport with animation
+              setTimeout(() => {
+                reactFlowInstance.current?.fitView({ duration: 300, padding: 0.2 });
+              }, 50);
             }, 0);
 
             return updatedEdges;
@@ -250,6 +260,11 @@ function App() {
       );
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
+
+      // Center viewport with animation
+      setTimeout(() => {
+        reactFlowInstance.current?.fitView({ duration: 300, padding: 0.2 });
+      }, 50);
     }, 100);
   }, [setNodes, setEdges]);
 
@@ -331,6 +346,7 @@ function App() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
+        onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode="dark"
