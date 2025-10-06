@@ -76,6 +76,20 @@ function ChatInterface({ onFlowUpdate }) {
     }
   }, [handleSubmit]);
 
+  const handleTextareaChange = useCallback((e) => {
+    setMessage(e.target.value);
+
+    const textarea = e.target;
+    const minHeight = 38;
+    const maxHeight = 76;
+
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+    textarea.style.height = `${newHeight}px`;
+    textarea.style.overflowY = scrollHeight > maxHeight ? 'scroll' : 'hidden';
+  }, []);
+
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
       const activeElement = document.activeElement;
@@ -94,60 +108,73 @@ function ChatInterface({ onFlowUpdate }) {
   }, []);
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 24,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      maxWidth: '33.33vw',
-      width: '100%',
-      zIndex: 1000,
-    }}>
-      <form onSubmit={handleSubmit}>
-        <div style={{ position: 'relative' }}>
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a command or '/resume' to continue..."
-            rows={1}
-            style={{
-              width: '100%',
-              margin: 0,
-              padding: '12px 16px',
-              paddingRight: '70px',
-              background: 'rgba(26, 26, 26, 0.95)',
-              border: '1px solid rgba(107, 114, 128, 0.5)',
-              borderRadius: '12px',
-              color: 'white',
-              fontSize: '14px',
-              outline: 'none',
-              resize: 'none',
-              fontFamily: 'inherit',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
-              boxSizing: 'border-box',
-            }}
-          />
-          <div style={{
-            position: 'absolute',
-            right: '12px',
-            top: 0,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            pointerEvents: 'none',
-            opacity: message.length > 0 ? 1 : 0,
-            transition: 'opacity 150ms ease',
-          }}>
-            <Kbd>⌘</Kbd>
-            <span style={{ color: '#9ca3af', fontSize: '12px' }}>+</span>
-            <Kbd>⏎</Kbd>
+    <>
+      <style>{`
+        .chat-textarea::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      <div style={{
+        position: 'fixed',
+        bottom: 24,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: '33.33vw',
+        width: '100%',
+        zIndex: 1000,
+      }}>
+        <form onSubmit={handleSubmit}>
+          <div style={{ position: 'relative' }}>
+            <textarea
+              className="chat-textarea"
+              ref={textareaRef}
+              value={message}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a command or '/resume' to continue conversation."
+              rows={1}
+              style={{
+                width: '100%',
+                minHeight: '38px',
+                maxHeight: '76px',
+                margin: 0,
+                padding: '12px 16px',
+                paddingRight: '70px',
+                background: 'rgba(26, 26, 26, 0.95)',
+                border: '1px solid rgba(107, 114, 128, 0.5)',
+                borderRadius: '12px',
+                color: 'white',
+                fontSize: '12px',
+                outline: 'none',
+                resize: 'none',
+                fontFamily: 'inherit',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
+                boxSizing: 'border-box',
+                overflowY: 'hidden',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              right: '12px',
+              top: 0,
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              pointerEvents: 'none',
+              opacity: message.length > 0 ? 1 : 0,
+              transition: 'opacity 150ms ease',
+            }}>
+              <Kbd>⌘</Kbd>
+              <span style={{ color: '#9ca3af', fontSize: '12px' }}>+</span>
+              <Kbd>⏎</Kbd>
+            </div>
           </div>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </>
   );
 }
 
