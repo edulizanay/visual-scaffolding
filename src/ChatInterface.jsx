@@ -33,6 +33,19 @@ function ChatInterface({ onFlowUpdate }) {
   const isFirstMessage = useRef(true);
   const textareaRef = useRef(null);
 
+  const adjustTextareaHeight = useCallback((textarea) => {
+    if (!textarea) return;
+
+    const minHeight = 38;
+    const maxHeight = 76;
+
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+    textarea.style.height = `${newHeight}px`;
+    textarea.style.overflowY = scrollHeight > maxHeight ? 'scroll' : 'hidden';
+  }, []);
+
   const loadConversationHistory = useCallback(async () => {
     try {
       const { history } = await getConversationDebug();
@@ -122,21 +135,16 @@ function ChatInterface({ onFlowUpdate }) {
 
   const handleTextareaChange = useCallback((e) => {
     setMessage(e.target.value);
-
-    const textarea = e.target;
-    const minHeight = 38;
-    const maxHeight = 76;
-
-    textarea.style.height = 'auto';
-    const scrollHeight = textarea.scrollHeight;
-    const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
-    textarea.style.height = `${newHeight}px`;
-    textarea.style.overflowY = scrollHeight > maxHeight ? 'scroll' : 'hidden';
-  }, []);
+    adjustTextareaHeight(e.target);
+  }, [adjustTextareaHeight]);
 
   useEffect(() => {
     loadConversationHistory();
   }, [loadConversationHistory]);
+
+  useEffect(() => {
+    adjustTextareaHeight(textareaRef.current);
+  }, [message, adjustTextareaHeight]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {

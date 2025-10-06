@@ -9,4 +9,6 @@
 - ArrowUp navigates backward through sent messages, ArrowDown navigates forward
 - Draft message is preserved when navigating and restored when returning to current
 - History is read-only (doesn't modify history.json)
+- Fixed: Extracted textarea resize logic into `adjustTextareaHeight` function
+- Added useEffect to auto-resize textarea whenever message changes (including from arrow navigation)
 - Ready for manual testing

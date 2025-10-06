@@ -4,7 +4,7 @@
       "id": "manuel",
       "position": {
         "x": 0,
-        "y": 96
+        "y": 83
       },
       "data": {
         "label": "Manuel",
@@ -21,7 +21,7 @@
       "id": "alicia",
       "position": {
         "x": 0,
-        "y": 182
+        "y": 169
       },
       "data": {
         "label": "Alicia",
@@ -38,7 +38,7 @@
       "id": "sergio",
       "position": {
         "x": 0,
-        "y": 268
+        "y": 255
       },
       "data": {
         "label": "Sergio",
@@ -55,7 +55,7 @@
       "id": "elsa",
       "position": {
         "x": 0,
-        "y": 354
+        "y": 341
       },
       "data": {
         "label": "Elsa",
@@ -72,7 +72,7 @@
       "id": "eduardo-dad",
       "position": {
         "x": 222,
-        "y": 139
+        "y": 149
       },
       "data": {
         "label": "Eduardo",
@@ -89,7 +89,7 @@
       "id": "jessica-mom",
       "position": {
         "x": 222,
-        "y": 311
+        "y": 321
       },
       "data": {
         "label": "Jessica",
@@ -157,7 +157,7 @@
       "id": "joaquin",
       "position": {
         "x": 444,
-        "y": 354
+        "y": 374
       },
       "data": {
         "label": "Joaquin",
@@ -174,7 +174,7 @@
       "id": "damien",
       "position": {
         "x": 444,
-        "y": 450
+        "y": 460
       },
       "data": {
         "label": "Damien",
@@ -190,8 +190,8 @@
     {
       "id": "1759739196218-xra83e1o4",
       "position": {
-        "x": 767.8022875207471,
-        "y": 167.99071898838164
+        "x": 666,
+        "y": 149
       },
       "data": {
         "label": "Florencia",
@@ -210,11 +210,47 @@
       "id": "1759739196223-qgh4vsm95",
       "position": {
         "x": 666,
-        "y": 450
+        "y": 460
       },
       "data": {
         "label": "Trini",
         "description": "Child of Damien"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
+    },
+    {
+      "id": "1759757897141-f4iglsfvn",
+      "type": "default",
+      "position": {
+        "x": 666,
+        "y": 235
+      },
+      "data": {
+        "label": "New Child",
+        "description": "Child of Tomas"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
+    },
+    {
+      "id": "1759758511156-2g8r8mfw8",
+      "type": "default",
+      "position": {
+        "x": 666,
+        "y": 374
+      },
+      "data": {
+        "label": "New Child",
+        "description": "Child of Tomas"
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -352,6 +388,16 @@
       "data": {
         "label": "parent of"
       }
+    },
+    {
+      "id": "1759757897141-l23rqxtni",
+      "source": "tomas",
+      "target": "1759757897141-f4iglsfvn"
+    },
+    {
+      "id": "1759758511156-uig0b3x5i",
+      "source": "tomas",
+      "target": "1759758511156-2g8r8mfw8"
     }
   ]
 }

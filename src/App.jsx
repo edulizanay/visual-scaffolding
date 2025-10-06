@@ -19,7 +19,7 @@ import ChatInterface, { Kbd } from './ChatInterface';
 
 const nodeWidth = 172;
 const nodeHeight = 36;
-const FIT_VIEW_PADDING = 0.25;
+const FIT_VIEW_PADDING = 0.35;
 
 const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
@@ -357,7 +357,7 @@ function App() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{      width: '100vw',      height: '100vh'    }}>
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edgesWithHandlers}
@@ -372,6 +372,7 @@ function App() {
         defaultViewport={{ x: 300, y: 200, zoom: 1 }}
         fitView
         fitViewOptions={{ padding: FIT_VIEW_PADDING }}
+        proOptions={{ hideAttribution: true }}
       >
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} />

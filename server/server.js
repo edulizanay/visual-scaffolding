@@ -428,9 +428,10 @@ async function executeAddNode(params) {
   const flow = await readFlow();
 
   // If parentNodeId provided, verify it exists
+  let parentNode = null;
   if (parentNodeId) {
-    const parentExists = flow.nodes.some(n => n.id === parentNodeId);
-    if (!parentExists) {
+    parentNode = flow.nodes.find(n => n.id === parentNodeId);
+    if (!parentNode) {
       return { success: false, error: `Parent node ${parentNodeId} not found` };
     }
   }
@@ -439,7 +440,9 @@ async function executeAddNode(params) {
   const newNode = {
     id: nodeId,
     type: 'default',
-    position: { x: 0, y: 0 },
+    position: parentNode
+      ? { x: parentNode.position.x + 200, y: parentNode.position.y }
+      : { x: 0, y: 0 },
     data: { label }
   };
 
