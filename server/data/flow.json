@@ -5,7 +5,7 @@
       "type": "default",
       "position": {
         "x": 0,
-        "y": 96
+        "y": 202
       },
       "data": {
         "label": "Manuel",
@@ -25,7 +25,7 @@
       "type": "default",
       "position": {
         "x": 0,
-        "y": 182
+        "y": 288
       },
       "data": {
         "label": "Alicia",
@@ -45,7 +45,7 @@
       "type": "default",
       "position": {
         "x": 0,
-        "y": 268
+        "y": 374
       },
       "data": {
         "label": "Sergio",
@@ -65,7 +65,7 @@
       "type": "default",
       "position": {
         "x": 0,
-        "y": 354
+        "y": 460
       },
       "data": {
         "label": "Elsa",
@@ -85,7 +85,7 @@
       "type": "default",
       "position": {
         "x": 222,
-        "y": 139
+        "y": 268
       },
       "data": {
         "label": "Eduardo",
@@ -105,7 +105,7 @@
       "type": "default",
       "position": {
         "x": 222,
-        "y": 311
+        "y": 440
       },
       "data": {
         "label": "Jessica",
@@ -125,7 +125,7 @@
       "type": "default",
       "position": {
         "x": 444,
-        "y": 0
+        "y": 96
       },
       "data": {
         "label": "Eduardo Jr.",
@@ -135,7 +135,7 @@
       "targetPosition": "left",
       "measured": {
         "width": 150,
-        "height": 57
+        "height": 58
       },
       "selected": false,
       "dragging": false
@@ -145,7 +145,7 @@
       "type": "default",
       "position": {
         "x": 444,
-        "y": 96
+        "y": 215
       },
       "data": {
         "label": "Maria Jesus",
@@ -165,7 +165,7 @@
       "type": "default",
       "position": {
         "x": 444,
-        "y": 225
+        "y": 344
       },
       "data": {
         "label": "Tomas",
@@ -185,7 +185,7 @@
       "type": "default",
       "position": {
         "x": 444,
-        "y": 354
+        "y": 450
       },
       "data": {
         "label": "Joaquin",
@@ -205,7 +205,7 @@
       "type": "default",
       "position": {
         "x": 444,
-        "y": 450
+        "y": 546
       },
       "data": {
         "label": "Damien",
