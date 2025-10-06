@@ -76,11 +76,36 @@ async function writeHistory(historyData) {
   await fs.writeFile(historyPath, JSON.stringify(historyData, null, 2));
 }
 
+function compareSnapshotsIgnoringPositions(state1, state2) {
+  if (!state1 || !state2) return false;
+
+  const strip = (state) => ({
+    nodes: state.nodes.map(({ id, data }) => ({ id, data })),
+    edges: state.edges.map(({ id, source, target, data }) => ({ id, source, target, data }))
+  });
+
+  return JSON.stringify(strip(state1)) === JSON.stringify(strip(state2));
+}
+
 export async function pushSnapshot(flowState) {
   const cleanState = cleanSnapshot(flowState);
   const history = await readHistory();
 
-  // If we're not at the end, truncate future states
+  const lastSnapshot = history.states[history.currentIndex];
+
+  // If identical to last snapshot (including positions), skip
+  if (lastSnapshot && JSON.stringify(cleanState) === JSON.stringify(lastSnapshot)) {
+    return;
+  }
+
+  // If identical except positions, update last snapshot's positions
+  if (lastSnapshot && compareSnapshotsIgnoringPositions(cleanState, lastSnapshot)) {
+    history.states[history.currentIndex] = cleanState;
+    await writeHistory(history);
+    return;
+  }
+
+  // If we're not at the end, truncate future states (only when adding a NEW snapshot)
   if (history.currentIndex < history.states.length - 1) {
     history.states = history.states.slice(0, history.currentIndex + 1);
   }
