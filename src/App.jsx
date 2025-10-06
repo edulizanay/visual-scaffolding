@@ -218,6 +218,13 @@ function App() {
         onLabelChange: updateNodeLabel,
         onDescriptionChange: updateNodeDescription,
       },
+      style: {
+        ...(node.style || {}),
+        ...(node.data.collapsed ? {
+          borderWidth: '2px',
+          borderColor: 'rgba(255, 255, 255, 0.4)',
+        } : {}),
+      },
     })),
     [nodes, updateNodeLabel, updateNodeDescription]
   );
