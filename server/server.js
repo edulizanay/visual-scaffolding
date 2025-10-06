@@ -28,7 +28,7 @@ const DEFAULT_FLOW = {
   edges: []
 };
 
-async function readFlow() {
+export async function readFlow() {
   try {
     const data = await fs.readFile(getFlowPath(), 'utf-8');
     return JSON.parse(data);
@@ -40,7 +40,7 @@ async function readFlow() {
   }
 }
 
-async function writeFlow(flowData, skipSnapshot = false) {
+export async function writeFlow(flowData, skipSnapshot = false) {
   const flowPath = getFlowPath();
   const dataDir = dirname(flowPath);
   await fs.mkdir(dataDir, { recursive: true });
@@ -273,8 +273,9 @@ export async function executeTool(toolName, params) {
       case 'deleteEdge':
         return await executeDeleteEdge(params);
       case 'undo':
+        return await executeUndo();
       case 'redo':
-        return { success: false, error: `${toolName} is not yet implemented` };
+        return await executeRedo();
       default:
         return { success: false, error: `Unknown tool: ${toolName}` };
     }
@@ -473,6 +474,30 @@ async function executeDeleteEdge(params) {
   flow.edges.splice(edgeIndex, 1);
 
   await writeFlow(flow);
+  return { success: true };
+}
+
+// undo: Reverts to previous flow state
+async function executeUndo() {
+  const previousState = await historyUndo();
+
+  if (!previousState) {
+    return { success: false, error: 'Nothing to undo' };
+  }
+
+  await writeFlow(previousState, true);
+  return { success: true };
+}
+
+// redo: Reapplies last undone change
+async function executeRedo() {
+  const nextState = await historyRedo();
+
+  if (!nextState) {
+    return { success: false, error: 'Nothing to redo' };
+  }
+
+  await writeFlow(nextState, true);
   return { success: true };
 }
 
