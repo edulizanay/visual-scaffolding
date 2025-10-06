@@ -1,9 +1,9 @@
 // ABOUTME: Chat interface for AI tool interaction
 // ABOUTME: Provides text input and sends messages to backend
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { sendMessage, clearConversation } from './api';
+import { sendMessage, clearConversation, getConversationDebug } from './api';
 
-const Kbd = ({ children }) => (
+export const Kbd = ({ children, style = {} }) => (
   <kbd
     style={{
       display: 'inline-flex',
@@ -17,7 +17,8 @@ const Kbd = ({ children }) => (
       fontFamily: 'monospace',
       fontSize: '12px',
       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
-      userSelect: 'none'
+      userSelect: 'none',
+      ...style
     }}
   >
     {children}
@@ -26,8 +27,24 @@ const Kbd = ({ children }) => (
 
 function ChatInterface({ onFlowUpdate }) {
   const [message, setMessage] = useState('');
+  const [historyPosition, setHistoryPosition] = useState(-1);
+  const [draftMessage, setDraftMessage] = useState('');
+  const [userMessages, setUserMessages] = useState([]);
   const isFirstMessage = useRef(true);
   const textareaRef = useRef(null);
+
+  const loadConversationHistory = useCallback(async () => {
+    try {
+      const { history } = await getConversationDebug();
+      const messages = history
+        .filter(msg => msg.role === 'user')
+        .map(msg => msg.content)
+        .reverse(); // Most recent first
+      setUserMessages(messages);
+    } catch (error) {
+      console.error('Failed to load conversation history:', error);
+    }
+  }, []);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -64,17 +81,44 @@ function ChatInterface({ onFlowUpdate }) {
       }
 
       setMessage('');
+      setHistoryPosition(-1);
+      setDraftMessage('');
+      await loadConversationHistory();
     } catch (error) {
       console.error('❌ Failed to send message:', error);
     }
-  }, [message, onFlowUpdate]);
+  }, [message, onFlowUpdate, loadConversationHistory]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSubmit(e);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      // If at current draft, save it
+      if (historyPosition === -1) {
+        setDraftMessage(message);
+      }
+      // Move back in history if possible
+      if (historyPosition < userMessages.length - 1) {
+        const newPosition = historyPosition + 1;
+        setHistoryPosition(newPosition);
+        setMessage(userMessages[newPosition]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      // Move forward in history
+      if (historyPosition > -1) {
+        const newPosition = historyPosition - 1;
+        setHistoryPosition(newPosition);
+        if (newPosition === -1) {
+          setMessage(draftMessage); // Restore draft
+        } else {
+          setMessage(userMessages[newPosition]);
+        }
+      }
     }
-  }, [handleSubmit]);
+  }, [handleSubmit, historyPosition, userMessages, message, draftMessage]);
 
   const handleTextareaChange = useCallback((e) => {
     setMessage(e.target.value);
@@ -89,6 +133,10 @@ function ChatInterface({ onFlowUpdate }) {
     textarea.style.height = `${newHeight}px`;
     textarea.style.overflowY = scrollHeight > maxHeight ? 'scroll' : 'hidden';
   }, []);
+
+  useEffect(() => {
+    loadConversationHistory();
+  }, [loadConversationHistory]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {

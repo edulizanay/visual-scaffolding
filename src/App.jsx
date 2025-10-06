@@ -4,8 +4,6 @@ import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import { timer } from 'd3-timer';
 import {
   ReactFlow,
-  MiniMap,
-  Background,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -17,10 +15,11 @@ import '@xyflow/react/dist/style.css';
 import Node from './Node';
 import Edge from './Edge';
 import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api';
-import ChatInterface from './ChatInterface';
+import ChatInterface, { Kbd } from './ChatInterface';
 
 const nodeWidth = 172;
 const nodeHeight = 36;
+const FIT_VIEW_PADDING = 0.25;
 
 const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
@@ -53,28 +52,6 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 
   return { nodes: newNodes, edges };
 };
-
-const Kbd = ({ children, style = {} }) => (
-  <kbd
-    style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '4px',
-      padding: '4px 8px',
-      backgroundColor: '#3a3a3a',
-      border: '1px solid transparent',
-      borderRadius: '6px',
-      color: 'white',
-      fontFamily: 'monospace',
-      fontSize: '14px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
-      userSelect: 'none',
-      ...style
-    }}
-  >
-    {children}
-  </kbd>
-);
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -207,7 +184,7 @@ function App() {
 
         // Center viewport
         setTimeout(() => {
-          reactFlowInstance.current?.fitView({ duration: 300, padding: 0.2 });
+          reactFlowInstance.current?.fitView({ duration: 400, padding: FIT_VIEW_PADDING });
         }, 50);
       }
     });
@@ -394,8 +371,8 @@ function App() {
         colorMode="dark"
         defaultViewport={{ x: 300, y: 200, zoom: 1 }}
         fitView
+        fitViewOptions={{ padding: FIT_VIEW_PADDING }}
       >
-        <MiniMap />
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} />
       {toast && (
@@ -409,7 +386,7 @@ function App() {
           gap: '8px',
           animation: 'slideIn 0.3s ease-out',
         }}>
-          <Kbd>{toast === 'undo' ? '⌘ Z' : '⌘ Y'}</Kbd>
+          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{toast === 'undo' ? '⌘ Z' : '⌘ Y'}</Kbd>
           <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
             {toast === 'undo' ? 'to undo' : 'to redo'}
           </span>
