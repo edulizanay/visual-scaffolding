@@ -8,6 +8,7 @@ import {
   useEdgesState,
   addEdge,
   Position,
+  getOutgoers,
 } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
 
@@ -21,13 +22,29 @@ const nodeWidth = 172;
 const nodeHeight = 36;
 const FIT_VIEW_PADDING = 0.25;
 
+const getAllDescendants = (nodeId, nodes, edges) => {
+  const node = nodes.find(n => n.id === nodeId);
+  if (!node) return [];
+
+  const children = getOutgoers(node, nodes, edges);
+  const descendants = [...children];
+
+  children.forEach(child => {
+    descendants.push(...getAllDescendants(child.id, nodes, edges));
+  });
+
+  return descendants;
+};
+
 const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
   const isHorizontal = direction === 'LR';
 
   dagreGraph.setGraph({ rankdir: direction });
 
-  nodes.forEach((node) => {
+  const visibleNodes = nodes.filter(node => !node.hidden);
+
+  visibleNodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
@@ -38,6 +55,8 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   dagre.layout(dagreGraph);
 
   const newNodes = nodes.map((node) => {
+    if (node.hidden) return node;
+
     const nodeWithPosition = dagreGraph.node(node.id);
     return {
       ...node,
@@ -259,6 +278,40 @@ function App() {
     [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
   );
 
+  const onNodeClick = useCallback(
+    (event, node) => {
+      if (event.altKey) {
+        const isCurrentlyCollapsed = node.data.collapsed || false;
+
+        const updatedNodes = nodes.map(n =>
+          n.id === node.id
+            ? { ...n, data: { ...n.data, collapsed: !isCurrentlyCollapsed }}
+            : n
+        );
+
+        const descendants = getAllDescendants(node.id, nodes, edges);
+        const descendantIds = descendants.map(d => d.id);
+
+        const finalNodes = updatedNodes.map(n =>
+          descendantIds.includes(n.id)
+            ? { ...n, hidden: !isCurrentlyCollapsed }
+            : n
+        );
+
+        const finalEdges = edges.map(e =>
+          (descendantIds.includes(e.source) || descendantIds.includes(e.target))
+            ? { ...e, hidden: !isCurrentlyCollapsed }
+            : e
+        );
+
+        setTimeout(() => {
+          applyLayoutWithAnimation(finalNodes, finalEdges);
+        }, 0);
+      }
+    },
+    [nodes, edges, applyLayoutWithAnimation]
+  );
+
   const handleFlowUpdate = useCallback((updatedFlow) => {
     if (!updatedFlow) return;
 
@@ -365,6 +418,7 @@ function App() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeClick={onNodeClick}
         onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
