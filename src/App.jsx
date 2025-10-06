@@ -10,6 +10,7 @@ import {
   addEdge,
   Position,
 } from '@xyflow/react';
+import dagre from '@dagrejs/dagre';
 
 import '@xyflow/react/dist/style.css';
 import Node from './Node';
@@ -17,12 +18,69 @@ import Edge from './Edge';
 import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api';
 import ChatInterface from './ChatInterface';
 
+const nodeWidth = 172;
+const nodeHeight = 36;
+
+const getLayoutedElements = (nodes, edges, direction = 'LR') => {
+  const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  const isHorizontal = direction === 'LR';
+
+  dagreGraph.setGraph({ rankdir: direction });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const newNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      targetPosition: isHorizontal ? 'left' : 'top',
+      sourcePosition: isHorizontal ? 'right' : 'bottom',
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
+    };
+  });
+
+  return { nodes: newNodes, edges };
+};
+
+const Kbd = ({ children, style = {} }) => (
+  <kbd
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '4px 8px',
+      backgroundColor: '#3a3a3a',
+      border: '1px solid transparent',
+      borderRadius: '6px',
+      color: 'white',
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+      userSelect: 'none',
+      ...style
+    }}
+  >
+    {children}
+  </kbd>
+);
+
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
+  const [toast, setToast] = useState(null); // 'undo' | 'redo' | null
 
   useEffect(() => {
     const fetchFlow = async () => {
@@ -53,13 +111,16 @@ function App() {
     const timeoutId = setTimeout(async () => {
       try {
         await saveFlow(nodes, edges);
+        if (canUndo) {
+          setToast('undo');
+        }
       } catch (error) {
         console.error('Failed to save flow:', error);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [nodes, edges, isLoading]);
+  }, [nodes, edges, isLoading, canUndo]);
 
   const updateNodeLabel = useCallback((nodeId, newLabel) => {
     setNodes((nds) =>
@@ -160,23 +221,27 @@ function App() {
 
     setNodes(nodesWithPosition);
     setEdges(updatedFlow.edges);
+
+    // Auto-layout when LLM adds nodes
+    setTimeout(() => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        nodesWithPosition,
+        updatedFlow.edges,
+        'LR'
+      );
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+    }, 100);
   }, [setNodes, setEdges]);
 
   const updateHistoryStatus = useCallback(async () => {
     try {
       const status = await getHistoryStatus();
       setCanUndo(status.canUndo);
-      setCanRedo(status.canRedo);
     } catch (error) {
       console.error('Failed to get history status:', error);
     }
   }, []);
-
-  useEffect(() => {
-    updateHistoryStatus();
-    const interval = setInterval(updateHistoryStatus, 1000);
-    return () => clearInterval(interval);
-  }, [updateHistoryStatus]);
 
   const handleUndo = useCallback(async () => {
     try {
@@ -184,6 +249,7 @@ function App() {
       if (result.success && result.flow) {
         handleFlowUpdate(result.flow);
         await updateHistoryStatus();
+        setToast('redo');
       }
     } catch (error) {
       console.error('Failed to undo:', error);
@@ -196,11 +262,42 @@ function App() {
       if (result.success && result.flow) {
         handleFlowUpdate(result.flow);
         await updateHistoryStatus();
+        setToast('undo');
       }
     } catch (error) {
       console.error('Failed to redo:', error);
     }
   }, [handleFlowUpdate, updateHistoryStatus]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
+  useEffect(() => {
+    updateHistoryStatus();
+    const interval = setInterval(updateHistoryStatus, 1000);
+    return () => clearInterval(interval);
+  }, [updateHistoryStatus]);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   if (isLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', color: 'white' }}>Loading...</div>;
@@ -208,47 +305,6 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <div style={{
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        zIndex: 1000,
-        display: 'flex',
-        gap: 10
-      }}>
-        <button
-          onClick={handleUndo}
-          disabled={!canUndo}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            cursor: canUndo ? 'pointer' : 'not-allowed',
-            opacity: canUndo ? 1 : 0.5,
-            backgroundColor: '#333',
-            color: 'white',
-            border: '1px solid #555',
-            borderRadius: '4px'
-          }}
-        >
-          ← Undo
-        </button>
-        <button
-          onClick={handleRedo}
-          disabled={!canRedo}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            cursor: canRedo ? 'pointer' : 'not-allowed',
-            opacity: canRedo ? 1 : 0.5,
-            backgroundColor: '#333',
-            color: 'white',
-            border: '1px solid #555',
-            borderRadius: '4px'
-          }}
-        >
-          Redo →
-        </button>
-      </div>
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edgesWithHandlers}
@@ -263,9 +319,25 @@ function App() {
         fitView
       >
         <MiniMap />
-        <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} />
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          right: 20,
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'slideIn 0.3s ease-out',
+        }}>
+          <Kbd>{toast === 'undo' ? '⌘ Z' : '⌘ Y'}</Kbd>
+          <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
+            {toast === 'undo' ? 'to undo' : 'to redo'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

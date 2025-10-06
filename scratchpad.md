@@ -64,3 +64,42 @@
 - Iteration 2: LLM used correct IDs from retry message, edges created ✅
 - **Result:** 2 API calls total, all tests passing
 
+---
+
+## 2025-10-06 - DaggerAgent: Dagre Auto-Layout Implementation
+
+### Implementation Complete ✅
+**Agent:** DaggerAgent
+**Files Modified:**
+- `package.json` - Added `@dagrejs/dagre@^1.1.5` dependency
+- `src/App.jsx` - Added `getLayoutedElements()`, "Auto Layout" button, auto-trigger in `handleFlowUpdate`
+- `tests/dagre-layout.test.js` - Isolated layout tests (3 tests, all passing)
+
+### Features Implemented:
+- ✅ **LR (left-to-right) hierarchical layout** - Dagre algorithm with 172x36 node dimensions
+- ✅ **"Auto Layout" button** - Top-right canvas panel, triggers manual re-layout
+- ✅ **Auto-trigger on LLM node creation** - Runs layout 100ms after `handleFlowUpdate`
+- ✅ **Isolated testing** - Test reads production `flow.json`, verifies layout without modifying files
+
+### Test Results:
+```
+Input:  grandfather (-261, -73), father (40, -76), son (392, -88)
+Output: grandfather (0, 0), father (222, 0), son (444, 0)
+✅ All 3 tests passed (LR hierarchy, empty graph, single node)
+```
+
+### Future Work (NOT implemented yet):
+- **Remove `x`, `y` params from `addNode` tool** (`server/llm/tools.js`)
+  - LLM shouldn't need to think about positions (layout handles it)
+  - Simplifies tool schema
+- **Keep position params in `updateNode` tool**
+  - Allows LLM to manually reposition nodes (e.g., "move these nodes right")
+- **Dynamic node dimensions**
+  - Currently hardcoded to 172x36 (React Flow default)
+  - Could use actual measured node sizes from `node.measured`
+
+### Technical Notes:
+- Dagre runs entirely on frontend (presentation logic, not business logic)
+- 100ms timeout in auto-trigger prevents race conditions with React state updates
+- Button styled to match existing dark theme UI
+
