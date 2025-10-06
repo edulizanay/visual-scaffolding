@@ -21,7 +21,7 @@
       "id": "alicia",
       "position": {
         "x": 0,
-        "y": 245
+        "y": 288
       },
       "data": {
         "label": "Alicia",
@@ -38,7 +38,7 @@
       "id": "sergio",
       "position": {
         "x": 0,
-        "y": 331
+        "y": 374
       },
       "data": {
         "label": "Sergio",
@@ -55,7 +55,7 @@
       "id": "elsa",
       "position": {
         "x": 0,
-        "y": 513
+        "y": 705
       },
       "data": {
         "label": "Elsa",
@@ -72,11 +72,12 @@
       "id": "eduardo-dad",
       "position": {
         "x": 222,
-        "y": 66
+        "y": 43
       },
       "data": {
         "label": "Eduardo",
-        "description": "Dad"
+        "description": "Dad",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -89,11 +90,12 @@
       "id": "jessica-mom",
       "position": {
         "x": 222,
-        "y": 470
+        "y": 642
       },
       "data": {
         "label": "Jessica",
-        "description": "Mom"
+        "description": "Mom",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -106,96 +108,107 @@
       "id": "eduardo-jr",
       "position": {
         "x": 444,
-        "y": 53
+        "y": 43
       },
       "data": {
         "label": "Eduardo Jr.1",
-        "description": "Child 123"
+        "description": "Child 123",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "maria-jesus",
       "position": {
         "x": 444,
-        "y": 139
+        "y": 159
       },
       "data": {
         "label": "Maria Jesus",
-        "description": "Child 2"
+        "description": "Child 2",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "tomas",
       "position": {
         "x": 444,
-        "y": 225
+        "y": 374
       },
       "data": {
         "label": "Tomas",
-        "description": "Child 3"
+        "description": "Child 3",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "joaquin",
       "position": {
         "x": 444,
-        "y": 364
+        "y": 546
       },
       "data": {
         "label": "Joaquin",
-        "description": "Child 4"
+        "description": "Child 4",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "damien",
       "position": {
         "x": 444,
-        "y": 450
+        "y": 675
       },
       "data": {
         "label": "Damien",
-        "description": "Child 5"
+        "description": "Child 5",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759739196218-xra83e1o4",
       "position": {
         "x": 666,
-        "y": 182
+        "y": 288
       },
       "data": {
         "label": "Florencia",
-        "description": "Child of Tomas"
+        "description": "Child of Tomas",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -203,14 +216,13 @@
         "width": 150,
         "height": 57
       },
-      "selected": false,
-      "dragging": false
+      "hidden": false
     },
     {
       "id": "1759739196223-qgh4vsm95",
       "position": {
         "x": 666,
-        "y": 450
+        "y": 675
       },
       "data": {
         "label": "Trini",
@@ -221,17 +233,19 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759758511156-2g8r8mfw8",
       "position": {
         "x": 666,
-        "y": 96
+        "y": 159
       },
       "data": {
         "label": "New Child",
-        "description": "Child of Tomas"
+        "description": "Child of Tomas",
+        "collapsed": false
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -239,15 +253,13 @@
         "width": 150,
         "height": 57
       },
-      "selected": false,
-      "dragging": false
+      "hidden": false
     },
     {
       "id": "1759760144847-ghiw6lwwn",
-      "type": "default",
       "position": {
         "x": 666,
-        "y": 268
+        "y": 374
       },
       "data": {
         "label": "New Child 2",
@@ -258,14 +270,14 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759760527034-ll5k711mu",
-      "type": "default",
       "position": {
         "x": 666,
-        "y": 354
+        "y": 460
       },
       "data": {
         "label": "New Child 3",
@@ -276,13 +288,14 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759760530970",
       "position": {
         "x": 888,
-        "y": 96
+        "y": 159
       },
       "data": {
         "label": "Node 1759760530970",
@@ -293,13 +306,14 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759760533403",
       "position": {
         "x": 888,
-        "y": 182
+        "y": 245
       },
       "data": {
         "label": "Node 1759760533403",
@@ -311,16 +325,34 @@
         "width": 150,
         "height": 57
       },
-      "selected": false
+      "hidden": false
     },
     {
-      "id": "1759760536323",
+      "id": "1759761944855-uc7rpjda5",
       "position": {
-        "x": 1110,
-        "y": 182
+        "x": 666,
+        "y": 546
       },
       "data": {
-        "label": "Node 1759760536323",
+        "label": "New Child 4",
+        "description": "Child of Tomas"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      },
+      "hidden": false
+    },
+    {
+      "id": "1759762448604",
+      "position": {
+        "x": 888,
+        "y": 331
+      },
+      "data": {
+        "label": "Node 1759762448604",
         "description": ""
       },
       "sourcePosition": "right",
@@ -328,7 +360,26 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "hidden": false
+    },
+    {
+      "id": "1759763087449-87w70vkt1",
+      "position": {
+        "x": 666,
+        "y": 43
+      },
+      "data": {
+        "label": "Quirky Kid",
+        "description": "A different kind of child for Eduardo Jr."
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 72
+      },
+      "hidden": false
     }
   ],
   "edges": [
@@ -371,7 +422,7 @@
       "data": {
         "label": ""
       },
-      "selected": false
+      "hidden": false
     },
     {
       "id": "jessica-eduardo-jr",
@@ -380,7 +431,7 @@
       "data": {
         "label": ""
       },
-      "selected": false
+      "hidden": false
     },
     {
       "id": "eduardo-maria",
@@ -388,7 +439,8 @@
       "target": "maria-jesus",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "jessica-maria",
@@ -396,7 +448,8 @@
       "target": "maria-jesus",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "eduardo-tomas",
@@ -405,7 +458,7 @@
       "data": {
         "label": ""
       },
-      "selected": false
+      "hidden": false
     },
     {
       "id": "jessica-tomas",
@@ -413,7 +466,8 @@
       "target": "tomas",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "eduardo-joaquin",
@@ -421,7 +475,8 @@
       "target": "joaquin",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "jessica-joaquin",
@@ -429,7 +484,8 @@
       "target": "joaquin",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "eduardo-damien",
@@ -437,7 +493,8 @@
       "target": "damien",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "jessica-damien",
@@ -445,7 +502,8 @@
       "target": "damien",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759739196223-oi26zgr6p",
@@ -453,50 +511,65 @@
       "target": "1759739196223-qgh4vsm95",
       "data": {
         "label": "parent of"
-      }
+      },
+      "hidden": false
     },
     {
       "id": "1759758511156-uig0b3x5i",
       "source": "tomas",
-      "target": "1759758511156-2g8r8mfw8"
+      "target": "1759758511156-2g8r8mfw8",
+      "hidden": false
     },
     {
+      "id": "xy-edge__tomas-1759739196218-xra83e1o4",
       "source": "tomas",
       "target": "1759739196218-xra83e1o4",
-      "type": "smoothstep",
-      "data": {},
-      "id": "xy-edge__tomas-1759739196218-xra83e1o4"
+      "hidden": false
     },
     {
       "id": "1759760144847-w70vfbvkz",
       "source": "tomas",
-      "target": "1759760144847-ghiw6lwwn"
+      "target": "1759760144847-ghiw6lwwn",
+      "hidden": false
     },
     {
       "id": "1759760527034-mkn8u9kpo",
       "source": "tomas",
-      "target": "1759760527034-ll5k711mu"
+      "target": "1759760527034-ll5k711mu",
+      "hidden": false
     },
     {
       "id": "e1759758511156-2g8r8mfw8-1759760530970",
       "source": "1759758511156-2g8r8mfw8",
       "target": "1759760530970",
-      "type": "smoothstep",
-      "data": {}
+      "hidden": false
     },
     {
       "id": "e1759739196218-xra83e1o4-1759760533403",
       "source": "1759739196218-xra83e1o4",
       "target": "1759760533403",
-      "type": "smoothstep",
-      "data": {}
+      "hidden": false
     },
     {
-      "id": "e1759760533403-1759760536323",
-      "source": "1759760533403",
-      "target": "1759760536323",
-      "type": "smoothstep",
-      "data": {}
+      "id": "1759761944855-e4wchiyfw",
+      "source": "tomas",
+      "target": "1759761944855-uc7rpjda5",
+      "hidden": false
+    },
+    {
+      "id": "e1759739196218-xra83e1o4-1759762448604",
+      "source": "1759739196218-xra83e1o4",
+      "target": "1759762448604",
+      "hidden": false
+    },
+    {
+      "id": "1759763087449-76y2smtyn",
+      "source": "eduardo-jr",
+      "target": "1759763087449-87w70vkt1",
+      "data": {
+        "label": "adopted by"
+      },
+      "hidden": false
     }
   ]
 }
