@@ -201,6 +201,7 @@ User Request: ${userMessage}`;
 
   // Call Groq API with streaming
   const groqClient = getGroqClient();
+  console.log('🌐 Calling Groq API with model: openai/gpt-oss-120b');
   const completion = await groqClient.chat.completions.create({
     model: 'openai/gpt-oss-120b',
     messages,
@@ -211,6 +212,7 @@ User Request: ${userMessage}`;
     stream: true,
     stop: null
   });
+  console.log('✅ Groq API call completed');
 
   // Collect the streamed response
   let fullResponse = '';

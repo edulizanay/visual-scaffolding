@@ -17,15 +17,15 @@ export const toolDefinitions = [
           description: 'The label/name of the node',
         },
         description: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Optional description for the node',
         },
         parentNodeId: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Optional ID of parent node. If provided, creates edge from parent to new node',
         },
         edgeLabel: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Optional label for the auto-created edge. ONLY use if: (1) user explicitly requests an edge label, OR (2) there is a meaningful relationship to describe. Leave empty for unlabeled edges.',
         },
       },
