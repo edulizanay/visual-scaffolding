@@ -28,7 +28,7 @@ const DEFAULT_FLOW = {
   edges: []
 };
 
-async function readFlow() {
+export async function readFlow() {
   try {
     const data = await fs.readFile(getFlowPath(), 'utf-8');
     return JSON.parse(data);
@@ -40,7 +40,7 @@ async function readFlow() {
   }
 }
 
-async function writeFlow(flowData, skipSnapshot = false) {
+export async function writeFlow(flowData, skipSnapshot = false) {
   const flowPath = getFlowPath();
   const dataDir = dirname(flowPath);
   await fs.mkdir(dataDir, { recursive: true });
@@ -100,47 +100,166 @@ app.post('/api/conversation/message', async (req, res) => {
     // Save user message to conversation history
     await addUserMessage(message);
 
-    // Build complete LLM context
+    // Build complete LLM context (only once, for the initial user message)
     const llmContext = await buildLLMContext(message);
 
-    // Call Groq API
-    const llmResponse = await callGroqAPI(llmContext);
+    let currentMessage = message;
+    const MAX_ITERATIONS = 3;
+    let iteration = 0;
 
-    // Parse LLM response
-    const parsed = parseToolCalls(llmResponse);
+    // Error recovery loop: retry failed tool calls up to MAX_ITERATIONS times
+    while (iteration < MAX_ITERATIONS) {
+      iteration++;
+      console.log(`\n=== Iteration ${iteration} ===`);
 
-    // Handle parse errors
-    if (parsed.parseError) {
-      return res.json({
-        success: false,
-        parseError: parsed.parseError,
-        thinking: parsed.thinking,
-        response: llmResponse
-      });
+      // Update llmContext with current message (initial or retry message)
+      const contextWithMessage = { ...llmContext, userMessage: currentMessage };
+
+      // Call Groq API
+      const llmResponse = await callGroqAPI(contextWithMessage);
+
+      // Parse LLM response
+      const parsed = parseToolCalls(llmResponse);
+
+      // Handle parse errors
+      if (parsed.parseError) {
+        return res.json({
+          success: false,
+          parseError: parsed.parseError,
+          thinking: parsed.thinking,
+          response: llmResponse,
+          iterations: iteration
+        });
+      }
+
+      // If no tool calls, LLM gave up or finished without tools
+      if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
+        // Save assistant message to conversation
+        await addAssistantMessage(llmResponse, []);
+        return res.json({
+          success: true,
+          thinking: parsed.thinking,
+          response: 'No tool calls generated',
+          iterations: iteration
+        });
+      }
+
+      // Execute tool calls
+      const executionResults = await executeToolCalls(parsed.toolCalls);
+
+      // Check for failures
+      const failures = executionResults.filter(r => !r.success);
+
+      if (failures.length === 0) {
+        // All tool calls succeeded!
+        console.log(`✅ All ${executionResults.length} tool calls succeeded on iteration ${iteration}`);
+
+        // Save assistant message to conversation
+        await addAssistantMessage(llmResponse, parsed.toolCalls);
+
+        // Get updated flow state
+        const updatedFlow = await readFlow();
+
+        return res.json({
+          success: true,
+          thinking: parsed.thinking,
+          toolCalls: parsed.toolCalls,
+          execution: executionResults,
+          updatedFlow,
+          iterations: iteration
+        });
+      }
+
+      // Some failures occurred
+      console.log(`❌ ${failures.length} of ${executionResults.length} tool calls failed on iteration ${iteration}`);
+
+      if (iteration === MAX_ITERATIONS) {
+        // Max retries reached, return failure
+        console.log(`⚠️  Max iterations (${MAX_ITERATIONS}) reached, giving up`);
+
+        // Save assistant message to conversation
+        await addAssistantMessage(llmResponse, parsed.toolCalls);
+
+        // Get updated flow state
+        const updatedFlow = await readFlow();
+
+        return res.json({
+          success: false,
+          thinking: parsed.thinking,
+          toolCalls: parsed.toolCalls,
+          execution: executionResults,
+          updatedFlow,
+          errors: failures,
+          iterations: iteration,
+          message: `Failed after ${MAX_ITERATIONS} attempts`
+        });
+      }
+
+      // Build retry message and loop again
+      const currentFlow = await readFlow();
+      currentMessage = buildRetryMessage(executionResults, parsed.toolCalls, currentFlow);
+      console.log(`🔄 Retrying with message:\n${currentMessage}`);
     }
 
-    // Execute tool calls
-    const executionResults = await executeToolCalls(parsed.toolCalls);
-
-    // Save assistant message to conversation
-    await addAssistantMessage(llmResponse, parsed.toolCalls);
-
-    // Get updated flow state
-    const updatedFlow = await readFlow();
-
-    // Return results
-    res.json({
-      success: true,
-      thinking: parsed.thinking,
-      toolCalls: parsed.toolCalls,
-      execution: executionResults,
-      updatedFlow
-    });
   } catch (error) {
     console.error('Error processing message:', error);
     res.status(500).json({ error: 'Failed to process message' });
   }
 });
+
+/**
+ * Builds a retry message to send back to the LLM after tool execution failures.
+ * Provides verbose information about what succeeded/failed and current flow state.
+ */
+function buildRetryMessage(executionResults, toolCalls, currentFlow) {
+  const lines = ["Previous tool execution results:\n"];
+
+  // Show results for each tool call
+  executionResults.forEach((result, i) => {
+    const toolCall = toolCalls[i];
+
+    if (result.success) {
+      lines.push(`✅ ${toolCall.name}(${JSON.stringify(toolCall.params)}) → Success!`);
+      if (result.nodeId) {
+        lines.push(`   Created node with ID: "${result.nodeId}"`);
+      }
+      if (result.edgeId) {
+        lines.push(`   Created edge with ID: "${result.edgeId}"`);
+      }
+    } else {
+      lines.push(`❌ ${toolCall.name}(${JSON.stringify(toolCall.params)}) → Failed`);
+      lines.push(`   Error: ${result.error}`);
+    }
+  });
+
+  // Show current flow state so LLM can see available node IDs
+  lines.push("\n📊 Current Flow State:");
+
+  if (currentFlow.nodes.length === 0) {
+    lines.push("  No nodes exist yet.");
+  } else {
+    lines.push(`  Available Nodes (${currentFlow.nodes.length} total):`);
+    currentFlow.nodes.forEach(node => {
+      const label = node.data.label;
+      const desc = node.data.description ? ` - ${node.data.description}` : '';
+      lines.push(`    • "${label}" (ID: "${node.id}")${desc}`);
+    });
+  }
+
+  if (currentFlow.edges.length > 0) {
+    lines.push(`\n  Existing Edges (${currentFlow.edges.length} total):`);
+    currentFlow.edges.forEach(edge => {
+      const label = edge.data?.label ? ` [${edge.data.label}]` : '';
+      lines.push(`    • ${edge.source} → ${edge.target}${label}`);
+    });
+  }
+
+  lines.push("\n🔧 Instructions:");
+  lines.push("Please retry the failed operations using the correct node IDs shown above.");
+  lines.push("For successful operations, no action is needed - they are already complete.");
+
+  return lines.join('\n');
+}
 
 app.get('/api/conversation/debug', async (req, res) => {
   try {
@@ -273,8 +392,9 @@ export async function executeTool(toolName, params) {
       case 'deleteEdge':
         return await executeDeleteEdge(params);
       case 'undo':
+        return await executeUndo();
       case 'redo':
-        return { success: false, error: `${toolName} is not yet implemented` };
+        return await executeRedo();
       default:
         return { success: false, error: `Unknown tool: ${toolName}` };
     }
@@ -473,6 +593,30 @@ async function executeDeleteEdge(params) {
   flow.edges.splice(edgeIndex, 1);
 
   await writeFlow(flow);
+  return { success: true };
+}
+
+// undo: Reverts to previous flow state
+async function executeUndo() {
+  const previousState = await historyUndo();
+
+  if (!previousState) {
+    return { success: false, error: 'Nothing to undo' };
+  }
+
+  await writeFlow(previousState, true);
+  return { success: true };
+}
+
+// redo: Reapplies last undone change
+async function executeRedo() {
+  const nextState = await historyRedo();
+
+  if (!nextState) {
+    return { success: false, error: 'Nothing to redo' };
+  }
+
+  await writeFlow(nextState, true);
   return { success: true };
 }
 
