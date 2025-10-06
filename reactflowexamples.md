@@ -415,27 +415,6 @@ Last updated on September 9, 2025
 ---
 
 
-When collapsing/creating nodes:
-
-Node Position Animation
-This example demonstrates how to create fluid, animated transitions between different graph layouts. When you click the “toggle layout” button, nodes smoothly animate to their new positions, creating a visually appealing way to switch between different arrangements.
-
-This is a Pro example. Get all pro examples, templates, 1:1 support from the xyflow team and prioritized Github issues with a React Flow Pro subscription.
-
-See Pricing Plans
-Sign In
-
-About this Pro Example
-Dependencies: @xyflow/react , d3-timer 
-Implements a reusable useAnimatedNodes hook for smooth transitions
-Uses linear interpolation to animate node positions
-Demonstrates position tweening between horizontal and vertical layouts
-Provides a simple toggle control to switch between different layouts
-React Flow supports server-side rendering since version 12
-License: xyflow Pro License 
-
----
-
 maybe this but to exemplify how functions are progressing? like ins and outs? 
 
 Animating Edges
@@ -939,21 +918,6 @@ export default () => (
   </ReactFlowProvider>
 );
 
-----
-
-
-
-Undo and Redo
-This example demonstrates how to implement undo and redo functionality for a React Flow graph. Users can track and revert changes when moving, adding, or deleting nodes and edges. The implementation uses a snapshot-based approach with the useUndoRedo hook that manages past and future states, allowing users to navigate through their editing history with button clicks or keyboard shortcuts (Ctrl+Z and Ctrl+Shift+Z).
-
-This is a Pro example. Get all pro examples, templates, 1:1 support from the xyflow team and prioritized Github issues with a React Flow Pro subscription.
-
-See Pricing Plans
-Sign In
-
-About this Pro Example
-Dependencies: @xyflow/react 
-License: xyflow Pro License 
 
 ----
 

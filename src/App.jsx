@@ -1,6 +1,7 @@
 // ABOUTME: Main application component with React Flow canvas
 // ABOUTME: Loads flow from backend and auto-saves changes
 import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import { timer } from 'd3-timer';
 import {
   ReactFlow,
   MiniMap,
@@ -81,7 +82,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [canUndo, setCanUndo] = useState(false);
   const [toast, setToast] = useState(null); // 'undo' | 'redo' | null
+  const [isAnimating, setIsAnimating] = useState(false);
   const reactFlowInstance = useRef(null);
+  const animationTimerRef = useRef(null);
 
   const onInit = useCallback((instance) => {
     reactFlowInstance.current = instance;
@@ -111,7 +114,7 @@ function App() {
   }, [setNodes, setEdges]);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || isAnimating) return;
 
     const timeoutId = setTimeout(async () => {
       try {
@@ -125,7 +128,7 @@ function App() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [nodes, edges, isLoading, canUndo]);
+  }, [nodes, edges, isLoading, canUndo, isAnimating]);
 
   const updateNodeLabel = useCallback((nodeId, newLabel) => {
     setNodes((nds) =>
@@ -150,6 +153,66 @@ function App() {
       )
     );
   }, [setEdges]);
+
+  const applyLayoutWithAnimation = useCallback((currentNodes, currentEdges) => {
+    // Stop any existing animation
+    if (animationTimerRef.current) {
+      animationTimerRef.current.stop();
+    }
+
+    // Calculate final layout
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      currentNodes,
+      currentEdges,
+      'LR'
+    );
+
+    // Set animating flag
+    setIsAnimating(true);
+
+    const DURATION = 800;
+    const startTime = Date.now();
+
+    // Start animation
+    animationTimerRef.current = timer(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / DURATION, 1);
+
+      // Cubic ease-out (matches CSS cubic-bezier(0.4, 0, 0.2, 1))
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      // Interpolate node positions
+      const animatedNodes = currentNodes.map((node) => {
+        const targetNode = layoutedNodes.find(n => n.id === node.id);
+        if (!targetNode) return targetNode || node;
+
+        return {
+          ...targetNode,
+          position: {
+            x: node.position.x + (targetNode.position.x - node.position.x) * eased,
+            y: node.position.y + (targetNode.position.y - node.position.y) * eased,
+          },
+        };
+      });
+
+      setNodes(animatedNodes);
+      setEdges(layoutedEdges);
+
+      // Animation complete
+      if (progress === 1) {
+        animationTimerRef.current.stop();
+        setNodes(layoutedNodes); // Ensure exact final positions
+        setEdges(layoutedEdges);
+        setIsAnimating(false);
+
+        // Center viewport
+        setTimeout(() => {
+          reactFlowInstance.current?.fitView({ duration: 300, padding: 0.2 });
+        }, 50);
+      }
+    });
+
+  }, [setNodes, setEdges, setIsAnimating]);
 
   const nodesWithHandlers = useMemo(() =>
     nodes.map((node) => ({
@@ -208,35 +271,15 @@ function App() {
           data: { onLabelChange: updateEdgeLabel },
         };
 
-        // Add new node and edge, then apply layout
-        setNodes((nds) => {
-          const updatedNodes = [...nds, newNode];
-          setEdges((eds) => {
-            const updatedEdges = [...eds, newEdge];
+        const updatedNodes = [...nodes, newNode];
+        const updatedEdges = [...edges, newEdge];
 
-            // Apply layout after adding node
-            setTimeout(() => {
-              const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-                updatedNodes,
-                updatedEdges,
-                'LR'
-              );
-              setNodes(layoutedNodes);
-              setEdges(layoutedEdges);
-
-              // Center viewport with animation
-              setTimeout(() => {
-                reactFlowInstance.current?.fitView({ duration: 300, padding: 0.2 });
-              }, 50);
-            }, 0);
-
-            return updatedEdges;
-          });
-          return updatedNodes;
-        });
+        setTimeout(() => {
+          applyLayoutWithAnimation(updatedNodes, updatedEdges);
+        }, 0);
       }
     },
-    [setNodes, setEdges, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
+    [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
   );
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
@@ -253,20 +296,9 @@ function App() {
 
     // Auto-layout when LLM adds nodes
     setTimeout(() => {
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        nodesWithPosition,
-        updatedFlow.edges,
-        'LR'
-      );
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-
-      // Center viewport with animation
-      setTimeout(() => {
-        reactFlowInstance.current?.fitView({ duration: 300, padding: 0.2 });
-      }, 50);
+      applyLayoutWithAnimation(nodesWithPosition, updatedFlow.edges);
     }, 100);
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, applyLayoutWithAnimation]);
 
   const updateHistoryStatus = useCallback(async () => {
     try {
@@ -332,6 +364,16 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationTimerRef.current) {
+        animationTimerRef.current.stop();
+        setIsAnimating(false);
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', color: 'white' }}>Loading...</div>;
