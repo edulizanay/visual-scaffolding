@@ -203,8 +203,27 @@ function App() {
           data: { onLabelChange: updateEdgeLabel },
         };
 
-        setNodes((nds) => [...nds, newNode]);
-        setEdges((eds) => [...eds, newEdge]);
+        // Add new node and edge, then apply layout
+        setNodes((nds) => {
+          const updatedNodes = [...nds, newNode];
+          setEdges((eds) => {
+            const updatedEdges = [...eds, newEdge];
+
+            // Apply layout after adding node
+            setTimeout(() => {
+              const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+                updatedNodes,
+                updatedEdges,
+                'LR'
+              );
+              setNodes(layoutedNodes);
+              setEdges(layoutedEdges);
+            }, 0);
+
+            return updatedEdges;
+          });
+          return updatedNodes;
+        });
       }
     },
     [setNodes, setEdges, updateNodeLabel, updateNodeDescription, updateEdgeLabel],

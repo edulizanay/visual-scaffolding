@@ -114,6 +114,7 @@ function ChatInterface({ onFlowUpdate }) {
             rows={1}
             style={{
               width: '100%',
+              margin: 0,
               padding: '12px 16px',
               paddingRight: '70px',
               background: 'rgba(26, 26, 26, 0.95)',
