@@ -30,6 +30,8 @@ function ChatInterface({ onFlowUpdate }) {
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [draftMessage, setDraftMessage] = useState('');
   const [userMessages, setUserMessages] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingPlaceholder, setProcessingPlaceholder] = useState('processing.');
   const isFirstMessage = useRef(true);
   const textareaRef = useRef(null);
 
@@ -62,15 +64,23 @@ function ChatInterface({ onFlowUpdate }) {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+    if (isProcessing) return;
+
+    // Save message before clearing
+    const messageToSend = message;
+
+    // Clear input and start processing immediately
+    setMessage('');
+    setIsProcessing(true);
 
     // Handle first message of the session
     if (isFirstMessage.current) {
       isFirstMessage.current = false;
 
       // If first message is /resume, keep history and continue
-      if (message.trim() === '/resume') {
+      if (messageToSend.trim() === '/resume') {
         console.log('📜 Resuming previous conversation...');
-        setMessage('');
+        setIsProcessing(false);
         return;
       }
 
@@ -84,7 +94,7 @@ function ChatInterface({ onFlowUpdate }) {
     }
 
     try {
-      const response = await sendMessage(message);
+      const response = await sendMessage(messageToSend);
       console.log('✅ AI Response:', response);
 
       // Update the flow visualization if the AI made changes
@@ -93,14 +103,15 @@ function ChatInterface({ onFlowUpdate }) {
         console.log('🔄 Flow updated with AI changes');
       }
 
-      setMessage('');
       setHistoryPosition(-1);
       setDraftMessage('');
       await loadConversationHistory();
     } catch (error) {
       console.error('❌ Failed to send message:', error);
+    } finally {
+      setIsProcessing(false);
     }
-  }, [message, onFlowUpdate, loadConversationHistory]);
+  }, [message, isProcessing, onFlowUpdate, loadConversationHistory]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -163,6 +174,20 @@ function ChatInterface({ onFlowUpdate }) {
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (!isProcessing) return;
+
+    const dots = ['.', '..', '...'];
+    let index = 0;
+
+    const interval = setInterval(() => {
+      index = (index + 1) % dots.length;
+      setProcessingPlaceholder(`processing${dots[index]}`);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
   return (
     <>
       <style>{`
@@ -187,7 +212,7 @@ function ChatInterface({ onFlowUpdate }) {
               value={message}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder="Type a command or '/resume' to continue conversation."
+              placeholder={isProcessing ? processingPlaceholder : "Type a command or '/resume' to continue conversation."}
               rows={1}
               style={{
                 width: '100%',
@@ -209,6 +234,8 @@ function ChatInterface({ onFlowUpdate }) {
                 overflowY: 'hidden',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
+                opacity: isProcessing ? 0.6 : 1,
+                transition: 'opacity 200ms ease',
               }}
             />
             <div style={{

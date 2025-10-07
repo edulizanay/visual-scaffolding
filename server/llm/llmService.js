@@ -6,6 +6,7 @@ import { dirname, join } from 'path';
 import { getHistory } from '../conversationService.js';
 import { toolDefinitions } from './tools.js';
 import Groq from 'groq-sdk';
+import Cerebras from '@cerebras/cerebras_cloud_sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,8 +27,10 @@ try {
   console.warn('Could not load .env file:', error.message);
 }
 
-// Initialize Groq client lazily
+// Initialize clients lazily
 let groq = null;
+let cerebras = null;
+
 function getGroqClient() {
   if (!groq) {
     groq = new Groq({
@@ -35,6 +38,15 @@ function getGroqClient() {
     });
   }
   return groq;
+}
+
+function getCerebrasClient() {
+  if (!cerebras) {
+    cerebras = new Cerebras({
+      apiKey: process.env.CEREBRAS_API_KEY
+    });
+  }
+  return cerebras;
 }
 
 const SYSTEM_PROMPT = `You are a UI helper for React Flow graph structures.
@@ -140,8 +152,11 @@ export function parseToolCalls(llmResponse) {
 
   if (content) {
     try {
+      // Strip JSON comments (// style) that LLMs sometimes add
+      const cleanedContent = content.replace(/\/\/.*$/gm, '').trim();
+
       // Parse as JSON array
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(cleanedContent);
 
       // Ensure it's an array
       const toolUseBlocks = Array.isArray(parsed) ? parsed : [parsed];
@@ -169,10 +184,22 @@ export function parseToolCalls(llmResponse) {
 }
 
 /**
- * Call Groq API with the LLM context
- * Converts our context format to Groq messages format and streams the response
+ * Call LLM API with the LLM context, with Groq as primary and Cerebras as fallback
+ * Converts our context format to messages format and streams the response
  */
 export async function callGroqAPI(llmContext) {
+  try {
+    return await _callLLMWithProvider('groq', llmContext);
+  } catch (error) {
+    console.log('Groq failed, falling back to Cerebras:', error.message);
+    return await _callLLMWithProvider('cerebras', llmContext);
+  }
+}
+
+/**
+ * Internal function to call LLM with a specific provider
+ */
+async function _callLLMWithProvider(provider, llmContext) {
   const { systemPrompt, userMessage, flowState, conversationHistory, availableTools } = llmContext;
 
   // Format tools for the context message
@@ -189,7 +216,7 @@ ${toolsText}
 
 User Request: ${userMessage}`;
 
-  // Convert conversation history to Groq messages format
+  // Convert conversation history to messages format
   const messages = [
     { role: 'system', content: systemPrompt },
     ...conversationHistory.map(msg => ({
@@ -199,20 +226,29 @@ User Request: ${userMessage}`;
     { role: 'user', content: contextMessage }
   ];
 
-  // Call Groq API with streaming
-  const groqClient = getGroqClient();
-  console.log('🌐 Calling Groq API with model: openai/gpt-oss-120b');
-  const completion = await groqClient.chat.completions.create({
-    model: 'openai/gpt-oss-120b',
+  // Get the appropriate client and model (Groq uses 'openai/' prefix, Cerebras doesn't)
+  const client = provider === 'groq' ? getGroqClient() : getCerebrasClient();
+  const model = provider === 'groq' ? 'openai/gpt-oss-120b' : 'gpt-oss-120b';
+
+  console.log(`🌐 Calling ${provider.toUpperCase()} API with model: ${model}`);
+
+  const completionParams = {
+    model,
     messages,
     temperature: 1,
     max_completion_tokens: 8192,
     top_p: 1,
-    //reasoning_effort: 'medium',
     stream: true,
     stop: null
-  });
-  console.log('✅ Groq API call completed');
+  };
+
+  // Add provider-specific parameters
+  if (provider === 'groq' || provider === 'cerebras') {
+    completionParams.reasoning_effort = 'low';
+  }
+
+  const completion = await client.chat.completions.create(completionParams);
+  console.log(`✅ ${provider.toUpperCase()} API call completed`);
 
   // Collect the streamed response
   let fullResponse = '';
