@@ -17,6 +17,7 @@
     "@cerebras/cerebras_cloud_sdk": "^1.50.0",
     "@dagrejs/dagre": "^1.1.5",
     "@xyflow/react": "^12.0.0",
+    "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",
     "d3-timer": "^3.0.1",
     "dotenv": "^17.2.3",
