@@ -95,3 +95,24 @@ Tests:       66 passed, 66 total ✅
 - api-contracts: Response schemas, status codes, error handling
 
 **Next:** Step 3 - Create database layer (schema + db.js)
+
+---
+
+### Step 3: Database Layer ✅ COMPLETE
+
+**Files Created:**
+- server/migrations/001_initial.sql - SQLite schema (flows, conversation_history, undo_history, undo_state)
+- server/db.js - Database wrapper with all CRUD operations
+- tests/db.test.js - 22 tests covering all database operations
+
+**Tests:** 22/22 passing ✅
+
+**Database Features:**
+- Flow CRUD with multi-graph support (user_id + name)
+- Conversation history persistence
+- Undo/redo with snapshot management
+- Position-only updates (no new snapshots)
+- Deduplication logic
+- 50-snapshot limit
+
+**Next:** Step 4 - Update services to use database layer

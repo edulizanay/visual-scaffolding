@@ -26,11 +26,11 @@
 - [x] Create tests/api-contracts.test.js (20 tests covering all API endpoints and error handling)
 - [x] Run full test suite - **102/102 tests passing!**
 
-### Step 3: Database Layer
-- [ ] Create server/migrations/001_initial.sql (schema)
-- [ ] Create server/db.js (database wrapper with all CRUD functions)
-- [ ] Create tests/db.test.js to test database layer
-- [ ] Run db tests to verify correctness
+### Step 3: Database Layer ✅ COMPLETE
+- [x] Create server/migrations/001_initial.sql (schema for flows, conversation, undo/redo)
+- [x] Create server/db.js (database wrapper with all CRUD functions)
+- [x] Create tests/db.test.js (22 tests covering all operations)
+- [x] Run db tests - **22/22 passing!**
 
 ### Step 4: Update Services (Replace File I/O)
 - [ ] Update server/server.js (readFlow/writeFlow)
