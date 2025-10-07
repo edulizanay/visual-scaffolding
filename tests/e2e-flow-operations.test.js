@@ -2,34 +2,16 @@
 // ABOUTME: Ensures data persists correctly through create/save/restart/load cycles
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { promises as fs } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { readFlow, writeFlow, executeToolCalls } from '../server/server.js';
 import { pushSnapshot, undo, redo, canUndo, canRedo, initializeHistory } from '../server/historyService.js';
+import { closeDb } from '../server/db.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const TEST_FLOW_PATH = join(__dirname, 'test-data', 'test-e2e-flow.json');
-const TEST_HISTORY_PATH = join(__dirname, 'test-data', 'test-e2e-history.json');
-
-beforeEach(async () => {
-  process.env.FLOW_DATA_PATH = TEST_FLOW_PATH;
-  process.env.HISTORY_DATA_PATH = TEST_HISTORY_PATH;
-  await fs.mkdir(dirname(TEST_FLOW_PATH), { recursive: true });
-  await fs.writeFile(TEST_FLOW_PATH, JSON.stringify({ nodes: [], edges: [] }, null, 2));
-  await fs.writeFile(TEST_HISTORY_PATH, JSON.stringify({ states: [], currentIndex: -1 }, null, 2));
+beforeEach(() => {
+  process.env.DB_PATH = ':memory:';
 });
 
-afterEach(async () => {
-  // Clean up test files
-  try {
-    await fs.unlink(TEST_FLOW_PATH);
-    await fs.unlink(TEST_HISTORY_PATH);
-  } catch (error) {
-    // Ignore if files don't exist
-  }
+afterEach(() => {
+  closeDb();
 });
 
 describe('E2E Flow Operations', () => {

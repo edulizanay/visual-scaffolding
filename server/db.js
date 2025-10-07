@@ -264,7 +264,7 @@ export function getUndoStatus() {
 
   return {
     canUndo: currentIndex > 1,
-    canRedo: currentIndex < maxId,
+    canRedo: totalSnapshots > 0 && currentIndex < maxId,
     snapshotCount: totalSnapshots,
     currentIndex
   };

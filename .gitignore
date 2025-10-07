@@ -21,6 +21,12 @@ dist-ssr
 server/data/conversation.json
 tests/test-data/
 
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+server/data/backup-*/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

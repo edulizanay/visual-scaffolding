@@ -11,7 +11,8 @@
     "server:dev": "nodemon --ignore 'server/data/**' server/server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server:dev\"",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "migrate": "node server/migrate-to-sqlite.js"
   },
   "dependencies": {
     "@cerebras/cerebras_cloud_sdk": "^1.50.0",

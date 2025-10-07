@@ -1,7 +1,4 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { promises as fs } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import {
   pushSnapshot,
   undo,
@@ -12,17 +9,15 @@ import {
   clearHistory,
   initializeHistory
 } from '../server/historyService.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const TEST_HISTORY_PATH = join(__dirname, 'test-data', 'test-history.json');
+import { closeDb } from '../server/db.js';
 
 describe('historyService', () => {
-  beforeEach(async () => {
-    process.env.HISTORY_DATA_PATH = TEST_HISTORY_PATH;
-    await fs.mkdir(dirname(TEST_HISTORY_PATH), { recursive: true });
-    await fs.writeFile(TEST_HISTORY_PATH, JSON.stringify({ states: [], currentIndex: -1 }));
+  beforeEach(() => {
+    process.env.DB_PATH = ':memory:';
+  });
+
+  afterEach(() => {
+    closeDb();
   });
 
   describe('pushSnapshot', () => {
@@ -32,21 +27,21 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(1);
-      expect(status.currentIndex).toBe(0);
+      expect(status.currentIndex).toBe(1); // DB uses 1-based IDs
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
     });
 
     it('should add multiple snapshots', async () => {
-      const state1 = { nodes: [{ id: '1' }], edges: [] };
-      const state2 = { nodes: [{ id: '1' }, { id: '2' }], edges: [] };
+      const state1 = { nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'A' } }], edges: [] };
+      const state2 = { nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'B' } }], edges: [] };
 
       await pushSnapshot(state1);
       await pushSnapshot(state2);
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(2);
-      expect(status.currentIndex).toBe(1);
+      expect(status.currentIndex).toBe(2); // Second snapshot has ID 2
       expect(status.canUndo).toBe(true);
       expect(status.canRedo).toBe(false);
     });
@@ -58,12 +53,12 @@ describe('historyService', () => {
 
       await pushSnapshot(state1);
       await pushSnapshot(state2);
-      await undo(); // Back to state1
+      await undo(); // Back to state1 (index 1)
       await pushSnapshot(state3); // Should remove state2, add state3
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(2); // state1 and state3
-      expect(status.currentIndex).toBe(1);
+      expect(status.currentIndex).toBe(3); // state3 gets new ID 3 (auto-increment continues)
     });
 
     it('should limit snapshots to 50', async () => {
@@ -74,7 +69,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(50);
-      expect(status.currentIndex).toBe(49);
+      expect(status.currentIndex).toBe(60); // Last snapshot ID is 60
     });
   });
 
@@ -103,7 +98,7 @@ describe('historyService', () => {
       expect(result).toEqual(state1);
 
       const status = await getHistoryStatus();
-      expect(status.currentIndex).toBe(0);
+      expect(status.currentIndex).toBe(1); // Back to first snapshot (ID 1)
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(true);
     });
@@ -149,7 +144,7 @@ describe('historyService', () => {
       expect(result).toEqual(state2);
 
       const status = await getHistoryStatus();
-      expect(status.currentIndex).toBe(1);
+      expect(status.currentIndex).toBe(2); // Back to second snapshot (ID 2)
       expect(status.canUndo).toBe(true);
       expect(status.canRedo).toBe(false);
     });
@@ -217,7 +212,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(0);
-      expect(status.currentIndex).toBe(-1);
+      expect(status.currentIndex).toBe(-1); // Cleared state
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
     });
@@ -231,7 +226,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(1);
-      expect(status.currentIndex).toBe(0);
+      expect(status.currentIndex).toBe(1); // First snapshot gets ID 1
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
     });
@@ -245,7 +240,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(1);
-      expect(status.currentIndex).toBe(0);
+      expect(status.currentIndex).toBe(2); // New snapshot gets next ID
     });
   });
 });

@@ -1,29 +1,17 @@
 // ABOUTME: Tests API contract stability to ensure frontend compatibility
 // ABOUTME: Verifies response formats and status codes remain consistent
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
-import { promises as fs } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import app from '../server/server.js';
+import { closeDb } from '../server/db.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+beforeEach(() => {
+  process.env.DB_PATH = ':memory:';
+});
 
-const TEST_FLOW_PATH = join(__dirname, 'test-data', 'test-api-flow.json');
-const TEST_HISTORY_PATH = join(__dirname, 'test-data', 'test-api-history.json');
-const TEST_CONVERSATION_PATH = join(__dirname, 'test-data', 'test-api-conversation.json');
-
-beforeEach(async () => {
-  process.env.FLOW_DATA_PATH = TEST_FLOW_PATH;
-  process.env.HISTORY_DATA_PATH = TEST_HISTORY_PATH;
-  process.env.CONVERSATION_DATA_PATH = TEST_CONVERSATION_PATH;
-
-  await fs.mkdir(dirname(TEST_FLOW_PATH), { recursive: true });
-  await fs.writeFile(TEST_FLOW_PATH, JSON.stringify({ nodes: [], edges: [] }, null, 2));
-  await fs.writeFile(TEST_HISTORY_PATH, JSON.stringify({ states: [], currentIndex: -1 }, null, 2));
-  await fs.writeFile(TEST_CONVERSATION_PATH, JSON.stringify({ history: [] }, null, 2));
+afterEach(() => {
+  closeDb();
 });
 
 describe('API Contract: GET /api/flow', () => {
@@ -48,14 +36,15 @@ describe('API Contract: GET /api/flow', () => {
   });
 
   it('should return existing flow data', async () => {
-    // Populate flow
+    // Populate flow using saveFlow
+    const { saveFlow } = await import('../server/db.js');
     const existingFlow = {
       nodes: [
         { id: '1', position: { x: 0, y: 0 }, data: { label: 'Test' } }
       ],
       edges: []
     };
-    await fs.writeFile(TEST_FLOW_PATH, JSON.stringify(existingFlow, null, 2));
+    saveFlow(existingFlow);
 
     const response = await request(app).get('/api/flow');
 
@@ -274,17 +263,22 @@ describe('API Contract: Error Handling', () => {
   });
 
   it('should return 500 on server errors with error message', async () => {
-    // Force an error by providing invalid file path
-    process.env.FLOW_DATA_PATH = '/invalid/path/that/does/not/exist/flow.json';
+    // Force an error by providing invalid DB path
+    process.env.DB_PATH = '/invalid/path/that/does/not/exist/test.db';
+    closeDb(); // Close current DB to force re-init with bad path
 
     // This should fail with 500
     const response = await request(app)
       .post('/api/flow')
       .send({ nodes: [], edges: [] });
 
-    // Should be either 500 or 400 depending on error
-    expect([400, 500]).toContain(response.status);
+    // Should be 500 since DB cannot be created
+    expect(response.status).toBe(500);
     expect(response.body).toHaveProperty('error');
+
+    // Reset to memory DB
+    process.env.DB_PATH = ':memory:';
+    closeDb();
   });
 });
 

@@ -1,71 +1,25 @@
 // ABOUTME: Unit tests for conversation service
 // ABOUTME: Tests conversation CRUD operations and history management
-import { promises as fs } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import {
-  loadConversation,
   addUserMessage,
   addAssistantMessage,
   getHistory,
   clearHistory,
 } from '../server/conversationService.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const TEST_CONVERSATION_PATH = join(__dirname, 'test-conversation.json');
-
-// Override the conversation path for testing
-process.env.CONVERSATION_DATA_PATH = TEST_CONVERSATION_PATH;
+import { closeDb } from '../server/db.js';
 
 describe('conversationService', () => {
-  beforeEach(async () => {
-    // Ensure file is deleted AND cleared
-    try {
-      await fs.unlink(TEST_CONVERSATION_PATH);
-    } catch (error) {
-      // File doesn't exist, that's fine
-    }
-    // Force write empty conversation
-    await fs.writeFile(TEST_CONVERSATION_PATH, JSON.stringify({ history: [] }));
+  beforeEach(() => {
+    process.env.DB_PATH = ':memory:';
   });
 
-  afterAll(async () => {
-    // Clean up test file after all tests
-    try {
-      await fs.unlink(TEST_CONVERSATION_PATH);
-    } catch (error) {
-      // Ignore
-    }
-  });
-
-  describe('loadConversation', () => {
-    test('creates empty conversation if file does not exist', async () => {
-      const conversation = await loadConversation();
-      expect(conversation).toEqual({ history: [] });
-    });
-
-    test('loads existing conversation from file', async () => {
-      const testData = { history: [{ role: 'user', content: 'test' }] };
-      await fs.writeFile(TEST_CONVERSATION_PATH, JSON.stringify(testData));
-
-      const conversation = await loadConversation();
-      expect(conversation).toEqual(testData);
-    });
-
-    test('handles corrupted JSON gracefully', async () => {
-      await fs.writeFile(TEST_CONVERSATION_PATH, 'invalid json{');
-
-      const conversation = await loadConversation();
-      expect(conversation).toEqual({ history: [] });
-    });
+  afterEach(() => {
+    closeDb();
   });
 
   describe('addUserMessage', () => {
     test('appends user message with timestamp', async () => {
-      const beforeTime = new Date().toISOString();
       const history = await addUserMessage('Hello AI');
-      const afterTime = new Date().toISOString();
 
       expect(history).toHaveLength(1);
       expect(history[0]).toMatchObject({
@@ -73,18 +27,17 @@ describe('conversationService', () => {
         content: 'Hello AI',
       });
       expect(history[0].timestamp).toBeDefined();
-      expect(history[0].timestamp >= beforeTime).toBe(true);
-      expect(history[0].timestamp <= afterTime).toBe(true);
+      expect(typeof history[0].timestamp).toBe('string');
+      // SQLite CURRENT_TIMESTAMP format is like "2025-10-07 12:05:42"
+      expect(history[0].timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     });
 
-    test('persists message to file', async () => {
+    test('stores message in database', async () => {
       await addUserMessage('test message');
 
-      const fileContent = await fs.readFile(TEST_CONVERSATION_PATH, 'utf-8');
-      const data = JSON.parse(fileContent);
-
-      expect(data.history).toHaveLength(1);
-      expect(data.history[0].content).toBe('test message');
+      const history = await getHistory();
+      expect(history).toHaveLength(1);
+      expect(history[0].content).toBe('test message');
     });
 
     test('appends to existing history', async () => {
@@ -174,14 +127,12 @@ describe('conversationService', () => {
       expect(history).toHaveLength(0);
     });
 
-    test('persists empty history to file', async () => {
+    test('clears history in database', async () => {
       await addUserMessage('test');
       await clearHistory();
 
-      const fileContent = await fs.readFile(TEST_CONVERSATION_PATH, 'utf-8');
-      const data = JSON.parse(fileContent);
-
-      expect(data.history).toEqual([]);
+      const history = await getHistory();
+      expect(history).toEqual([]);
     });
   });
 });

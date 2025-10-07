@@ -1,54 +1,24 @@
 // ABOUTME: Unit tests for LLM service
 // ABOUTME: Tests context building and response parsing
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { promises as fs } from 'fs';
 import { buildLLMContext, parseToolCalls } from '../../server/llm/llmService.js';
 import { clearHistory, addUserMessage, addAssistantMessage } from '../../server/conversationService.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const TEST_CONVERSATION_PATH = join(__dirname, '../test-conversation.json');
-const TEST_FLOW_PATH = join(__dirname, '../test-flow.json');
-
-// Set test paths
-process.env.CONVERSATION_DATA_PATH = TEST_CONVERSATION_PATH;
-process.env.FLOW_DATA_PATH = TEST_FLOW_PATH;
+import { saveFlow, closeDb } from '../../server/db.js';
 
 describe('llmService', () => {
   beforeEach(async () => {
-    // Clean up test files
-    try {
-      await fs.unlink(TEST_CONVERSATION_PATH);
-    } catch (error) {
-      // File doesn't exist, that's fine
-    }
-    try {
-      await fs.unlink(TEST_FLOW_PATH);
-    } catch (error) {
-      // File doesn't exist, that's fine
-    }
-
-    // Create empty conversation
-    await fs.writeFile(TEST_CONVERSATION_PATH, JSON.stringify({ history: [] }));
+    process.env.DB_PATH = ':memory:';
 
     // Create test flow
-    await fs.writeFile(TEST_FLOW_PATH, JSON.stringify({
+    await saveFlow({
       nodes: [
         { id: '1', data: { label: 'Start', description: 'Initial node' }, position: { x: 0, y: 0 } }
       ],
       edges: []
-    }));
+    });
   });
 
-  afterAll(async () => {
-    // Clean up test files
-    try {
-      await fs.unlink(TEST_CONVERSATION_PATH);
-      await fs.unlink(TEST_FLOW_PATH);
-    } catch (error) {
-      // Ignore
-    }
+  afterEach(() => {
+    closeDb();
   });
 
   describe('buildLLMContext', () => {

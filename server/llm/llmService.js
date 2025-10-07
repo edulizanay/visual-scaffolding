@@ -1,8 +1,9 @@
 // ABOUTME: LLM service for building context and parsing responses
 // ABOUTME: Combines flow state, conversation history, and tools for LLM requests
-import { promises as fs, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { getFlow } from '../db.js';
 import { getHistory } from '../conversationService.js';
 import { toolDefinitions } from './tools.js';
 import Groq from 'groq-sdk';
@@ -94,23 +95,11 @@ Important:
 - You can call multiple tools in a single response
 - Available tools and their schemas will be provided in each request`;
 
-function getFlowPath() {
-  return process.env.FLOW_DATA_PATH || join(__dirname, '../data', 'flow.json');
-}
-
 /**
- * Load current flow state from flow.json
+ * Load current flow state from database
  */
 async function loadFlow() {
-  try {
-    const data = await fs.readFile(getFlowPath(), 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { nodes: [], edges: [] };
-    }
-    throw error;
-  }
+  return getFlow();
 }
 
 /**

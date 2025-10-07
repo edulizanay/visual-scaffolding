@@ -2,49 +2,23 @@
 // ABOUTME: Handles GET/POST operations for flow data persistence
 import express from 'express';
 import cors from 'cors';
-import { promises as fs } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { getFlow as dbGetFlow, saveFlow as dbSaveFlow } from './db.js';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
 import { buildLLMContext, parseToolCalls, callLLM } from './llm/llmService.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-// Dynamically resolve path for testability
-function getFlowPath() {
-  return process.env.FLOW_DATA_PATH || join(__dirname, 'data', 'flow.json');
-}
 
 app.use(cors());
 app.use(express.json());
 
-const DEFAULT_FLOW = {
-  nodes: [],
-  edges: []
-};
-
 export async function readFlow() {
-  try {
-    const data = await fs.readFile(getFlowPath(), 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return DEFAULT_FLOW;
-    }
-    throw error;
-  }
+  return dbGetFlow();
 }
 
 export async function writeFlow(flowData, skipSnapshot = false) {
-  const flowPath = getFlowPath();
-  const dataDir = dirname(flowPath);
-  await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(flowPath, JSON.stringify(flowData, null, 2));
+  dbSaveFlow(flowData);
 
   if (!skipSnapshot) {
     await pushSnapshot(flowData);
