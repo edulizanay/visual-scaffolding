@@ -38,7 +38,7 @@
       "id": "joaquin",
       "position": {
         "x": 444,
-        "y": 225
+        "y": 354
       },
       "data": {
         "label": "Joaquin",
@@ -55,7 +55,7 @@
       "id": "damien",
       "position": {
         "x": 444,
-        "y": 354
+        "y": 225
       },
       "data": {
         "label": "Damien",
@@ -89,7 +89,7 @@
       "id": "1759739196223_qgh4vsm95",
       "position": {
         "x": 666,
-        "y": 354
+        "y": 225
       },
       "data": {
         "label": "Trini",
@@ -149,9 +149,7 @@
       "measured": {
         "width": 150,
         "height": 57
-      },
-      "selected": false,
-      "dragging": false
+      }
     },
     {
       "id": "1759812831119_akf5n287q",
@@ -225,10 +223,27 @@
       "id": "1759823938430_b1guqkf4d",
       "position": {
         "x": 666,
-        "y": 225
+        "y": 354
       },
       "data": {
         "label": "Son of Joaquin"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
+    },
+    {
+      "id": "1759833424851",
+      "position": {
+        "x": 888,
+        "y": 96
+      },
+      "data": {
+        "label": "Node 1759833424851",
+        "description": ""
       },
       "sourcePosition": "right",
       "targetPosition": "left",
@@ -322,7 +337,6 @@
       "id": "1759813233751-hyj1jkh4l",
       "source": "1759812897831_fzizgo00s",
       "target": "1759812831109_v11lbp9zv",
-      "selected": true,
       "data": {
         "label": "parent of"
       }
@@ -336,6 +350,14 @@
       "id": "1759823938430-qiwezmts3",
       "source": "joaquin",
       "target": "1759823938430_b1guqkf4d",
+      "data": {
+        "label": ""
+      }
+    },
+    {
+      "id": "e1759739196218_xra83e1o4-1759833424851",
+      "source": "1759739196218_xra83e1o4",
+      "target": "1759833424851",
       "data": {
         "label": ""
       }

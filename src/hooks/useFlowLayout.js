@@ -27,7 +27,11 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
   const isHorizontal = direction === 'LR';
 
-  dagreGraph.setGraph({ rankdir: direction });
+  dagreGraph.setGraph({
+    rankdir: direction,
+    ranksep: 50,
+    nodesep: 50
+  });
 
   const visibleNodes = nodes.filter(node => !node.hidden);
 
