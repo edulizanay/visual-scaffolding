@@ -6,7 +6,7 @@ import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
-import { buildLLMContext, parseToolCalls, callGroqAPI } from './llm/llmService.js';
+import { buildLLMContext, parseToolCalls, callLLM } from './llm/llmService.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -116,7 +116,7 @@ app.post('/api/conversation/message', async (req, res) => {
       const contextWithMessage = { ...llmContext, userMessage: currentMessage };
 
       // Call Groq API
-      const llmResponse = await callGroqAPI(contextWithMessage);
+      const llmResponse = await callLLM(contextWithMessage);
 
       // Parse LLM response
       const parsed = parseToolCalls(llmResponse);
@@ -421,9 +421,9 @@ export async function executeToolCalls(toolCalls) {
   return results;
 }
 
-// Helper: Generate unique ID
+// Helper: Generate unique ID (uses underscore to match sanitizeId format)
 function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 // Helper: Sanitize string to create a valid ID

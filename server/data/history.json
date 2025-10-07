@@ -3,7 +3,7 @@
     {
       "nodes": [
         {
-          "id": "maria-jesus",
+          "id": "maria_jesus",
           "position": {
             "x": 444,
             "y": 0
@@ -47,7 +47,7 @@
           }
         },
         {
-          "id": "1759739196218-xra83e1o4",
+          "id": "1759739196218_xra83e1o4",
           "position": {
             "x": 666,
             "y": 96
@@ -58,7 +58,7 @@
           }
         },
         {
-          "id": "1759739196223-qgh4vsm95",
+          "id": "1759739196223_qgh4vsm95",
           "position": {
             "x": 666,
             "y": 354
@@ -69,7 +69,7 @@
           }
         },
         {
-          "id": "1759812770136-29vknhb6m",
+          "id": "1759812770136_29vknhb6m",
           "position": {
             "x": 0,
             "y": 268
@@ -79,7 +79,7 @@
           }
         },
         {
-          "id": "1759812770139-909vs30gp",
+          "id": "1759812770139_909vs30gp",
           "position": {
             "x": 0,
             "y": 354
@@ -89,7 +89,7 @@
           }
         },
         {
-          "id": "1759812831109-v11lbp9zv",
+          "id": "1759812831109_v11lbp9zv",
           "position": {
             "x": 222,
             "y": 139
@@ -100,7 +100,7 @@
           }
         },
         {
-          "id": "1759812831119-akf5n287q",
+          "id": "1759812831119_akf5n287q",
           "position": {
             "x": 222,
             "y": 311
@@ -111,7 +111,7 @@
           }
         },
         {
-          "id": "1759812831123-s0pdwz9s1",
+          "id": "1759812831123_s0pdwz9s1",
           "position": {
             "x": 444,
             "y": 450
@@ -122,7 +122,7 @@
           }
         },
         {
-          "id": "1759812897831-fzizgo00s",
+          "id": "1759812897831_fzizgo00s",
           "position": {
             "x": 0,
             "y": 96
@@ -133,7 +133,7 @@
           }
         },
         {
-          "id": "1759812897836-bbosb5lpm",
+          "id": "1759812897836_bbosb5lpm",
           "position": {
             "x": 0,
             "y": 182
@@ -144,7 +144,7 @@
           }
         },
         {
-          "id": "1759823938430-b1guqkf4d",
+          "id": "1759823938430_b1guqkf4d",
           "position": {
             "x": 666,
             "y": 225
@@ -158,7 +158,7 @@
         {
           "id": "1759739196223-oi26zgr6p",
           "source": "damien",
-          "target": "1759739196223-qgh4vsm95",
+          "target": "1759739196223_qgh4vsm95",
           "data": {
             "label": "parent of"
           }
@@ -166,85 +166,591 @@
         {
           "id": "xy-edge__tomas-1759739196218-xra83e1o4",
           "source": "tomas",
-          "target": "1759739196218-xra83e1o4"
+          "target": "1759739196218_xra83e1o4"
         },
         {
           "id": "1759812897840-4tbk5ff2k",
-          "source": "1759812770136-29vknhb6m",
-          "target": "1759812831119-akf5n287q"
+          "source": "1759812770136_29vknhb6m",
+          "target": "1759812831119_akf5n287q"
         },
         {
           "id": "1759812897842-ojtd2jaag",
-          "source": "1759812770139-909vs30gp",
-          "target": "1759812831119-akf5n287q"
+          "source": "1759812770139_909vs30gp",
+          "target": "1759812831119_akf5n287q"
         },
         {
           "id": "1759812897845-oiqljv2xt",
-          "source": "1759812831109-v11lbp9zv",
+          "source": "1759812831109_v11lbp9zv",
           "target": "tomas"
         },
         {
           "id": "1759812897849-wiseyg4xd",
-          "source": "1759812831119-akf5n287q",
+          "source": "1759812831119_akf5n287q",
           "target": "tomas"
         },
         {
           "id": "1759812897852-bepa5jq8v",
-          "source": "1759812831109-v11lbp9zv",
+          "source": "1759812831109_v11lbp9zv",
           "target": "joaquin"
         },
         {
           "id": "1759812897854-vpitnx57c",
-          "source": "1759812831119-akf5n287q",
+          "source": "1759812831119_akf5n287q",
           "target": "joaquin"
         },
         {
           "id": "1759812897856-wm4ix64wm",
-          "source": "1759812831109-v11lbp9zv",
+          "source": "1759812831109_v11lbp9zv",
           "target": "damien"
         },
         {
           "id": "1759812897858-qu5o7ca6z",
-          "source": "1759812831119-akf5n287q",
+          "source": "1759812831119_akf5n287q",
           "target": "damien"
         },
         {
           "id": "1759812897860-cuqee4d8k",
-          "source": "1759812831109-v11lbp9zv",
-          "target": "maria-jesus"
+          "source": "1759812831109_v11lbp9zv",
+          "target": "maria_jesus"
         },
         {
           "id": "1759812897862-et753natb",
-          "source": "1759812831119-akf5n287q",
-          "target": "maria-jesus"
+          "source": "1759812831119_akf5n287q",
+          "target": "maria_jesus"
         },
         {
           "id": "1759812897864-xr2zh0x2h",
-          "source": "1759812831109-v11lbp9zv",
-          "target": "1759812831123-s0pdwz9s1"
+          "source": "1759812831109_v11lbp9zv",
+          "target": "1759812831123_s0pdwz9s1"
         },
         {
           "id": "1759812897866-97lfo6q2o",
-          "source": "1759812831119-akf5n287q",
-          "target": "1759812831123-s0pdwz9s1"
+          "source": "1759812831119_akf5n287q",
+          "target": "1759812831123_s0pdwz9s1"
         },
         {
           "id": "1759813233751-hyj1jkh4l",
-          "source": "1759812897831-fzizgo00s",
-          "target": "1759812831109-v11lbp9zv"
+          "source": "1759812897831_fzizgo00s",
+          "target": "1759812831109_v11lbp9zv"
         },
         {
           "id": "1759813233753-xnnv96kez",
-          "source": "1759812897836-bbosb5lpm",
-          "target": "1759812831109-v11lbp9zv"
+          "source": "1759812897836_bbosb5lpm",
+          "target": "1759812831109_v11lbp9zv"
         },
         {
           "id": "1759823938430-qiwezmts3",
           "source": "joaquin",
-          "target": "1759823938430-b1guqkf4d"
+          "target": "1759823938430_b1guqkf4d"
+        }
+      ]
+    },
+    {
+      "nodes": [
+        {
+          "id": "maria_jesus",
+          "position": {
+            "x": 444,
+            "y": 0
+          },
+          "data": {
+            "label": "Maria Jesus",
+            "description": "Child 2"
+          }
+        },
+        {
+          "id": "tomas",
+          "position": {
+            "x": 444,
+            "y": 96
+          },
+          "data": {
+            "label": "Tomas",
+            "description": "Child 3"
+          }
+        },
+        {
+          "id": "joaquin",
+          "position": {
+            "x": 444,
+            "y": 225
+          },
+          "data": {
+            "label": "Joaquin",
+            "description": "Child 4"
+          }
+        },
+        {
+          "id": "damien",
+          "position": {
+            "x": 444,
+            "y": 354
+          },
+          "data": {
+            "label": "Damien",
+            "description": "Child 5"
+          }
+        },
+        {
+          "id": "1759739196218_xra83e1o4",
+          "position": {
+            "x": 666,
+            "y": 96
+          },
+          "data": {
+            "label": "Florencia",
+            "description": "Child of Tomas"
+          }
+        },
+        {
+          "id": "1759739196223_qgh4vsm95",
+          "position": {
+            "x": 666,
+            "y": 354
+          },
+          "data": {
+            "label": "Trini",
+            "description": "Child of Damien"
+          }
+        },
+        {
+          "id": "1759812770136_29vknhb6m",
+          "position": {
+            "x": 0,
+            "y": 268
+          },
+          "data": {
+            "label": "Sergio"
+          }
+        },
+        {
+          "id": "1759812770139_909vs30gp",
+          "position": {
+            "x": 0,
+            "y": 354
+          },
+          "data": {
+            "label": "Elsa"
+          }
+        },
+        {
+          "id": "1759812831109_v11lbp9zv",
+          "position": {
+            "x": 222,
+            "y": 139
+          },
+          "data": {
+            "label": "Eduardo Sr.",
+            "description": "Father"
+          }
+        },
+        {
+          "id": "1759812831119_akf5n287q",
+          "position": {
+            "x": 222,
+            "y": 311
+          },
+          "data": {
+            "label": "Jessica",
+            "description": "Mother"
+          }
+        },
+        {
+          "id": "1759812831123_s0pdwz9s1",
+          "position": {
+            "x": 444,
+            "y": 450
+          },
+          "data": {
+            "label": "Eduardo",
+            "description": "Sibling"
+          }
+        },
+        {
+          "id": "1759812897831_fzizgo00s",
+          "position": {
+            "x": 0,
+            "y": 96
+          },
+          "data": {
+            "label": "Manuel",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759812897836_bbosb5lpm",
+          "position": {
+            "x": 0,
+            "y": 182
+          },
+          "data": {
+            "label": "Alicia",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759823938430_b1guqkf4d",
+          "position": {
+            "x": 666,
+            "y": 225
+          },
+          "data": {
+            "label": "Son of Joaquin"
+          }
+        },
+        {
+          "id": "eduardo_s_child",
+          "position": {
+            "x": 644,
+            "y": 450
+          },
+          "data": {
+            "label": "Eduardo’s Child",
+            "description": "Child of Eduardo"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "1759739196223-oi26zgr6p",
+          "source": "damien",
+          "target": "1759739196223_qgh4vsm95",
+          "data": {
+            "label": "parent of"
+          }
+        },
+        {
+          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
+          "source": "tomas",
+          "target": "1759739196218_xra83e1o4"
+        },
+        {
+          "id": "1759812897840-4tbk5ff2k",
+          "source": "1759812770136_29vknhb6m",
+          "target": "1759812831119_akf5n287q"
+        },
+        {
+          "id": "1759812897842-ojtd2jaag",
+          "source": "1759812770139_909vs30gp",
+          "target": "1759812831119_akf5n287q"
+        },
+        {
+          "id": "1759812897845-oiqljv2xt",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897849-wiseyg4xd",
+          "source": "1759812831119_akf5n287q",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897852-bepa5jq8v",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897854-vpitnx57c",
+          "source": "1759812831119_akf5n287q",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897856-wm4ix64wm",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897858-qu5o7ca6z",
+          "source": "1759812831119_akf5n287q",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897860-cuqee4d8k",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "maria_jesus"
+        },
+        {
+          "id": "1759812897862-et753natb",
+          "source": "1759812831119_akf5n287q",
+          "target": "maria_jesus"
+        },
+        {
+          "id": "1759812897864-xr2zh0x2h",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "1759812831123_s0pdwz9s1"
+        },
+        {
+          "id": "1759812897866-97lfo6q2o",
+          "source": "1759812831119_akf5n287q",
+          "target": "1759812831123_s0pdwz9s1"
+        },
+        {
+          "id": "1759813233751-hyj1jkh4l",
+          "source": "1759812897831_fzizgo00s",
+          "target": "1759812831109_v11lbp9zv"
+        },
+        {
+          "id": "1759813233753-xnnv96kez",
+          "source": "1759812897836_bbosb5lpm",
+          "target": "1759812831109_v11lbp9zv"
+        },
+        {
+          "id": "1759823938430-qiwezmts3",
+          "source": "joaquin",
+          "target": "1759823938430_b1guqkf4d"
+        },
+        {
+          "id": "1759830581275_f6ffwqq64",
+          "source": "1759812831123_s0pdwz9s1",
+          "target": "eduardo_s_child"
+        }
+      ]
+    },
+    {
+      "nodes": [
+        {
+          "id": "maria_jesus",
+          "position": {
+            "x": 444,
+            "y": 0
+          },
+          "data": {
+            "label": "Maria Jesus",
+            "description": "Child 2"
+          }
+        },
+        {
+          "id": "tomas",
+          "position": {
+            "x": 444,
+            "y": 96
+          },
+          "data": {
+            "label": "Tomas",
+            "description": "Child 3"
+          }
+        },
+        {
+          "id": "joaquin",
+          "position": {
+            "x": 444,
+            "y": 225
+          },
+          "data": {
+            "label": "Joaquin",
+            "description": "Child 4"
+          }
+        },
+        {
+          "id": "damien",
+          "position": {
+            "x": 444,
+            "y": 354
+          },
+          "data": {
+            "label": "Damien",
+            "description": "Child 5"
+          }
+        },
+        {
+          "id": "1759739196218_xra83e1o4",
+          "position": {
+            "x": 666,
+            "y": 96
+          },
+          "data": {
+            "label": "Florencia",
+            "description": "Child of Tomas"
+          }
+        },
+        {
+          "id": "1759739196223_qgh4vsm95",
+          "position": {
+            "x": 666,
+            "y": 354
+          },
+          "data": {
+            "label": "Trini",
+            "description": "Child of Damien"
+          }
+        },
+        {
+          "id": "1759812770136_29vknhb6m",
+          "position": {
+            "x": 0,
+            "y": 268
+          },
+          "data": {
+            "label": "Sergio"
+          }
+        },
+        {
+          "id": "1759812770139_909vs30gp",
+          "position": {
+            "x": 0,
+            "y": 354
+          },
+          "data": {
+            "label": "Elsa"
+          }
+        },
+        {
+          "id": "1759812831109_v11lbp9zv",
+          "position": {
+            "x": 222,
+            "y": 139
+          },
+          "data": {
+            "label": "Eduardo Sr.",
+            "description": "Father"
+          }
+        },
+        {
+          "id": "1759812831119_akf5n287q",
+          "position": {
+            "x": 222,
+            "y": 311
+          },
+          "data": {
+            "label": "Jessica",
+            "description": "Mother"
+          }
+        },
+        {
+          "id": "1759812831123_s0pdwz9s1",
+          "position": {
+            "x": 444,
+            "y": 450
+          },
+          "data": {
+            "label": "Eduardo",
+            "description": "Sibling"
+          }
+        },
+        {
+          "id": "1759812897831_fzizgo00s",
+          "position": {
+            "x": 0,
+            "y": 96
+          },
+          "data": {
+            "label": "Manuel",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759812897836_bbosb5lpm",
+          "position": {
+            "x": 0,
+            "y": 182
+          },
+          "data": {
+            "label": "Alicia",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759823938430_b1guqkf4d",
+          "position": {
+            "x": 666,
+            "y": 225
+          },
+          "data": {
+            "label": "Son of Joaquin"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "1759739196223-oi26zgr6p",
+          "source": "damien",
+          "target": "1759739196223_qgh4vsm95",
+          "data": {
+            "label": "parent of"
+          }
+        },
+        {
+          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
+          "source": "tomas",
+          "target": "1759739196218_xra83e1o4"
+        },
+        {
+          "id": "1759812897840-4tbk5ff2k",
+          "source": "1759812770136_29vknhb6m",
+          "target": "1759812831119_akf5n287q"
+        },
+        {
+          "id": "1759812897842-ojtd2jaag",
+          "source": "1759812770139_909vs30gp",
+          "target": "1759812831119_akf5n287q"
+        },
+        {
+          "id": "1759812897845-oiqljv2xt",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897849-wiseyg4xd",
+          "source": "1759812831119_akf5n287q",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897852-bepa5jq8v",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897854-vpitnx57c",
+          "source": "1759812831119_akf5n287q",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897856-wm4ix64wm",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897858-qu5o7ca6z",
+          "source": "1759812831119_akf5n287q",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897860-cuqee4d8k",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "maria_jesus"
+        },
+        {
+          "id": "1759812897862-et753natb",
+          "source": "1759812831119_akf5n287q",
+          "target": "maria_jesus"
+        },
+        {
+          "id": "1759812897864-xr2zh0x2h",
+          "source": "1759812831109_v11lbp9zv",
+          "target": "1759812831123_s0pdwz9s1"
+        },
+        {
+          "id": "1759812897866-97lfo6q2o",
+          "source": "1759812831119_akf5n287q",
+          "target": "1759812831123_s0pdwz9s1"
+        },
+        {
+          "id": "1759813233751-hyj1jkh4l",
+          "source": "1759812897831_fzizgo00s",
+          "target": "1759812831109_v11lbp9zv"
+        },
+        {
+          "id": "1759813233753-xnnv96kez",
+          "source": "1759812897836_bbosb5lpm",
+          "target": "1759812831109_v11lbp9zv"
+        },
+        {
+          "id": "1759823938430-qiwezmts3",
+          "source": "joaquin",
+          "target": "1759823938430_b1guqkf4d"
         }
       ]
     }
   ],
-  "currentIndex": 0
+  "currentIndex": 2
 }

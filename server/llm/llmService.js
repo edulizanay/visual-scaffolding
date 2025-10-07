@@ -187,7 +187,7 @@ export function parseToolCalls(llmResponse) {
  * Call LLM API with the LLM context, with Groq as primary and Cerebras as fallback
  * Converts our context format to messages format and streams the response
  */
-export async function callGroqAPI(llmContext) {
+export async function callLLM(llmContext) {
   try {
     return await _callLLMWithProvider('groq', llmContext);
   } catch (error) {
