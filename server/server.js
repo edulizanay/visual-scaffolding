@@ -426,24 +426,43 @@ function generateId() {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Helper: Sanitize string to create a valid ID
+function sanitizeId(str) {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')  // Replace non-alphanumeric with underscore
+    .replace(/^_+|_+$/g, '');      // Remove leading/trailing underscores
+}
+
 // addNode: Creates a new node, optionally with edge to parent
 async function executeAddNode(params, flow) {
-  const { label, description, parentNodeId, edgeLabel } = params;
+  const { id, label, description, parentNodeId, edgeLabel } = params;
 
   if (!label) {
     return { success: false, error: 'label is required' };
   }
 
-  // If parentNodeId provided, verify it exists
+  // Use provided ID, or sanitize label, or generate random ID
+  const nodeId = id || sanitizeId(label) || generateId();
+
+  // Check for ID collision
+  if (flow.nodes.some(n => n.id === nodeId)) {
+    return {
+      success: false,
+      error: `Node ID "${nodeId}" already exists. Please choose a different ID.`
+    };
+  }
+
+  // If parentNodeId provided, sanitize and verify it exists
   let parentNode = null;
   if (parentNodeId) {
-    parentNode = flow.nodes.find(n => n.id === parentNodeId);
+    const sanitizedParentId = sanitizeId(parentNodeId);
+    parentNode = flow.nodes.find(n => n.id === sanitizedParentId);
     if (!parentNode) {
       return { success: false, error: `Parent node ${parentNodeId} not found` };
     }
   }
-
-  const nodeId = generateId();
   const newNode = {
     id: nodeId,
     type: 'default',
@@ -460,11 +479,11 @@ async function executeAddNode(params, flow) {
   flow.nodes.push(newNode);
 
   // Create edge if parent specified
-  if (parentNodeId) {
+  if (parentNode) {
     const edgeId = generateId();
     const newEdge = {
       id: edgeId,
-      source: parentNodeId,
+      source: parentNode.id,
       target: nodeId
     };
 

@@ -8,10 +8,14 @@
 export const toolDefinitions = [
   {
     name: 'addNode',
-    description: 'Creates a new node. If parentNodeId is provided, automatically creates an edge from parent to the new node. If the user asks for a label on the edge you can include it in the same call',
+    description: 'Creates a new node. If parentNodeId is provided, automatically creates an edge from parent to the new node. If the user asks for a label on the edge you can include it in the same call. NOTE: When creating multiple related nodes in a batch, you can reference them by their label (e.g., parentNodeId: "Lion") and the system will automatically match them.',
     parameters: {
       type: 'object',
       properties: {
+        id: {
+          type: 'string',
+          description: 'Optional: Specify a custom ID for this node. If omitted, an ID will be auto-generated from the label (e.g., "My Node" becomes "my_node"). This allows you to reference nodes by their label when creating chains.',
+        },
         label: {
           type: 'string',
           description: 'The label/name of the node',
@@ -22,7 +26,7 @@ export const toolDefinitions = [
         },
         parentNodeId: {
           type: ['string', 'null'],
-          description: 'Optional ID of parent node. If provided, creates edge from parent to new node',
+          description: 'Optional ID or label of parent node. You can use either the exact label (e.g., "Lion") or a previously generated ID. The system will automatically match them. If provided, creates edge from parent to new node.',
         },
         edgeLabel: {
           type: ['string', 'null'],
