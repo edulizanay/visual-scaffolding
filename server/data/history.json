@@ -3,87 +3,10 @@
     {
       "nodes": [
         {
-          "id": "manuel",
-          "position": {
-            "x": 0,
-            "y": 83
-          },
-          "data": {
-            "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
-          }
-        },
-        {
-          "id": "alicia",
-          "position": {
-            "x": 0,
-            "y": 169
-          },
-          "data": {
-            "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
-          "position": {
-            "x": 0,
-            "y": 255
-          },
-          "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
-          }
-        },
-        {
-          "id": "elsa",
-          "position": {
-            "x": 0,
-            "y": 341
-          },
-          "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
-          }
-        },
-        {
-          "id": "eduardo-dad",
-          "position": {
-            "x": 222,
-            "y": 149
-          },
-          "data": {
-            "label": "Eduardo",
-            "description": "Dad"
-          }
-        },
-        {
-          "id": "jessica-mom",
-          "position": {
-            "x": 222,
-            "y": 321
-          },
-          "data": {
-            "label": "Jessica",
-            "description": "Mom"
-          }
-        },
-        {
-          "id": "eduardo-jr",
-          "position": {
-            "x": 444,
-            "y": 0
-          },
-          "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
-          }
-        },
-        {
           "id": "maria-jesus",
           "position": {
             "x": 444,
-            "y": 96
+            "y": 0
           },
           "data": {
             "label": "Maria Jesus",
@@ -94,7 +17,7 @@
           "id": "tomas",
           "position": {
             "x": 444,
-            "y": 225
+            "y": 96
           },
           "data": {
             "label": "Tomas",
@@ -105,7 +28,7 @@
           "id": "joaquin",
           "position": {
             "x": 444,
-            "y": 374
+            "y": 225
           },
           "data": {
             "label": "Joaquin",
@@ -116,7 +39,7 @@
           "id": "damien",
           "position": {
             "x": 444,
-            "y": 460
+            "y": 354
           },
           "data": {
             "label": "Damien",
@@ -127,7 +50,7 @@
           "id": "1759739196218-xra83e1o4",
           "position": {
             "x": 666,
-            "y": 149
+            "y": 96
           },
           "data": {
             "label": "Florencia",
@@ -138,7 +61,7 @@
           "id": "1759739196223-qgh4vsm95",
           "position": {
             "x": 666,
-            "y": 460
+            "y": 354
           },
           "data": {
             "label": "Trini",
@@ -146,740 +69,82 @@
           }
         },
         {
-          "id": "1759757897141-f4iglsfvn",
-          "position": {
-            "x": 666,
-            "y": 235
-          },
-          "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759758511156-2g8r8mfw8",
-          "position": {
-            "x": 666,
-            "y": 374
-          },
-          "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759739196218-b98otum6e",
-          "source": "tomas",
-          "target": "1759739196218-xra83e1o4",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759739196223-oi26zgr6p",
-          "source": "damien",
-          "target": "1759739196223-qgh4vsm95",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759757897141-l23rqxtni",
-          "source": "tomas",
-          "target": "1759757897141-f4iglsfvn"
-        },
-        {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        }
-      ]
-    },
-    {
-      "nodes": [
-        {
-          "id": "manuel",
-          "position": {
-            "x": 0,
-            "y": 96
-          },
-          "data": {
-            "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
-          }
-        },
-        {
-          "id": "alicia",
-          "position": {
-            "x": 0,
-            "y": 182
-          },
-          "data": {
-            "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
+          "id": "1759812770136-29vknhb6m",
           "position": {
             "x": 0,
             "y": 268
           },
           "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
+            "label": "Sergio"
           }
         },
         {
-          "id": "elsa",
+          "id": "1759812770139-909vs30gp",
           "position": {
             "x": 0,
             "y": 354
           },
           "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
+            "label": "Elsa"
           }
         },
         {
-          "id": "eduardo-dad",
+          "id": "1759812831109-v11lbp9zv",
           "position": {
             "x": 222,
             "y": 139
           },
           "data": {
-            "label": "Eduardo",
-            "description": "Dad"
+            "label": "Eduardo Sr.",
+            "description": "Father"
           }
         },
         {
-          "id": "jessica-mom",
+          "id": "1759812831119-akf5n287q",
           "position": {
             "x": 222,
             "y": 311
           },
           "data": {
             "label": "Jessica",
-            "description": "Mom"
+            "description": "Mother"
           }
         },
         {
-          "id": "eduardo-jr",
+          "id": "1759812831123-s0pdwz9s1",
           "position": {
             "x": 444,
-            "y": 0
+            "y": 450
           },
           "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
+            "label": "Eduardo",
+            "description": "Sibling"
           }
         },
         {
-          "id": "maria-jesus",
-          "position": {
-            "x": 444,
-            "y": 96
-          },
-          "data": {
-            "label": "Maria Jesus",
-            "description": "Child 2"
-          }
-        },
-        {
-          "id": "tomas",
-          "position": {
-            "x": 444,
-            "y": 225
-          },
-          "data": {
-            "label": "Tomas",
-            "description": "Child 3"
-          }
-        },
-        {
-          "id": "joaquin",
-          "position": {
-            "x": 444,
-            "y": 364
-          },
-          "data": {
-            "label": "Joaquin",
-            "description": "Child 4"
-          }
-        },
-        {
-          "id": "damien",
-          "position": {
-            "x": 444,
-            "y": 460
-          },
-          "data": {
-            "label": "Damien",
-            "description": "Child 5"
-          }
-        },
-        {
-          "id": "1759739196218-xra83e1o4",
-          "position": {
-            "x": 661.4166150194604,
-            "y": 59.16394104343752
-          },
-          "data": {
-            "label": "Florencia",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759739196223-qgh4vsm95",
-          "position": {
-            "x": 666,
-            "y": 460
-          },
-          "data": {
-            "label": "Trini",
-            "description": "Child of Damien"
-          }
-        },
-        {
-          "id": "1759758511156-2g8r8mfw8",
-          "position": {
-            "x": 667.0094992541649,
-            "y": 245.88858726271053
-          },
-          "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759739196223-oi26zgr6p",
-          "source": "damien",
-          "target": "1759739196223-qgh4vsm95",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        },
-        {
-          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
-          "source": "tomas",
-          "target": "1759739196218-xra83e1o4"
-        }
-      ]
-    },
-    {
-      "nodes": [
-        {
-          "id": "manuel",
+          "id": "1759812897831-fzizgo00s",
           "position": {
             "x": 0,
             "y": 96
           },
           "data": {
             "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
+            "description": "Grandparent"
           }
         },
         {
-          "id": "alicia",
+          "id": "1759812897836-bbosb5lpm",
           "position": {
             "x": 0,
             "y": 182
           },
           "data": {
             "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
-          "position": {
-            "x": 0,
-            "y": 268
-          },
-          "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
-          }
-        },
-        {
-          "id": "elsa",
-          "position": {
-            "x": 0,
-            "y": 354
-          },
-          "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
-          }
-        },
-        {
-          "id": "eduardo-dad",
-          "position": {
-            "x": 222,
-            "y": 139
-          },
-          "data": {
-            "label": "Eduardo",
-            "description": "Dad"
-          }
-        },
-        {
-          "id": "jessica-mom",
-          "position": {
-            "x": 222,
-            "y": 311
-          },
-          "data": {
-            "label": "Jessica",
-            "description": "Mom"
-          }
-        },
-        {
-          "id": "eduardo-jr",
-          "position": {
-            "x": 444,
-            "y": 0
-          },
-          "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
-          }
-        },
-        {
-          "id": "maria-jesus",
-          "position": {
-            "x": 444,
-            "y": 96
-          },
-          "data": {
-            "label": "Maria Jesus",
-            "description": "Child 2"
-          }
-        },
-        {
-          "id": "tomas",
-          "position": {
-            "x": 444,
-            "y": 225
-          },
-          "data": {
-            "label": "Tomas",
-            "description": "Child 3"
-          }
-        },
-        {
-          "id": "joaquin",
-          "position": {
-            "x": 444,
-            "y": 364
-          },
-          "data": {
-            "label": "Joaquin",
-            "description": "Child 4"
-          }
-        },
-        {
-          "id": "damien",
-          "position": {
-            "x": 444,
-            "y": 460
-          },
-          "data": {
-            "label": "Damien",
-            "description": "Child 5"
-          }
-        },
-        {
-          "id": "1759739196218-xra83e1o4",
-          "position": {
-            "x": 666,
-            "y": 225
-          },
-          "data": {
-            "label": "Florencia",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759739196223-qgh4vsm95",
-          "position": {
-            "x": 666,
-            "y": 460
-          },
-          "data": {
-            "label": "Trini",
-            "description": "Child of Damien"
-          }
-        },
-        {
-          "id": "1759758511156-2g8r8mfw8",
-          "position": {
-            "x": 666,
-            "y": 139
-          },
-          "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760144847-ghiw6lwwn",
-          "position": {
-            "x": 666,
-            "y": 364
-          },
-          "data": {
-            "label": "New Child 2",
-            "description": "Child of Tomas"
+            "description": "Grandparent"
           }
         }
       ],
       "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
         {
           "id": "1759739196223-oi26zgr6p",
           "source": "damien",
@@ -889,106 +154,89 @@
           }
         },
         {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        },
-        {
           "id": "xy-edge__tomas-1759739196218-xra83e1o4",
           "source": "tomas",
           "target": "1759739196218-xra83e1o4"
         },
         {
-          "id": "1759760144847-w70vfbvkz",
-          "source": "tomas",
-          "target": "1759760144847-ghiw6lwwn"
+          "id": "1759812897840-4tbk5ff2k",
+          "source": "1759812770136-29vknhb6m",
+          "target": "1759812831119-akf5n287q"
+        },
+        {
+          "id": "1759812897842-ojtd2jaag",
+          "source": "1759812770139-909vs30gp",
+          "target": "1759812831119-akf5n287q"
+        },
+        {
+          "id": "1759812897845-oiqljv2xt",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897849-wiseyg4xd",
+          "source": "1759812831119-akf5n287q",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897852-bepa5jq8v",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897854-vpitnx57c",
+          "source": "1759812831119-akf5n287q",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897856-wm4ix64wm",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897858-qu5o7ca6z",
+          "source": "1759812831119-akf5n287q",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897860-cuqee4d8k",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897862-et753natb",
+          "source": "1759812831119-akf5n287q",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897864-xr2zh0x2h",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759812897866-97lfo6q2o",
+          "source": "1759812831119-akf5n287q",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759813233751-hyj1jkh4l",
+          "source": "1759812897831-fzizgo00s",
+          "target": "1759812831109-v11lbp9zv"
+        },
+        {
+          "id": "1759813233753-xnnv96kez",
+          "source": "1759812897836-bbosb5lpm",
+          "target": "1759812831109-v11lbp9zv"
         }
       ]
     },
     {
       "nodes": [
         {
-          "id": "manuel",
-          "position": {
-            "x": 0,
-            "y": 96
-          },
-          "data": {
-            "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
-          }
-        },
-        {
-          "id": "alicia",
-          "position": {
-            "x": 0,
-            "y": 182
-          },
-          "data": {
-            "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
-          "position": {
-            "x": 0,
-            "y": 268
-          },
-          "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
-          }
-        },
-        {
-          "id": "elsa",
-          "position": {
-            "x": 0,
-            "y": 354
-          },
-          "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
-          }
-        },
-        {
-          "id": "eduardo-dad",
-          "position": {
-            "x": 222,
-            "y": 139
-          },
-          "data": {
-            "label": "Eduardo",
-            "description": "Dad"
-          }
-        },
-        {
-          "id": "jessica-mom",
-          "position": {
-            "x": 222,
-            "y": 311
-          },
-          "data": {
-            "label": "Jessica",
-            "description": "Mom"
-          }
-        },
-        {
-          "id": "eduardo-jr",
-          "position": {
-            "x": 444,
-            "y": 0
-          },
-          "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
-          }
-        },
-        {
           "id": "maria-jesus",
           "position": {
             "x": 444,
-            "y": 96
+            "y": 0
           },
           "data": {
             "label": "Maria Jesus",
@@ -999,7 +247,7 @@
           "id": "tomas",
           "position": {
             "x": 444,
-            "y": 225
+            "y": 86
           },
           "data": {
             "label": "Tomas",
@@ -1010,331 +258,9 @@
           "id": "joaquin",
           "position": {
             "x": 444,
-            "y": 364
-          },
-          "data": {
-            "label": "Joaquin",
-            "description": "Child 4"
-          }
-        },
-        {
-          "id": "damien",
-          "position": {
-            "x": 444,
-            "y": 460
-          },
-          "data": {
-            "label": "Damien",
-            "description": "Child 5"
-          }
-        },
-        {
-          "id": "1759739196218-xra83e1o4",
-          "position": {
-            "x": 666,
-            "y": 182
-          },
-          "data": {
-            "label": "Florencia",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759739196223-qgh4vsm95",
-          "position": {
-            "x": 666,
-            "y": 460
-          },
-          "data": {
-            "label": "Trini",
-            "description": "Child of Damien"
-          }
-        },
-        {
-          "id": "1759758511156-2g8r8mfw8",
-          "position": {
-            "x": 666,
-            "y": 96
-          },
-          "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760144847-ghiw6lwwn",
-          "position": {
-            "x": 666,
-            "y": 278
-          },
-          "data": {
-            "label": "New Child 2",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760527034-ll5k711mu",
-          "position": {
-            "x": 666,
-            "y": 364
-          },
-          "data": {
-            "label": "New Child 3",
-            "description": "Child of Tomas"
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759739196223-oi26zgr6p",
-          "source": "damien",
-          "target": "1759739196223-qgh4vsm95",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        },
-        {
-          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
-          "source": "tomas",
-          "target": "1759739196218-xra83e1o4"
-        },
-        {
-          "id": "1759760144847-w70vfbvkz",
-          "source": "tomas",
-          "target": "1759760144847-ghiw6lwwn"
-        },
-        {
-          "id": "1759760527034-mkn8u9kpo",
-          "source": "tomas",
-          "target": "1759760527034-ll5k711mu"
-        }
-      ]
-    },
-    {
-      "nodes": [
-        {
-          "id": "manuel",
-          "position": {
-            "x": 0,
-            "y": 0
-          },
-          "data": {
-            "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
-          }
-        },
-        {
-          "id": "alicia",
-          "position": {
-            "x": 0,
-            "y": 245
-          },
-          "data": {
-            "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
-          "position": {
-            "x": 0,
-            "y": 331
-          },
-          "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
-          }
-        },
-        {
-          "id": "elsa",
-          "position": {
-            "x": 0,
-            "y": 513
-          },
-          "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
-          }
-        },
-        {
-          "id": "eduardo-dad",
-          "position": {
-            "x": 222,
-            "y": 66
-          },
-          "data": {
-            "label": "Eduardo",
-            "description": "Dad"
-          }
-        },
-        {
-          "id": "jessica-mom",
-          "position": {
-            "x": 222,
-            "y": 470
-          },
-          "data": {
-            "label": "Jessica",
-            "description": "Mom"
-          }
-        },
-        {
-          "id": "eduardo-jr",
-          "position": {
-            "x": 444,
-            "y": 53
-          },
-          "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
-          }
-        },
-        {
-          "id": "maria-jesus",
-          "position": {
-            "x": 444,
-            "y": 139
-          },
-          "data": {
-            "label": "Maria Jesus",
-            "description": "Child 2"
-          }
-        },
-        {
-          "id": "tomas",
-          "position": {
-            "x": 444,
             "y": 225
           },
           "data": {
-            "label": "Tomas",
-            "description": "Child 3"
-          }
-        },
-        {
-          "id": "joaquin",
-          "position": {
-            "x": 444,
-            "y": 364
-          },
-          "data": {
             "label": "Joaquin",
             "description": "Child 4"
           }
@@ -1343,7 +269,7 @@
           "id": "damien",
           "position": {
             "x": 444,
-            "y": 450
+            "y": 364
           },
           "data": {
             "label": "Damien",
@@ -1354,7 +280,7 @@
           "id": "1759739196218-xra83e1o4",
           "position": {
             "x": 666,
-            "y": 182
+            "y": 86
           },
           "data": {
             "label": "Florencia",
@@ -1365,7 +291,7 @@
           "id": "1759739196223-qgh4vsm95",
           "position": {
             "x": 666,
-            "y": 450
+            "y": 364
           },
           "data": {
             "label": "Trini",
@@ -1373,877 +299,282 @@
           }
         },
         {
-          "id": "1759758511156-2g8r8mfw8",
+          "id": "1759812770136-29vknhb6m",
           "position": {
-            "x": 666,
-            "y": 96
+            "x": 0,
+            "y": 182
           },
           "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
+            "label": "Sergio"
           }
         },
         {
-          "id": "1759760144847-ghiw6lwwn",
+          "id": "1759812770139-909vs30gp",
           "position": {
-            "x": 666,
+            "x": 0,
             "y": 268
           },
           "data": {
-            "label": "New Child 2",
-            "description": "Child of Tomas"
+            "label": "Elsa"
           }
         },
         {
-          "id": "1759760527034-ll5k711mu",
+          "id": "1759812831109-v11lbp9zv",
           "position": {
-            "x": 666,
-            "y": 354
-          },
-          "data": {
-            "label": "New Child 3",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760530970",
-          "position": {
-            "x": 888,
+            "x": 222,
             "y": 96
           },
           "data": {
-            "label": "Node 1759760530970",
-            "description": ""
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
+            "label": "Eduardo Sr.",
+            "description": "Father"
           }
         },
         {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759739196223-oi26zgr6p",
-          "source": "damien",
-          "target": "1759739196223-qgh4vsm95",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        },
-        {
-          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
-          "source": "tomas",
-          "target": "1759739196218-xra83e1o4"
-        },
-        {
-          "id": "1759760144847-w70vfbvkz",
-          "source": "tomas",
-          "target": "1759760144847-ghiw6lwwn"
-        },
-        {
-          "id": "1759760527034-mkn8u9kpo",
-          "source": "tomas",
-          "target": "1759760527034-ll5k711mu"
-        },
-        {
-          "id": "e1759758511156-2g8r8mfw8-1759760530970",
-          "source": "1759758511156-2g8r8mfw8",
-          "target": "1759760530970"
-        }
-      ]
-    },
-    {
-      "nodes": [
-        {
-          "id": "manuel",
-          "position": {
-            "x": 0,
-            "y": 0
-          },
-          "data": {
-            "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
-          }
-        },
-        {
-          "id": "alicia",
-          "position": {
-            "x": 0,
-            "y": 245
-          },
-          "data": {
-            "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
-          "position": {
-            "x": 0,
-            "y": 331
-          },
-          "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
-          }
-        },
-        {
-          "id": "elsa",
-          "position": {
-            "x": 0,
-            "y": 513
-          },
-          "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
-          }
-        },
-        {
-          "id": "eduardo-dad",
+          "id": "1759812831119-akf5n287q",
           "position": {
             "x": 222,
-            "y": 66
-          },
-          "data": {
-            "label": "Eduardo",
-            "description": "Dad"
-          }
-        },
-        {
-          "id": "jessica-mom",
-          "position": {
-            "x": 222,
-            "y": 470
-          },
-          "data": {
-            "label": "Jessica",
-            "description": "Mom"
-          }
-        },
-        {
-          "id": "eduardo-jr",
-          "position": {
-            "x": 444,
-            "y": 53
-          },
-          "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
-          }
-        },
-        {
-          "id": "maria-jesus",
-          "position": {
-            "x": 444,
-            "y": 139
-          },
-          "data": {
-            "label": "Maria Jesus",
-            "description": "Child 2"
-          }
-        },
-        {
-          "id": "tomas",
-          "position": {
-            "x": 444,
-            "y": 225
-          },
-          "data": {
-            "label": "Tomas",
-            "description": "Child 3"
-          }
-        },
-        {
-          "id": "joaquin",
-          "position": {
-            "x": 444,
-            "y": 364
-          },
-          "data": {
-            "label": "Joaquin",
-            "description": "Child 4"
-          }
-        },
-        {
-          "id": "damien",
-          "position": {
-            "x": 444,
-            "y": 450
-          },
-          "data": {
-            "label": "Damien",
-            "description": "Child 5"
-          }
-        },
-        {
-          "id": "1759739196218-xra83e1o4",
-          "position": {
-            "x": 666,
-            "y": 182
-          },
-          "data": {
-            "label": "Florencia",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759739196223-qgh4vsm95",
-          "position": {
-            "x": 666,
-            "y": 450
-          },
-          "data": {
-            "label": "Trini",
-            "description": "Child of Damien"
-          }
-        },
-        {
-          "id": "1759758511156-2g8r8mfw8",
-          "position": {
-            "x": 666,
-            "y": 96
-          },
-          "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760144847-ghiw6lwwn",
-          "position": {
-            "x": 666,
             "y": 268
           },
           "data": {
-            "label": "New Child 2",
-            "description": "Child of Tomas"
+            "label": "Jessica",
+            "description": "Mother"
           }
         },
         {
-          "id": "1759760527034-ll5k711mu",
+          "id": "1759812831123-s0pdwz9s1",
           "position": {
-            "x": 666,
-            "y": 354
-          },
-          "data": {
-            "label": "New Child 3",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760530970",
-          "position": {
-            "x": 888,
-            "y": 96
-          },
-          "data": {
-            "label": "Node 1759760530970",
-            "description": ""
-          }
-        },
-        {
-          "id": "1759760533403",
-          "position": {
-            "x": 888,
-            "y": 182
-          },
-          "data": {
-            "label": "Node 1759760533403",
-            "description": ""
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759739196223-oi26zgr6p",
-          "source": "damien",
-          "target": "1759739196223-qgh4vsm95",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        },
-        {
-          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
-          "source": "tomas",
-          "target": "1759739196218-xra83e1o4"
-        },
-        {
-          "id": "1759760144847-w70vfbvkz",
-          "source": "tomas",
-          "target": "1759760144847-ghiw6lwwn"
-        },
-        {
-          "id": "1759760527034-mkn8u9kpo",
-          "source": "tomas",
-          "target": "1759760527034-ll5k711mu"
-        },
-        {
-          "id": "e1759758511156-2g8r8mfw8-1759760530970",
-          "source": "1759758511156-2g8r8mfw8",
-          "target": "1759760530970"
-        },
-        {
-          "id": "e1759739196218-xra83e1o4-1759760533403",
-          "source": "1759739196218-xra83e1o4",
-          "target": "1759760533403"
-        }
-      ]
-    },
-    {
-      "nodes": [
-        {
-          "id": "manuel",
-          "position": {
-            "x": 0,
-            "y": 0
-          },
-          "data": {
-            "label": "Manuel",
-            "description": "Grandpa (Dad's side)"
-          }
-        },
-        {
-          "id": "alicia",
-          "position": {
-            "x": 0,
-            "y": 245
-          },
-          "data": {
-            "label": "Alicia",
-            "description": "Grandma (Dad's side)"
-          }
-        },
-        {
-          "id": "sergio",
-          "position": {
-            "x": 0,
-            "y": 331
-          },
-          "data": {
-            "label": "Sergio",
-            "description": "Grandpa (Mom's side)"
-          }
-        },
-        {
-          "id": "elsa",
-          "position": {
-            "x": 0,
-            "y": 513
-          },
-          "data": {
-            "label": "Elsa",
-            "description": "Grandma (Mom's side)"
-          }
-        },
-        {
-          "id": "eduardo-dad",
-          "position": {
-            "x": 222,
-            "y": 66
+            "x": 444,
+            "y": 450
           },
           "data": {
             "label": "Eduardo",
-            "description": "Dad"
+            "description": "Sibling"
           }
         },
         {
-          "id": "jessica-mom",
+          "id": "1759812897831-fzizgo00s",
           "position": {
-            "x": 222,
-            "y": 470
+            "x": 0,
+            "y": 10
           },
           "data": {
-            "label": "Jessica",
-            "description": "Mom"
+            "label": "Manuel",
+            "description": "Grandparent"
           }
         },
         {
-          "id": "eduardo-jr",
+          "id": "1759812897836-bbosb5lpm",
           "position": {
-            "x": 444,
-            "y": 53
-          },
-          "data": {
-            "label": "Eduardo Jr.1",
-            "description": "Child 123"
-          }
-        },
-        {
-          "id": "maria-jesus",
-          "position": {
-            "x": 444,
-            "y": 139
-          },
-          "data": {
-            "label": "Maria Jesus",
-            "description": "Child 2"
-          }
-        },
-        {
-          "id": "tomas",
-          "position": {
-            "x": 444,
-            "y": 225
-          },
-          "data": {
-            "label": "Tomas",
-            "description": "Child 3"
-          }
-        },
-        {
-          "id": "joaquin",
-          "position": {
-            "x": 444,
-            "y": 364
-          },
-          "data": {
-            "label": "Joaquin",
-            "description": "Child 4"
-          }
-        },
-        {
-          "id": "damien",
-          "position": {
-            "x": 444,
-            "y": 450
-          },
-          "data": {
-            "label": "Damien",
-            "description": "Child 5"
-          }
-        },
-        {
-          "id": "1759739196218-xra83e1o4",
-          "position": {
-            "x": 666,
-            "y": 182
-          },
-          "data": {
-            "label": "Florencia",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759739196223-qgh4vsm95",
-          "position": {
-            "x": 666,
-            "y": 450
-          },
-          "data": {
-            "label": "Trini",
-            "description": "Child of Damien"
-          }
-        },
-        {
-          "id": "1759758511156-2g8r8mfw8",
-          "position": {
-            "x": 666,
+            "x": 0,
             "y": 96
           },
           "data": {
-            "label": "New Child",
-            "description": "Child of Tomas"
+            "label": "Alicia",
+            "description": "Grandparent"
           }
         },
         {
-          "id": "1759760144847-ghiw6lwwn",
+          "id": "1759820210775-d1bc8zne6",
           "position": {
-            "x": 666,
-            "y": 268
-          },
-          "data": {
-            "label": "New Child 2",
-            "description": "Child of Tomas"
-          }
-        },
-        {
-          "id": "1759760527034-ll5k711mu",
-          "position": {
-            "x": 666,
+            "x": 0,
             "y": 354
           },
           "data": {
-            "label": "New Child 3",
-            "description": "Child of Tomas"
+            "label": "Silly Sausage"
           }
         },
         {
-          "id": "1759760530970",
+          "id": "1759820210775-tm47wrgsm",
           "position": {
-            "x": 888,
-            "y": 96
+            "x": 0,
+            "y": 440
           },
           "data": {
-            "label": "Node 1759760530970",
-            "description": ""
+            "label": "Wacky Walrus"
           }
         },
         {
-          "id": "1759760533403",
+          "id": "1759820210775-jip7yls4q",
           "position": {
-            "x": 888,
-            "y": 182
+            "x": 0,
+            "y": 526
           },
           "data": {
-            "label": "Node 1759760533403",
-            "description": ""
+            "label": "Jolly Jellybean"
           }
         },
         {
-          "id": "1759760536323",
+          "id": "1759820210775-14798l48v",
           "position": {
-            "x": 1110,
-            "y": 182
+            "x": 0,
+            "y": 612
           },
           "data": {
-            "label": "Node 1759760536323",
-            "description": ""
+            "label": "Goofy Gopher"
+          }
+        },
+        {
+          "id": "1759820210775-x8kycqv01",
+          "position": {
+            "x": 0,
+            "y": 698
+          },
+          "data": {
+            "label": "Zany Zebra"
+          }
+        },
+        {
+          "id": "1759820210775-zawyjo2ky",
+          "position": {
+            "x": 0,
+            "y": 784
+          },
+          "data": {
+            "label": "Quirky Quokka"
+          }
+        },
+        {
+          "id": "1759820210775-cia1g46n8",
+          "position": {
+            "x": 0,
+            "y": 870
+          },
+          "data": {
+            "label": "Bouncy Burrito"
+          }
+        },
+        {
+          "id": "1759820210775-1r4k7lqgy",
+          "position": {
+            "x": 0,
+            "y": 956
+          },
+          "data": {
+            "label": "Punny Pancake"
+          }
+        },
+        {
+          "id": "1759820210775-dz23dlx5g",
+          "position": {
+            "x": 0,
+            "y": 1042
+          },
+          "data": {
+            "label": "Loopy Lollipop"
+          }
+        },
+        {
+          "id": "1759820210775-4wwo1uoju",
+          "position": {
+            "x": 0,
+            "y": 1128
+          },
+          "data": {
+            "label": "Cheeky Cheddar"
+          }
+        },
+        {
+          "id": "1759820210775-pz74ee6ng",
+          "position": {
+            "x": 0,
+            "y": 1214
+          },
+          "data": {
+            "label": "Mirthful Muffin"
+          }
+        },
+        {
+          "id": "1759820210775-snf84h008",
+          "position": {
+            "x": 0,
+            "y": 1300
+          },
+          "data": {
+            "label": "Dizzy Doughnut"
+          }
+        },
+        {
+          "id": "1759820210775-rau0dgz59",
+          "position": {
+            "x": 0,
+            "y": 1386
+          },
+          "data": {
+            "label": "Funky Flamingo"
+          }
+        },
+        {
+          "id": "1759820210775-pv996z1jj",
+          "position": {
+            "x": 0,
+            "y": 1472
+          },
+          "data": {
+            "label": "Snazzy Snail"
+          }
+        },
+        {
+          "id": "1759820210775-wmh29xwyq",
+          "position": {
+            "x": 0,
+            "y": 1558
+          },
+          "data": {
+            "label": "Jazzy Jello"
+          }
+        },
+        {
+          "id": "1759820210775-p8dssce6t",
+          "position": {
+            "x": 0,
+            "y": 1644
+          },
+          "data": {
+            "label": "Wiggly Watermelon"
+          }
+        },
+        {
+          "id": "1759820210775-gbvscmmrg",
+          "position": {
+            "x": 0,
+            "y": 1730
+          },
+          "data": {
+            "label": "Giggly Giraffe"
+          }
+        },
+        {
+          "id": "1759820210775-xg50yi11q",
+          "position": {
+            "x": 0,
+            "y": 1816
+          },
+          "data": {
+            "label": "Nifty Noodle"
+          }
+        },
+        {
+          "id": "1759820210775-x8a0ixdox",
+          "position": {
+            "x": 0,
+            "y": 1902
+          },
+          "data": {
+            "label": "Bizarre Banana"
+          }
+        },
+        {
+          "id": "1759820210775-p8dmqqjkq",
+          "position": {
+            "x": 0,
+            "y": 1988
+          },
+          "data": {
+            "label": "Whimsical Wombat"
           }
         }
       ],
       "edges": [
-        {
-          "id": "manuel-eduardo",
-          "source": "manuel",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "alicia-eduardo",
-          "source": "alicia",
-          "target": "eduardo-dad",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "sergio-jessica",
-          "source": "sergio",
-          "target": "jessica-mom",
-          "data": {
-            "label": "father of"
-          }
-        },
-        {
-          "id": "elsa-jessica",
-          "source": "elsa",
-          "target": "jessica-mom",
-          "data": {
-            "label": "mother of"
-          }
-        },
-        {
-          "id": "eduardo-eduardo-jr",
-          "source": "eduardo-dad",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-eduardo-jr",
-          "source": "jessica-mom",
-          "target": "eduardo-jr",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "eduardo-maria",
-          "source": "eduardo-dad",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-maria",
-          "source": "jessica-mom",
-          "target": "maria-jesus",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-tomas",
-          "source": "eduardo-dad",
-          "target": "tomas",
-          "data": {
-            "label": ""
-          }
-        },
-        {
-          "id": "jessica-tomas",
-          "source": "jessica-mom",
-          "target": "tomas",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-joaquin",
-          "source": "eduardo-dad",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-joaquin",
-          "source": "jessica-mom",
-          "target": "joaquin",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "eduardo-damien",
-          "source": "eduardo-dad",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
-        {
-          "id": "jessica-damien",
-          "source": "jessica-mom",
-          "target": "damien",
-          "data": {
-            "label": "parent of"
-          }
-        },
         {
           "id": "1759739196223-oi26zgr6p",
           "source": "damien",
@@ -2253,42 +584,82 @@
           }
         },
         {
-          "id": "1759758511156-uig0b3x5i",
-          "source": "tomas",
-          "target": "1759758511156-2g8r8mfw8"
-        },
-        {
           "id": "xy-edge__tomas-1759739196218-xra83e1o4",
           "source": "tomas",
           "target": "1759739196218-xra83e1o4"
         },
         {
-          "id": "1759760144847-w70vfbvkz",
-          "source": "tomas",
-          "target": "1759760144847-ghiw6lwwn"
+          "id": "1759812897840-4tbk5ff2k",
+          "source": "1759812770136-29vknhb6m",
+          "target": "1759812831119-akf5n287q"
         },
         {
-          "id": "1759760527034-mkn8u9kpo",
-          "source": "tomas",
-          "target": "1759760527034-ll5k711mu"
+          "id": "1759812897842-ojtd2jaag",
+          "source": "1759812770139-909vs30gp",
+          "target": "1759812831119-akf5n287q"
         },
         {
-          "id": "e1759758511156-2g8r8mfw8-1759760530970",
-          "source": "1759758511156-2g8r8mfw8",
-          "target": "1759760530970"
+          "id": "1759812897845-oiqljv2xt",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "tomas"
         },
         {
-          "id": "e1759739196218-xra83e1o4-1759760533403",
-          "source": "1759739196218-xra83e1o4",
-          "target": "1759760533403"
+          "id": "1759812897849-wiseyg4xd",
+          "source": "1759812831119-akf5n287q",
+          "target": "tomas"
         },
         {
-          "id": "e1759760533403-1759760536323",
-          "source": "1759760533403",
-          "target": "1759760536323"
+          "id": "1759812897852-bepa5jq8v",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897854-vpitnx57c",
+          "source": "1759812831119-akf5n287q",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897856-wm4ix64wm",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897858-qu5o7ca6z",
+          "source": "1759812831119-akf5n287q",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897860-cuqee4d8k",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897862-et753natb",
+          "source": "1759812831119-akf5n287q",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897864-xr2zh0x2h",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759812897866-97lfo6q2o",
+          "source": "1759812831119-akf5n287q",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759813233751-hyj1jkh4l",
+          "source": "1759812897831-fzizgo00s",
+          "target": "1759812831109-v11lbp9zv"
+        },
+        {
+          "id": "1759813233753-xnnv96kez",
+          "source": "1759812897836-bbosb5lpm",
+          "target": "1759812831109-v11lbp9zv"
         }
       ]
     }
   ],
-  "currentIndex": 6
+  "currentIndex": 0
 }

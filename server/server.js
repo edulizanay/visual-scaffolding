@@ -173,12 +173,12 @@ app.post('/api/conversation/message', async (req, res) => {
       // Some failures occurred
       console.log(`❌ ${failures.length} of ${executionResults.length} tool calls failed on iteration ${iteration}`);
 
+      // Save assistant message to conversation history (so next iteration has context)
+      await addAssistantMessage(llmResponse, parsed.toolCalls);
+
       if (iteration === MAX_ITERATIONS) {
         // Max retries reached, return failure
         console.log(`⚠️  Max iterations (${MAX_ITERATIONS}) reached, giving up`);
-
-        // Save assistant message to conversation
-        await addAssistantMessage(llmResponse, parsed.toolCalls);
 
         // Get updated flow state
         const updatedFlow = await readFlow();
@@ -195,9 +195,10 @@ app.post('/api/conversation/message', async (req, res) => {
         });
       }
 
-      // Build retry message and loop again
+      // Build retry message and add to conversation as user message
       const currentFlow = await readFlow();
       currentMessage = buildRetryMessage(executionResults, parsed.toolCalls, currentFlow);
+      await addUserMessage(currentMessage);
       console.log(`🔄 Retrying with message:\n${currentMessage}`);
     }
 
@@ -376,21 +377,21 @@ app.post('/api/test/mock-llm', async (req, res) => {
 
 // ==================== Tool Execution Functions ====================
 
-export async function executeTool(toolName, params) {
+export async function executeTool(toolName, params, flow) {
   try {
     switch (toolName) {
       case 'addNode':
-        return await executeAddNode(params);
+        return await executeAddNode(params, flow);
       case 'updateNode':
-        return await executeUpdateNode(params);
+        return await executeUpdateNode(params, flow);
       case 'deleteNode':
-        return await executeDeleteNode(params);
+        return await executeDeleteNode(params, flow);
       case 'addEdge':
-        return await executeAddEdge(params);
+        return await executeAddEdge(params, flow);
       case 'updateEdge':
-        return await executeUpdateEdge(params);
+        return await executeUpdateEdge(params, flow);
       case 'deleteEdge':
-        return await executeDeleteEdge(params);
+        return await executeDeleteEdge(params, flow);
       case 'undo':
         return await executeUndo();
       case 'redo':
@@ -404,11 +405,19 @@ export async function executeTool(toolName, params) {
 }
 
 export async function executeToolCalls(toolCalls) {
+  let flow = await readFlow(); // Read once at start
   const results = [];
+
   for (const { name, params } of toolCalls) {
-    const result = await executeTool(name, params);
+    const result = await executeTool(name, params, flow);
     results.push(result);
+
+    if (result.success && result.updatedFlow) {
+      flow = result.updatedFlow; // Update in-memory flow
+    }
   }
+
+  await writeFlow(flow); // Write once at end
   return results;
 }
 
@@ -418,14 +427,12 @@ function generateId() {
 }
 
 // addNode: Creates a new node, optionally with edge to parent
-async function executeAddNode(params) {
+async function executeAddNode(params, flow) {
   const { label, description, parentNodeId, edgeLabel } = params;
 
   if (!label) {
     return { success: false, error: 'label is required' };
   }
-
-  const flow = await readFlow();
 
   // If parentNodeId provided, verify it exists
   let parentNode = null;
@@ -468,19 +475,17 @@ async function executeAddNode(params) {
     flow.edges.push(newEdge);
   }
 
-  await writeFlow(flow);
-  return { success: true, nodeId };
+  return { success: true, nodeId, updatedFlow: flow };
 }
 
 // updateNode: Updates node properties
-async function executeUpdateNode(params) {
+async function executeUpdateNode(params, flow) {
   const { nodeId, label, description, position } = params;
 
   if (!nodeId) {
     return { success: false, error: 'nodeId is required' };
   }
 
-  const flow = await readFlow();
   const node = flow.nodes.find(n => n.id === nodeId);
 
   if (!node) {
@@ -491,19 +496,17 @@ async function executeUpdateNode(params) {
   if (description !== undefined) node.data.description = description;
   if (position !== undefined) node.position = position;
 
-  await writeFlow(flow);
-  return { success: true };
+  return { success: true, updatedFlow: flow };
 }
 
 // deleteNode: Removes node and all connected edges
-async function executeDeleteNode(params) {
+async function executeDeleteNode(params, flow) {
   const { nodeId } = params;
 
   if (!nodeId) {
     return { success: false, error: 'nodeId is required' };
   }
 
-  const flow = await readFlow();
   const nodeIndex = flow.nodes.findIndex(n => n.id === nodeId);
 
   if (nodeIndex === -1) {
@@ -513,19 +516,16 @@ async function executeDeleteNode(params) {
   flow.nodes.splice(nodeIndex, 1);
   flow.edges = flow.edges.filter(e => e.source !== nodeId && e.target !== nodeId);
 
-  await writeFlow(flow);
-  return { success: true };
+  return { success: true, updatedFlow: flow };
 }
 
 // addEdge: Creates edge between two nodes
-async function executeAddEdge(params) {
+async function executeAddEdge(params, flow) {
   const { sourceNodeId, targetNodeId, label } = params;
 
   if (!sourceNodeId || !targetNodeId) {
     return { success: false, error: 'sourceNodeId and targetNodeId are required' };
   }
-
-  const flow = await readFlow();
 
   const sourceExists = flow.nodes.some(n => n.id === sourceNodeId);
   const targetExists = flow.nodes.some(n => n.id === targetNodeId);
@@ -550,19 +550,17 @@ async function executeAddEdge(params) {
 
   flow.edges.push(newEdge);
 
-  await writeFlow(flow);
-  return { success: true, edgeId };
+  return { success: true, edgeId, updatedFlow: flow };
 }
 
 // updateEdge: Updates edge label
-async function executeUpdateEdge(params) {
+async function executeUpdateEdge(params, flow) {
   const { edgeId, label } = params;
 
   if (!edgeId || !label) {
     return { success: false, error: 'edgeId and label are required' };
   }
 
-  const flow = await readFlow();
   const edge = flow.edges.find(e => e.id === edgeId);
 
   if (!edge) {
@@ -574,19 +572,17 @@ async function executeUpdateEdge(params) {
   }
   edge.data.label = label;
 
-  await writeFlow(flow);
-  return { success: true };
+  return { success: true, updatedFlow: flow };
 }
 
 // deleteEdge: Removes edge
-async function executeDeleteEdge(params) {
+async function executeDeleteEdge(params, flow) {
   const { edgeId } = params;
 
   if (!edgeId) {
     return { success: false, error: 'edgeId is required' };
   }
 
-  const flow = await readFlow();
   const edgeIndex = flow.edges.findIndex(e => e.id === edgeId);
 
   if (edgeIndex === -1) {
@@ -595,32 +591,29 @@ async function executeDeleteEdge(params) {
 
   flow.edges.splice(edgeIndex, 1);
 
-  await writeFlow(flow);
-  return { success: true };
+  return { success: true, updatedFlow: flow };
 }
 
 // undo: Reverts to previous flow state
-async function executeUndo() {
+async function executeUndo(params, flow) {
   const previousState = await historyUndo();
 
   if (!previousState) {
     return { success: false, error: 'Nothing to undo' };
   }
 
-  await writeFlow(previousState, true);
-  return { success: true };
+  return { success: true, updatedFlow: previousState };
 }
 
 // redo: Reapplies last undone change
-async function executeRedo() {
+async function executeRedo(params, flow) {
   const nextState = await historyRedo();
 
   if (!nextState) {
     return { success: false, error: 'Nothing to redo' };
   }
 
-  await writeFlow(nextState, true);
-  return { success: true };
+  return { success: true, updatedFlow: nextState };
 }
 
 // ==================== Server Startup ====================
