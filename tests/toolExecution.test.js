@@ -2,7 +2,7 @@
 // ABOUTME: Covers all 8 tool operations with comprehensive edge cases
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { executeTool, executeToolCalls } from '../server/server.js';
+import { executeToolCalls } from '../server/server.js';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -11,16 +11,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const TEST_FLOW_PATH = join(__dirname, 'test-data', 'test-flow.json');
+const TEST_HISTORY_PATH = join(__dirname, 'test-data', 'test-tool-history.json');
 
 async function loadFlow() {
   const data = await readFile(TEST_FLOW_PATH, 'utf-8');
   return JSON.parse(data);
 }
 
+async function executeTool(toolName, params) {
+  const results = await executeToolCalls([{ name: toolName, params }]);
+  return results[0];
+}
+
 beforeEach(async () => {
   process.env.FLOW_DATA_PATH = TEST_FLOW_PATH;
+  process.env.HISTORY_DATA_PATH = TEST_HISTORY_PATH;
   await mkdir(dirname(TEST_FLOW_PATH), { recursive: true });
   await writeFile(TEST_FLOW_PATH, JSON.stringify({ nodes: [], edges: [] }, null, 2));
+  await writeFile(TEST_HISTORY_PATH, JSON.stringify({ states: [], currentIndex: -1 }, null, 2));
 });
 
 describe('executeTool - addNode', () => {
