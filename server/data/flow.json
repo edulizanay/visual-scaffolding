@@ -149,7 +149,9 @@
       "measured": {
         "width": 150,
         "height": 57
-      }
+      },
+      "selected": false,
+      "dragging": false
     },
     {
       "id": "1759812831119_akf5n287q",
@@ -248,12 +250,18 @@
     {
       "id": "xy-edge__tomas-1759739196218-xra83e1o4",
       "source": "tomas",
-      "target": "1759739196218_xra83e1o4"
+      "target": "1759739196218_xra83e1o4",
+      "data": {
+        "label": "son of"
+      }
     },
     {
       "id": "1759812897840-4tbk5ff2k",
       "source": "1759812770136_29vknhb6m",
-      "target": "1759812831119_akf5n287q"
+      "target": "1759812831119_akf5n287q",
+      "data": {
+        "label": ""
+      }
     },
     {
       "id": "1759812897842-ojtd2jaag",
@@ -313,7 +321,11 @@
     {
       "id": "1759813233751-hyj1jkh4l",
       "source": "1759812897831_fzizgo00s",
-      "target": "1759812831109_v11lbp9zv"
+      "target": "1759812831109_v11lbp9zv",
+      "selected": true,
+      "data": {
+        "label": "parent of"
+      }
     },
     {
       "id": "1759813233753-xnnv96kez",
@@ -323,7 +335,10 @@
     {
       "id": "1759823938430-qiwezmts3",
       "source": "joaquin",
-      "target": "1759823938430_b1guqkf4d"
+      "target": "1759823938430_b1guqkf4d",
+      "data": {
+        "label": ""
+      }
     }
   ]
 }

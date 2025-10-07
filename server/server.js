@@ -330,51 +330,6 @@ app.get('/api/flow/history-status', async (req, res) => {
   }
 });
 
-// Mock testing endpoint for validating LLM responses
-app.post('/api/test/mock-llm', async (req, res) => {
-  try {
-    const { llmResponse } = req.body;
-
-    if (!llmResponse || typeof llmResponse !== 'string') {
-      return res.status(400).json({ error: 'llmResponse is required and must be a string' });
-    }
-
-    // Parse the LLM response
-    const parsed = parseToolCalls(llmResponse);
-
-    // If there's a parse error, return it to the frontend
-    if (parsed.parseError) {
-      return res.json({
-        success: false,
-        parseError: parsed.parseError,
-        thinking: parsed.thinking,
-        content: parsed.content,
-        toolCalls: []
-      });
-    }
-
-    // Execute the tool calls
-    const executionResults = await executeToolCalls(parsed.toolCalls);
-
-    // Get updated flow state
-    const updatedFlow = await readFlow();
-
-    // Return results
-    res.json({
-      success: true,
-      parsed: {
-        thinking: parsed.thinking,
-        toolCalls: parsed.toolCalls
-      },
-      execution: executionResults,
-      updatedFlow
-    });
-  } catch (error) {
-    console.error('Error testing mock LLM response:', error);
-    res.status(500).json({ error: 'Failed to process mock LLM response', details: error.message });
-  }
-});
-
 // ==================== Tool Execution Functions ====================
 
 export async function executeTool(toolName, params, flow) {

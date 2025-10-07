@@ -49,51 +49,50 @@ const CustomEdge = ({
   return (
     <>
       <BaseEdge id={id} path={edgePath} />
-      {(isEditing || data?.label) && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              pointerEvents: 'all',
-            }}
-            onDoubleClick={handleDoubleClick}
-          >
-            {isEditing ? (
-              <input
-                className="nodrag nopan"
-                value={editValue}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                autoFocus
-                style={{
-                  background: '#1a192b',
-                  border: '1px solid #555',
-                  color: 'white',
-                  padding: '2px 8px',
-                  borderRadius: '3px',
-                  fontSize: '12px',
-                  fontFamily: 'inherit',
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  background: '#1a192b',
-                  padding: '2px 8px',
-                  borderRadius: '3px',
-                  fontSize: '12px',
-                  color: 'white',
-                  cursor: 'text',
-                }}
-              >
-                {data?.label || '\u00A0'}
-              </div>
-            )}
-          </div>
-        </EdgeLabelRenderer>
-      )}
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'all',
+          }}
+          onDoubleClick={handleDoubleClick}
+        >
+          {isEditing ? (
+            <input
+              className="nodrag nopan"
+              value={editValue}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              style={{
+                background: '#1a192b',
+                border: '1px solid #555',
+                color: 'white',
+                padding: '2px 8px',
+                borderRadius: '3px',
+                fontSize: '12px',
+                fontFamily: 'inherit',
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                background: data?.label ? '#1a192b' : 'transparent',
+                opacity: data?.label ? 1 : 0,
+                padding: '2px 8px',
+                borderRadius: '3px',
+                fontSize: '12px',
+                color: 'white',
+                cursor: 'text',
+              }}
+            >
+              {data?.label || '\u00A0'}
+            </div>
+          )}
+        </div>
+      </EdgeLabelRenderer>
     </>
   );
 };

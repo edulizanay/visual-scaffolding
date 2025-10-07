@@ -239,13 +239,9 @@ User Request: ${userMessage}`;
     max_completion_tokens: 8192,
     top_p: 1,
     stream: true,
-    stop: null
+    stop: null,
+    reasoning_effort: 'low'
   };
-
-  // Add provider-specific parameters
-  if (provider === 'groq' || provider === 'cerebras') {
-    completionParams.reasoning_effort = 'low';
-  }
 
   const completion = await client.chat.completions.create(completionParams);
   console.log(`✅ ${provider.toUpperCase()} API call completed`);
