@@ -25,7 +25,7 @@ export const Kbd = ({ children, style = {} }) => (
   </kbd>
 );
 
-function ChatInterface({ onFlowUpdate }) {
+function ChatInterface({ onFlowUpdate, onProcessingChange }) {
   const [message, setMessage] = useState('');
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [draftMessage, setDraftMessage] = useState('');
@@ -34,6 +34,10 @@ function ChatInterface({ onFlowUpdate }) {
   const [processingPlaceholder, setProcessingPlaceholder] = useState('processing.');
   const isFirstMessage = useRef(true);
   const textareaRef = useRef(null);
+
+  useEffect(() => {
+    onProcessingChange?.(isProcessing);
+  }, [isProcessing, onProcessingChange]);
 
   const adjustTextareaHeight = useCallback((textarea) => {
     if (!textarea) return;

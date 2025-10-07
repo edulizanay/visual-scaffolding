@@ -22,6 +22,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [canUndo, setCanUndo] = useState(false);
   const [toast, setToast] = useState(null); // 'undo' | 'redo' | null
+  const [isBackendProcessing, setIsBackendProcessing] = useState(false);
   const reactFlowInstance = useRef(null);
 
   const { applyLayoutWithAnimation, isAnimating, FIT_VIEW_PADDING, getAllDescendants } = useFlowLayout(
@@ -58,7 +59,7 @@ function App() {
   }, [setNodes, setEdges]);
 
   useEffect(() => {
-    if (isLoading || isAnimating) return;
+    if (isLoading || isAnimating || isBackendProcessing) return;
 
     const timeoutId = setTimeout(async () => {
       try {
@@ -72,7 +73,7 @@ function App() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [nodes, edges, isLoading, canUndo, isAnimating]);
+  }, [nodes, edges, isLoading, canUndo, isAnimating, isBackendProcessing]);
 
   const updateNodeLabel = useCallback((nodeId, newLabel) => {
     setNodes((nds) =>
@@ -314,7 +315,7 @@ function App() {
         proOptions={{ hideAttribution: true }}
       >
       </ReactFlow>
-      <ChatInterface onFlowUpdate={handleFlowUpdate} />
+      <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
       {toast && (
         <div style={{
           position: 'fixed',

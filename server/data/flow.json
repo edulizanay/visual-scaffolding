@@ -21,7 +21,7 @@
       "id": "tomas",
       "position": {
         "x": 444,
-        "y": 96
+        "y": 86
       },
       "data": {
         "label": "Tomas",
@@ -55,7 +55,7 @@
       "id": "damien",
       "position": {
         "x": 444,
-        "y": 354
+        "y": 364
       },
       "data": {
         "label": "Damien",
@@ -72,7 +72,7 @@
       "id": "1759739196218-xra83e1o4",
       "position": {
         "x": 666,
-        "y": 96
+        "y": 86
       },
       "data": {
         "label": "Florencia",
@@ -89,7 +89,7 @@
       "id": "1759739196223-qgh4vsm95",
       "position": {
         "x": 666,
-        "y": 354
+        "y": 364
       },
       "data": {
         "label": "Trini",
@@ -122,7 +122,7 @@
       "id": "1759812770139-909vs30gp",
       "position": {
         "x": 0,
-        "y": 354
+        "y": 450
       },
       "data": {
         "label": "Elsa"
@@ -218,6 +218,54 @@
         "width": 150,
         "height": 57
       }
+    },
+    {
+      "id": "1759822926626-ke57wasff",
+      "position": {
+        "x": 0,
+        "y": 536
+      },
+      "data": {
+        "label": "Node 1"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
+    },
+    {
+      "id": "1759822943770-8w1wfcwb1",
+      "position": {
+        "x": 222,
+        "y": 536
+      },
+      "data": {
+        "label": "Node 2"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
+    },
+    {
+      "id": "1759822962556-x7l03iiga",
+      "position": {
+        "x": 444,
+        "y": 536
+      },
+      "data": {
+        "label": "Node 3"
+      },
+      "sourcePosition": "right",
+      "targetPosition": "left",
+      "measured": {
+        "width": 150,
+        "height": 57
+      }
     }
   ],
   "edges": [
@@ -303,6 +351,16 @@
       "id": "1759813233753-xnnv96kez",
       "source": "1759812897836-bbosb5lpm",
       "target": "1759812831109-v11lbp9zv"
+    },
+    {
+      "id": "1759822943770-poxmmdo37",
+      "source": "1759822926626-ke57wasff",
+      "target": "1759822943770-8w1wfcwb1"
+    },
+    {
+      "id": "1759822962556-4a2q2jktq",
+      "source": "1759822943770-8w1wfcwb1",
+      "target": "1759822962556-x7l03iiga"
     }
   ]
 }

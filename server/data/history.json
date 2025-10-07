@@ -247,7 +247,7 @@
           "id": "tomas",
           "position": {
             "x": 444,
-            "y": 86
+            "y": 96
           },
           "data": {
             "label": "Tomas",
@@ -269,7 +269,7 @@
           "id": "damien",
           "position": {
             "x": 444,
-            "y": 364
+            "y": 354
           },
           "data": {
             "label": "Damien",
@@ -280,7 +280,7 @@
           "id": "1759739196218-xra83e1o4",
           "position": {
             "x": 666,
-            "y": 86
+            "y": 96
           },
           "data": {
             "label": "Florencia",
@@ -291,7 +291,7 @@
           "id": "1759739196223-qgh4vsm95",
           "position": {
             "x": 666,
-            "y": 364
+            "y": 354
           },
           "data": {
             "label": "Trini",
@@ -302,7 +302,7 @@
           "id": "1759812770136-29vknhb6m",
           "position": {
             "x": 0,
-            "y": 182
+            "y": 268
           },
           "data": {
             "label": "Sergio"
@@ -312,7 +312,7 @@
           "id": "1759812770139-909vs30gp",
           "position": {
             "x": 0,
-            "y": 268
+            "y": 354
           },
           "data": {
             "label": "Elsa"
@@ -322,7 +322,7 @@
           "id": "1759812831109-v11lbp9zv",
           "position": {
             "x": 222,
-            "y": 96
+            "y": 139
           },
           "data": {
             "label": "Eduardo Sr.",
@@ -333,7 +333,7 @@
           "id": "1759812831119-akf5n287q",
           "position": {
             "x": 222,
-            "y": 268
+            "y": 311
           },
           "data": {
             "label": "Jessica",
@@ -355,7 +355,7 @@
           "id": "1759812897831-fzizgo00s",
           "position": {
             "x": 0,
-            "y": 10
+            "y": 96
           },
           "data": {
             "label": "Manuel",
@@ -366,7 +366,7 @@
           "id": "1759812897836-bbosb5lpm",
           "position": {
             "x": 0,
-            "y": 96
+            "y": 182
           },
           "data": {
             "label": "Alicia",
@@ -374,203 +374,13 @@
           }
         },
         {
-          "id": "1759820210775-d1bc8zne6",
+          "id": "1759822926626-ke57wasff",
           "position": {
             "x": 0,
-            "y": 354
+            "y": 0
           },
           "data": {
-            "label": "Silly Sausage"
-          }
-        },
-        {
-          "id": "1759820210775-tm47wrgsm",
-          "position": {
-            "x": 0,
-            "y": 440
-          },
-          "data": {
-            "label": "Wacky Walrus"
-          }
-        },
-        {
-          "id": "1759820210775-jip7yls4q",
-          "position": {
-            "x": 0,
-            "y": 526
-          },
-          "data": {
-            "label": "Jolly Jellybean"
-          }
-        },
-        {
-          "id": "1759820210775-14798l48v",
-          "position": {
-            "x": 0,
-            "y": 612
-          },
-          "data": {
-            "label": "Goofy Gopher"
-          }
-        },
-        {
-          "id": "1759820210775-x8kycqv01",
-          "position": {
-            "x": 0,
-            "y": 698
-          },
-          "data": {
-            "label": "Zany Zebra"
-          }
-        },
-        {
-          "id": "1759820210775-zawyjo2ky",
-          "position": {
-            "x": 0,
-            "y": 784
-          },
-          "data": {
-            "label": "Quirky Quokka"
-          }
-        },
-        {
-          "id": "1759820210775-cia1g46n8",
-          "position": {
-            "x": 0,
-            "y": 870
-          },
-          "data": {
-            "label": "Bouncy Burrito"
-          }
-        },
-        {
-          "id": "1759820210775-1r4k7lqgy",
-          "position": {
-            "x": 0,
-            "y": 956
-          },
-          "data": {
-            "label": "Punny Pancake"
-          }
-        },
-        {
-          "id": "1759820210775-dz23dlx5g",
-          "position": {
-            "x": 0,
-            "y": 1042
-          },
-          "data": {
-            "label": "Loopy Lollipop"
-          }
-        },
-        {
-          "id": "1759820210775-4wwo1uoju",
-          "position": {
-            "x": 0,
-            "y": 1128
-          },
-          "data": {
-            "label": "Cheeky Cheddar"
-          }
-        },
-        {
-          "id": "1759820210775-pz74ee6ng",
-          "position": {
-            "x": 0,
-            "y": 1214
-          },
-          "data": {
-            "label": "Mirthful Muffin"
-          }
-        },
-        {
-          "id": "1759820210775-snf84h008",
-          "position": {
-            "x": 0,
-            "y": 1300
-          },
-          "data": {
-            "label": "Dizzy Doughnut"
-          }
-        },
-        {
-          "id": "1759820210775-rau0dgz59",
-          "position": {
-            "x": 0,
-            "y": 1386
-          },
-          "data": {
-            "label": "Funky Flamingo"
-          }
-        },
-        {
-          "id": "1759820210775-pv996z1jj",
-          "position": {
-            "x": 0,
-            "y": 1472
-          },
-          "data": {
-            "label": "Snazzy Snail"
-          }
-        },
-        {
-          "id": "1759820210775-wmh29xwyq",
-          "position": {
-            "x": 0,
-            "y": 1558
-          },
-          "data": {
-            "label": "Jazzy Jello"
-          }
-        },
-        {
-          "id": "1759820210775-p8dssce6t",
-          "position": {
-            "x": 0,
-            "y": 1644
-          },
-          "data": {
-            "label": "Wiggly Watermelon"
-          }
-        },
-        {
-          "id": "1759820210775-gbvscmmrg",
-          "position": {
-            "x": 0,
-            "y": 1730
-          },
-          "data": {
-            "label": "Giggly Giraffe"
-          }
-        },
-        {
-          "id": "1759820210775-xg50yi11q",
-          "position": {
-            "x": 0,
-            "y": 1816
-          },
-          "data": {
-            "label": "Nifty Noodle"
-          }
-        },
-        {
-          "id": "1759820210775-x8a0ixdox",
-          "position": {
-            "x": 0,
-            "y": 1902
-          },
-          "data": {
-            "label": "Bizarre Banana"
-          }
-        },
-        {
-          "id": "1759820210775-p8dmqqjkq",
-          "position": {
-            "x": 0,
-            "y": 1988
-          },
-          "data": {
-            "label": "Whimsical Wombat"
+            "label": "Node 1"
           }
         }
       ],
@@ -659,7 +469,532 @@
           "target": "1759812831109-v11lbp9zv"
         }
       ]
+    },
+    {
+      "nodes": [
+        {
+          "id": "maria-jesus",
+          "position": {
+            "x": 444,
+            "y": 0
+          },
+          "data": {
+            "label": "Maria Jesus",
+            "description": "Child 2"
+          }
+        },
+        {
+          "id": "tomas",
+          "position": {
+            "x": 444,
+            "y": 96
+          },
+          "data": {
+            "label": "Tomas",
+            "description": "Child 3"
+          }
+        },
+        {
+          "id": "joaquin",
+          "position": {
+            "x": 444,
+            "y": 225
+          },
+          "data": {
+            "label": "Joaquin",
+            "description": "Child 4"
+          }
+        },
+        {
+          "id": "damien",
+          "position": {
+            "x": 444,
+            "y": 364
+          },
+          "data": {
+            "label": "Damien",
+            "description": "Child 5"
+          }
+        },
+        {
+          "id": "1759739196218-xra83e1o4",
+          "position": {
+            "x": 666,
+            "y": 96
+          },
+          "data": {
+            "label": "Florencia",
+            "description": "Child of Tomas"
+          }
+        },
+        {
+          "id": "1759739196223-qgh4vsm95",
+          "position": {
+            "x": 666,
+            "y": 364
+          },
+          "data": {
+            "label": "Trini",
+            "description": "Child of Damien"
+          }
+        },
+        {
+          "id": "1759812770136-29vknhb6m",
+          "position": {
+            "x": 0,
+            "y": 255
+          },
+          "data": {
+            "label": "Sergio"
+          }
+        },
+        {
+          "id": "1759812770139-909vs30gp",
+          "position": {
+            "x": 0,
+            "y": 341
+          },
+          "data": {
+            "label": "Elsa"
+          }
+        },
+        {
+          "id": "1759812831109-v11lbp9zv",
+          "position": {
+            "x": 222,
+            "y": 149
+          },
+          "data": {
+            "label": "Eduardo Sr.",
+            "description": "Father"
+          }
+        },
+        {
+          "id": "1759812831119-akf5n287q",
+          "position": {
+            "x": 222,
+            "y": 321
+          },
+          "data": {
+            "label": "Jessica",
+            "description": "Mother"
+          }
+        },
+        {
+          "id": "1759812831123-s0pdwz9s1",
+          "position": {
+            "x": 444,
+            "y": 450
+          },
+          "data": {
+            "label": "Eduardo",
+            "description": "Sibling"
+          }
+        },
+        {
+          "id": "1759812897831-fzizgo00s",
+          "position": {
+            "x": 0,
+            "y": 83
+          },
+          "data": {
+            "label": "Manuel",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759812897836-bbosb5lpm",
+          "position": {
+            "x": 0,
+            "y": 169
+          },
+          "data": {
+            "label": "Alicia",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759822926626-ke57wasff",
+          "position": {
+            "x": 0,
+            "y": 427
+          },
+          "data": {
+            "label": "Node 1"
+          }
+        },
+        {
+          "id": "1759822943770-8w1wfcwb1",
+          "position": {
+            "x": 222,
+            "y": 427
+          },
+          "data": {
+            "label": "Node 2"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "1759739196223-oi26zgr6p",
+          "source": "damien",
+          "target": "1759739196223-qgh4vsm95",
+          "data": {
+            "label": "parent of"
+          }
+        },
+        {
+          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
+          "source": "tomas",
+          "target": "1759739196218-xra83e1o4"
+        },
+        {
+          "id": "1759812897840-4tbk5ff2k",
+          "source": "1759812770136-29vknhb6m",
+          "target": "1759812831119-akf5n287q"
+        },
+        {
+          "id": "1759812897842-ojtd2jaag",
+          "source": "1759812770139-909vs30gp",
+          "target": "1759812831119-akf5n287q"
+        },
+        {
+          "id": "1759812897845-oiqljv2xt",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897849-wiseyg4xd",
+          "source": "1759812831119-akf5n287q",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897852-bepa5jq8v",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897854-vpitnx57c",
+          "source": "1759812831119-akf5n287q",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897856-wm4ix64wm",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897858-qu5o7ca6z",
+          "source": "1759812831119-akf5n287q",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897860-cuqee4d8k",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897862-et753natb",
+          "source": "1759812831119-akf5n287q",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897864-xr2zh0x2h",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759812897866-97lfo6q2o",
+          "source": "1759812831119-akf5n287q",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759813233751-hyj1jkh4l",
+          "source": "1759812897831-fzizgo00s",
+          "target": "1759812831109-v11lbp9zv"
+        },
+        {
+          "id": "1759813233753-xnnv96kez",
+          "source": "1759812897836-bbosb5lpm",
+          "target": "1759812831109-v11lbp9zv"
+        },
+        {
+          "id": "1759822943770-poxmmdo37",
+          "source": "1759822926626-ke57wasff",
+          "target": "1759822943770-8w1wfcwb1"
+        }
+      ]
+    },
+    {
+      "nodes": [
+        {
+          "id": "maria-jesus",
+          "position": {
+            "x": 444,
+            "y": 0
+          },
+          "data": {
+            "label": "Maria Jesus",
+            "description": "Child 2"
+          }
+        },
+        {
+          "id": "tomas",
+          "position": {
+            "x": 444,
+            "y": 86
+          },
+          "data": {
+            "label": "Tomas",
+            "description": "Child 3"
+          }
+        },
+        {
+          "id": "joaquin",
+          "position": {
+            "x": 444,
+            "y": 225
+          },
+          "data": {
+            "label": "Joaquin",
+            "description": "Child 4"
+          }
+        },
+        {
+          "id": "damien",
+          "position": {
+            "x": 444,
+            "y": 364
+          },
+          "data": {
+            "label": "Damien",
+            "description": "Child 5"
+          }
+        },
+        {
+          "id": "1759739196218-xra83e1o4",
+          "position": {
+            "x": 666,
+            "y": 86
+          },
+          "data": {
+            "label": "Florencia",
+            "description": "Child of Tomas"
+          }
+        },
+        {
+          "id": "1759739196223-qgh4vsm95",
+          "position": {
+            "x": 666,
+            "y": 364
+          },
+          "data": {
+            "label": "Trini",
+            "description": "Child of Damien"
+          }
+        },
+        {
+          "id": "1759812770136-29vknhb6m",
+          "position": {
+            "x": 0,
+            "y": 268
+          },
+          "data": {
+            "label": "Sergio"
+          }
+        },
+        {
+          "id": "1759812770139-909vs30gp",
+          "position": {
+            "x": 0,
+            "y": 450
+          },
+          "data": {
+            "label": "Elsa"
+          }
+        },
+        {
+          "id": "1759812831109-v11lbp9zv",
+          "position": {
+            "x": 222,
+            "y": 139
+          },
+          "data": {
+            "label": "Eduardo Sr.",
+            "description": "Father"
+          }
+        },
+        {
+          "id": "1759812831119-akf5n287q",
+          "position": {
+            "x": 222,
+            "y": 311
+          },
+          "data": {
+            "label": "Jessica",
+            "description": "Mother"
+          }
+        },
+        {
+          "id": "1759812831123-s0pdwz9s1",
+          "position": {
+            "x": 444,
+            "y": 450
+          },
+          "data": {
+            "label": "Eduardo",
+            "description": "Sibling"
+          }
+        },
+        {
+          "id": "1759812897831-fzizgo00s",
+          "position": {
+            "x": 0,
+            "y": 96
+          },
+          "data": {
+            "label": "Manuel",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759812897836-bbosb5lpm",
+          "position": {
+            "x": 0,
+            "y": 182
+          },
+          "data": {
+            "label": "Alicia",
+            "description": "Grandparent"
+          }
+        },
+        {
+          "id": "1759822926626-ke57wasff",
+          "position": {
+            "x": 0,
+            "y": 536
+          },
+          "data": {
+            "label": "Node 1"
+          }
+        },
+        {
+          "id": "1759822943770-8w1wfcwb1",
+          "position": {
+            "x": 222,
+            "y": 536
+          },
+          "data": {
+            "label": "Node 2"
+          }
+        },
+        {
+          "id": "1759822962556-x7l03iiga",
+          "position": {
+            "x": 444,
+            "y": 536
+          },
+          "data": {
+            "label": "Node 3"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "1759739196223-oi26zgr6p",
+          "source": "damien",
+          "target": "1759739196223-qgh4vsm95",
+          "data": {
+            "label": "parent of"
+          }
+        },
+        {
+          "id": "xy-edge__tomas-1759739196218-xra83e1o4",
+          "source": "tomas",
+          "target": "1759739196218-xra83e1o4"
+        },
+        {
+          "id": "1759812897840-4tbk5ff2k",
+          "source": "1759812770136-29vknhb6m",
+          "target": "1759812831119-akf5n287q"
+        },
+        {
+          "id": "1759812897842-ojtd2jaag",
+          "source": "1759812770139-909vs30gp",
+          "target": "1759812831119-akf5n287q"
+        },
+        {
+          "id": "1759812897845-oiqljv2xt",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897849-wiseyg4xd",
+          "source": "1759812831119-akf5n287q",
+          "target": "tomas"
+        },
+        {
+          "id": "1759812897852-bepa5jq8v",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897854-vpitnx57c",
+          "source": "1759812831119-akf5n287q",
+          "target": "joaquin"
+        },
+        {
+          "id": "1759812897856-wm4ix64wm",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897858-qu5o7ca6z",
+          "source": "1759812831119-akf5n287q",
+          "target": "damien"
+        },
+        {
+          "id": "1759812897860-cuqee4d8k",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897862-et753natb",
+          "source": "1759812831119-akf5n287q",
+          "target": "maria-jesus"
+        },
+        {
+          "id": "1759812897864-xr2zh0x2h",
+          "source": "1759812831109-v11lbp9zv",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759812897866-97lfo6q2o",
+          "source": "1759812831119-akf5n287q",
+          "target": "1759812831123-s0pdwz9s1"
+        },
+        {
+          "id": "1759813233751-hyj1jkh4l",
+          "source": "1759812897831-fzizgo00s",
+          "target": "1759812831109-v11lbp9zv"
+        },
+        {
+          "id": "1759813233753-xnnv96kez",
+          "source": "1759812897836-bbosb5lpm",
+          "target": "1759812831109-v11lbp9zv"
+        },
+        {
+          "id": "1759822943770-poxmmdo37",
+          "source": "1759822926626-ke57wasff",
+          "target": "1759822943770-8w1wfcwb1"
+        },
+        {
+          "id": "1759822962556-4a2q2jktq",
+          "source": "1759822943770-8w1wfcwb1",
+          "target": "1759822962556-x7l03iiga"
+        }
+      ]
     }
   ],
-  "currentIndex": 0
+  "currentIndex": 3
 }
