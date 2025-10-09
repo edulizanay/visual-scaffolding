@@ -173,6 +173,60 @@ export function parseToolCalls(llmResponse) {
 }
 
 /**
+ * Builds a retry message to send back to the LLM after tool execution failures.
+ * Provides verbose information about what succeeded/failed and current flow state.
+ */
+export function buildRetryMessage(executionResults, toolCalls, currentFlow) {
+  const lines = ["Previous tool execution results:\n"];
+
+  // Show results for each tool call
+  executionResults.forEach((result, i) => {
+    const toolCall = toolCalls[i];
+
+    if (result.success) {
+      lines.push(`✅ ${toolCall.name}(${JSON.stringify(toolCall.params)}) → Success!`);
+      if (result.nodeId) {
+        lines.push(`   Created node with ID: "${result.nodeId}"`);
+      }
+      if (result.edgeId) {
+        lines.push(`   Created edge with ID: "${result.edgeId}"`);
+      }
+    } else {
+      lines.push(`❌ ${toolCall.name}(${JSON.stringify(toolCall.params)}) → Failed`);
+      lines.push(`   Error: ${result.error}`);
+    }
+  });
+
+  // Show current flow state so LLM can see available node IDs
+  lines.push("\n📊 Current Flow State:");
+
+  if (currentFlow.nodes.length === 0) {
+    lines.push("  No nodes exist yet.");
+  } else {
+    lines.push(`  Available Nodes (${currentFlow.nodes.length} total):`);
+    currentFlow.nodes.forEach(node => {
+      const label = node.data.label;
+      const desc = node.data.description ? ` - ${node.data.description}` : '';
+      lines.push(`    • "${label}" (ID: "${node.id}")${desc}`);
+    });
+  }
+
+  if (currentFlow.edges.length > 0) {
+    lines.push(`\n  Existing Edges (${currentFlow.edges.length} total):`);
+    currentFlow.edges.forEach(edge => {
+      const label = edge.data?.label ? ` [${edge.data.label}]` : '';
+      lines.push(`    • ${edge.source} → ${edge.target}${label}`);
+    });
+  }
+
+  lines.push("\n🔧 Instructions:");
+  lines.push("Please retry the failed operations using the correct node IDs shown above.");
+  lines.push("For successful operations, no action is needed - they are already complete.");
+
+  return lines.join('\n');
+}
+
+/**
  * Call LLM API with the LLM context, with Groq as primary and Cerebras as fallback
  * Converts our context format to messages format and streams the response
  */

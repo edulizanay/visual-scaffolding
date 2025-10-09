@@ -2,7 +2,8 @@
 // ABOUTME: Covers all 8 tool operations with comprehensive edge cases
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { executeToolCalls, readFlow } from '../server/server.js';
+import { executeToolCalls } from '../server/tools/executor.js';
+import { readFlow } from '../server/server.js';
 import { closeDb } from '../server/db.js';
 
 async function executeTool(toolName, params) {
