@@ -35,7 +35,6 @@ function App() {
     reactFlowInstance,
     visualSettings
   );
-  const zoomLevel = visualSettings.dimensions?.zoom ?? DEFAULT_VISUAL_SETTINGS.dimensions.zoom;
 
   const onInit = useCallback((instance) => {
     reactFlowInstance.current = instance;
@@ -48,11 +47,6 @@ function App() {
   useEffect(() => {
     edgesRef.current = edges;
   }, [edges]);
-
-  useEffect(() => {
-    if (!reactFlowInstance.current) return;
-    reactFlowInstance.current.zoomTo(zoomLevel, { duration: 300 });
-  }, [zoomLevel]);
 
   useEffect(() => {
     if (isLoading) return;

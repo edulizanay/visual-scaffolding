@@ -78,7 +78,6 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSetti
   const animationTimerRef = useRef(null);
   const settings = visualSettings || DEFAULT_VISUAL_SETTINGS;
   const fitViewPadding = settings.dimensions?.fitViewPadding ?? DEFAULT_VISUAL_SETTINGS.dimensions.fitViewPadding;
-  const zoomLevel = settings.dimensions?.zoom ?? DEFAULT_VISUAL_SETTINGS.dimensions.zoom;
 
   const applyLayoutWithAnimation = useCallback((currentNodes, currentEdges) => {
     // Stop any existing animation
@@ -135,12 +134,11 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSetti
         // Center viewport
         setTimeout(() => {
           reactFlowInstance.current?.fitView({ duration: 400, padding: fitViewPadding });
-          reactFlowInstance.current?.zoomTo(zoomLevel, { duration: 0 });
         }, 50);
       }
     });
 
-  }, [setNodes, setEdges, reactFlowInstance, visualSettings, fitViewPadding, zoomLevel]);
+  }, [setNodes, setEdges, reactFlowInstance, visualSettings, fitViewPadding]);
 
   // Cleanup animation on unmount
   useEffect(() => {

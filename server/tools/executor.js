@@ -453,12 +453,6 @@ async function executeChangeDimensions(params, flow, settings) {
       nextSettings.dimensions.node.overrides[nodeId] = updatedOverride;
       break;
     }
-    case 'zoom': {
-      const currentZoom = nextSettings.dimensions.zoom ?? DEFAULT_VISUAL_SETTINGS.dimensions.zoom;
-      const updatedZoom = clamp(adjustByPercentage(currentZoom, direction), 0.2, 2.5);
-      nextSettings.dimensions.zoom = updatedZoom;
-      break;
-    }
     case 'layout_spacing': {
       const dagreSpacing = nextSettings.dimensions.dagre || { ...DEFAULT_VISUAL_SETTINGS.dimensions.dagre };
       if (affectsHorizontal) {

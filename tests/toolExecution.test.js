@@ -283,25 +283,4 @@ describe('executeTool - changeDimensions', () => {
     expect(updated.dimensions.node.overrides[nodeId].height).toBe(expectedHeight);
   });
 
-  it('should clamp zoom between allowed range', async () => {
-    for (let i = 0; i < 25; i++) {
-      await executeTool('changeDimensions', {
-        target: 'zoom',
-        direction: 'decrease',
-      });
-    }
-
-    let settings = getVisualSettings();
-    expect(settings.dimensions.zoom).toBeGreaterThanOrEqual(0.2);
-
-    for (let i = 0; i < 25; i++) {
-      await executeTool('changeDimensions', {
-        target: 'zoom',
-        direction: 'increase',
-      });
-    }
-
-    settings = getVisualSettings();
-    expect(settings.dimensions.zoom).toBeLessThanOrEqual(2.5);
-  });
 });

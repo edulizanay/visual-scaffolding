@@ -102,7 +102,7 @@ Located in `server/llm/tools.js`. Defined in OpenAI function calling format with
 
 9. **changeVisuals** - Update background or node colors (global or per-node overrides)
 
-10. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by ±10%
+10. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by a fixed percentage
 
 **Key Features:**
 - `addNode` accepts label as `parentNodeId` (auto-matches to node)

@@ -194,14 +194,14 @@ export const toolDefinitions = [
   },
   {
     name: 'changeDimensions',
-    description: 'Adjusts node sizes, zoom level, or dagre layout spacing by +/-10% increments.',
+    description: 'Adjusts node sizes or dagre layout spacing by +/-10% increments.',
     parameters: {
       type: 'object',
       properties: {
         target: {
           type: 'string',
-          enum: ['node', 'all_nodes', 'zoom', 'layout_spacing'],
-          description: 'What to resize: a specific node, all nodes, overall zoom, or layout spacing.',
+          enum: ['node', 'all_nodes', 'layout_spacing'],
+          description: 'What to resize: a specific node, all nodes, or layout spacing.',
         },
         nodeId: {
           type: 'string',

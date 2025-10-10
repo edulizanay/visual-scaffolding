@@ -15,12 +15,11 @@ export const DEFAULT_VISUAL_SETTINGS = {
     node: {
       default: {
         width: 172,
-        height: 36,
-        borderRadius: 3,
+        height: 76,
+        borderRadius: 4,
       },
       overrides: {},
     },
-    zoom: 1,
     dagre: {
       horizontal: 50,
       vertical: 50,
