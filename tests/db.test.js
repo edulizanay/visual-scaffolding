@@ -7,6 +7,8 @@ import {
   closeDb,
   getFlow,
   saveFlow,
+  getVisualSettings,
+  saveVisualSettings,
   addConversationMessage,
   getConversationHistory,
   clearConversationHistory,
@@ -17,6 +19,7 @@ import {
   clearUndoHistory,
   initializeUndoHistory
 } from '../server/db.js';
+import { DEFAULT_VISUAL_SETTINGS } from '../shared/visualSettings.js';
 
 beforeEach(() => {
   // Use in-memory database for tests
@@ -42,6 +45,7 @@ describe('Database Connection', () => {
     expect(tableNames).toContain('conversation_history');
     expect(tableNames).toContain('undo_history');
     expect(tableNames).toContain('undo_state');
+    expect(tableNames).toContain('visual_settings');
   });
 
   it('should initialize undo_state table', () => {
@@ -135,6 +139,53 @@ describe('Flow Operations', () => {
     const retrieved = getFlow();
 
     expect(retrieved).toEqual(complexFlow);
+  });
+});
+
+describe('Visual Settings Operations', () => {
+  it('should return default settings when none stored', () => {
+    const settings = getVisualSettings();
+    expect(settings).toEqual(DEFAULT_VISUAL_SETTINGS);
+  });
+
+  it('should persist updated settings', () => {
+    const updated = {
+      ...DEFAULT_VISUAL_SETTINGS,
+      colors: {
+        ...DEFAULT_VISUAL_SETTINGS.colors,
+        background: '#123456',
+      },
+    };
+
+    saveVisualSettings(updated);
+
+    const settings = getVisualSettings();
+    expect(settings.colors.background).toBe('#123456');
+    expect(settings.colors.allNodes).toEqual(DEFAULT_VISUAL_SETTINGS.colors.allNodes);
+  });
+
+  it('should overwrite previous settings on save', () => {
+    const first = {
+      ...DEFAULT_VISUAL_SETTINGS,
+      dimensions: {
+        ...DEFAULT_VISUAL_SETTINGS.dimensions,
+        zoom: 1.2,
+      },
+    };
+
+    const second = {
+      ...DEFAULT_VISUAL_SETTINGS,
+      dimensions: {
+        ...DEFAULT_VISUAL_SETTINGS.dimensions,
+        zoom: 0.8,
+      },
+    };
+
+    saveVisualSettings(first);
+    saveVisualSettings(second);
+
+    const settings = getVisualSettings();
+    expect(settings.dimensions.zoom).toBe(0.8);
   });
 });
 

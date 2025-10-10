@@ -15,6 +15,7 @@ import Edge from './Edge';
 import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api';
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
+import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -24,21 +25,50 @@ function App() {
   const [toast, setToast] = useState(null); // 'undo' | 'redo' | null
   const [isBackendProcessing, setIsBackendProcessing] = useState(false);
   const reactFlowInstance = useRef(null);
+  const nodesRef = useRef([]);
+  const edgesRef = useRef([]);
+  const [visualSettings, setVisualSettings] = useState(DEFAULT_VISUAL_SETTINGS);
 
-  const { applyLayoutWithAnimation, isAnimating, FIT_VIEW_PADDING, getAllDescendants } = useFlowLayout(
+  const { applyLayoutWithAnimation, isAnimating, fitViewPadding, getAllDescendants } = useFlowLayout(
     setNodes,
     setEdges,
-    reactFlowInstance
+    reactFlowInstance,
+    visualSettings
   );
+  const zoomLevel = visualSettings.dimensions?.zoom ?? DEFAULT_VISUAL_SETTINGS.dimensions.zoom;
 
   const onInit = useCallback((instance) => {
     reactFlowInstance.current = instance;
   }, []);
 
   useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
+
+  useEffect(() => {
+    if (!reactFlowInstance.current) return;
+    reactFlowInstance.current.zoomTo(zoomLevel, { duration: 300 });
+  }, [zoomLevel]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!reactFlowInstance.current) return;
+    const hasElements = nodesRef.current.length > 0 || edgesRef.current.length > 0;
+    if (!hasElements) return;
+
+    applyLayoutWithAnimation(nodesRef.current, edgesRef.current);
+  }, [visualSettings, applyLayoutWithAnimation, isLoading]);
+
+  useEffect(() => {
     const fetchFlow = async () => {
       try {
         const flow = await loadFlow();
+        const settings = mergeWithDefaultVisualSettings(flow.settings || {});
+        setVisualSettings(settings);
 
         const nodesWithPosition = flow.nodes.map(node => ({
           ...node,
@@ -99,24 +129,60 @@ function App() {
     );
   }, [setEdges]);
 
-  const nodesWithHandlers = useMemo(() =>
-    nodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onLabelChange: updateNodeLabel,
-        onDescriptionChange: updateNodeDescription,
-      },
-      style: {
-        ...(node.style || {}),
-        ...(node.data.collapsed ? {
-          borderWidth: '2px',
-          borderColor: 'rgba(255, 255, 255, 0.4)',
-        } : {}),
-      },
-    })),
-    [nodes, updateNodeLabel, updateNodeDescription]
-  );
+  const nodesWithHandlers = useMemo(() => {
+    const defaultNode = visualSettings.dimensions?.node?.default ?? DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
+    const overrides = visualSettings.dimensions?.node?.overrides ?? {};
+    const globalColors = visualSettings.colors?.allNodes ?? DEFAULT_VISUAL_SETTINGS.colors.allNodes;
+    const perNodeColors = visualSettings.colors?.perNode ?? {};
+
+    return nodes.map((node) => {
+      const override = overrides[node.id] || {};
+      const width = override.width ?? defaultNode.width;
+      const height = override.height ?? defaultNode.height;
+
+      const nodeColorOverrides = perNodeColors[node.id] || {};
+      const background = nodeColorOverrides.background ?? globalColors.background;
+      const border = nodeColorOverrides.border ?? globalColors.border;
+      const text = nodeColorOverrides.text ?? globalColors.text;
+
+      const baseStyle = {
+        background,
+        border: `1px solid ${border}`,
+        color: text,
+        width,
+        minWidth: width,
+        height,
+        minHeight: height,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '8px',
+        boxSizing: 'border-box',
+        borderRadius: '12px',
+      };
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          onLabelChange: updateNodeLabel,
+          onDescriptionChange: updateNodeDescription,
+          textColor: text,
+        },
+        style: {
+          ...(node.style || {}),
+          ...baseStyle,
+          ...(node.data.collapsed
+            ? {
+                borderWidth: '2px',
+                borderColor: 'rgba(255, 255, 255, 0.4)',
+              }
+            : {}),
+        },
+      };
+    });
+  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings]);
 
   const edgesWithHandlers = useMemo(() =>
     edges.map((edge) => ({
@@ -210,6 +276,9 @@ function App() {
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
     if (!updatedFlow) return;
+
+    const mergedSettings = mergeWithDefaultVisualSettings(updatedFlow.settings || {});
+    setVisualSettings(mergedSettings);
 
     const nodesWithPosition = updatedFlow.nodes.map(node => ({
       ...node,
@@ -309,9 +378,9 @@ function App() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode="dark"
-        style={{ background: 'linear-gradient(180deg, #0f0a1a 0%, #1a0f2e 100%)' }}
+        style={{ background: visualSettings.colors?.background ?? DEFAULT_VISUAL_SETTINGS.colors.background }}
         fitView
-        fitViewOptions={{ padding: FIT_VIEW_PADDING }}
+        fitViewOptions={{ padding: fitViewPadding }}
         proOptions={{ hideAttribution: true }}
       >
       </ReactFlow>

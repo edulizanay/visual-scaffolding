@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { getFlow } from '../db.js';
+import { getFlow, getVisualSettings } from '../db.js';
 import { getHistory } from '../conversationService.js';
 import { toolDefinitions } from './tools.js';
 import Groq from 'groq-sdk';
@@ -108,12 +108,14 @@ async function loadFlow() {
  */
 export async function buildLLMContext(userMessage) {
   const flowState = await loadFlow();
+  const visualSettings = await getVisualSettings();
   const conversationHistory = await getHistory(6); // Last 6 interactions
 
   return {
     systemPrompt: SYSTEM_PROMPT,
     userMessage,
-    flowState,
+    flowState: { ...flowState, settings: visualSettings },
+    visualSettings,
     conversationHistory,
     availableTools: toolDefinitions,
   };

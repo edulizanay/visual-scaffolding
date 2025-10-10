@@ -4,10 +4,7 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 import { timer } from 'd3-timer';
 import { getOutgoers } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
-
-const nodeWidth = 172;
-const nodeHeight = 36;
-const FIT_VIEW_PADDING = 0.25;
+import { DEFAULT_VISUAL_SETTINGS } from '../../shared/visualSettings.js';
 
 export const getAllDescendants = (nodeId, nodes, edges) => {
   const node = nodes.find(n => n.id === nodeId);
@@ -23,20 +20,27 @@ export const getAllDescendants = (nodeId, nodes, edges) => {
   return descendants;
 };
 
-export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
+export const getLayoutedElements = (nodes, edges, visualSettings, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
   const isHorizontal = direction === 'LR';
+  const settings = visualSettings || DEFAULT_VISUAL_SETTINGS;
+  const dagreSpacing = settings.dimensions?.dagre || DEFAULT_VISUAL_SETTINGS.dimensions.dagre;
+  const defaultNode = settings.dimensions?.node?.default || DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
+  const overrides = settings.dimensions?.node?.overrides || {};
 
   dagreGraph.setGraph({
     rankdir: direction,
-    ranksep: 50,
-    nodesep: 50
+    ranksep: dagreSpacing.horizontal ?? DEFAULT_VISUAL_SETTINGS.dimensions.dagre.horizontal,
+    nodesep: dagreSpacing.vertical ?? DEFAULT_VISUAL_SETTINGS.dimensions.dagre.vertical,
   });
 
   const visibleNodes = nodes.filter(node => !node.hidden);
 
   visibleNodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    const override = overrides[node.id] || {};
+    const width = override.width ?? defaultNode.width;
+    const height = override.height ?? defaultNode.height;
+    dagreGraph.setNode(node.id, { width, height });
   });
 
   edges.forEach((edge) => {
@@ -49,13 +53,19 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
     if (node.hidden) return node;
 
     const nodeWithPosition = dagreGraph.node(node.id);
+    if (!nodeWithPosition) return node;
+
+    const override = overrides[node.id] || {};
+    const width = override.width ?? defaultNode.width;
+    const height = override.height ?? defaultNode.height;
+
     return {
       ...node,
       targetPosition: isHorizontal ? 'left' : 'top',
       sourcePosition: isHorizontal ? 'right' : 'bottom',
       position: {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
+        x: nodeWithPosition.x - width / 2,
+        y: nodeWithPosition.y - height / 2,
       },
     };
   });
@@ -63,9 +73,12 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   return { nodes: newNodes, edges };
 };
 
-export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
+export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSettings) {
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef(null);
+  const settings = visualSettings || DEFAULT_VISUAL_SETTINGS;
+  const fitViewPadding = settings.dimensions?.fitViewPadding ?? DEFAULT_VISUAL_SETTINGS.dimensions.fitViewPadding;
+  const zoomLevel = settings.dimensions?.zoom ?? DEFAULT_VISUAL_SETTINGS.dimensions.zoom;
 
   const applyLayoutWithAnimation = useCallback((currentNodes, currentEdges) => {
     // Stop any existing animation
@@ -77,6 +90,7 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       currentNodes,
       currentEdges,
+      visualSettings,
       'LR'
     );
 
@@ -120,12 +134,13 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
 
         // Center viewport
         setTimeout(() => {
-          reactFlowInstance.current?.fitView({ duration: 400, padding: FIT_VIEW_PADDING });
+          reactFlowInstance.current?.fitView({ duration: 400, padding: fitViewPadding });
+          reactFlowInstance.current?.zoomTo(zoomLevel, { duration: 0 });
         }, 50);
       }
     });
 
-  }, [setNodes, setEdges, reactFlowInstance]);
+  }, [setNodes, setEdges, reactFlowInstance, visualSettings, fitViewPadding, zoomLevel]);
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -140,7 +155,7 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
   return {
     applyLayoutWithAnimation,
     isAnimating,
-    FIT_VIEW_PADDING,
+    fitViewPadding,
     getAllDescendants,
     getLayoutedElements,
   };
