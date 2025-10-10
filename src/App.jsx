@@ -139,6 +139,7 @@ function App() {
       const override = overrides[node.id] || {};
       const width = override.width ?? defaultNode.width;
       const height = override.height ?? defaultNode.height;
+      const borderRadius = override.borderRadius ?? defaultNode.borderRadius;
 
       const nodeColorOverrides = perNodeColors[node.id] || {};
       const background = nodeColorOverrides.background ?? globalColors.background;
@@ -159,7 +160,7 @@ function App() {
         justifyContent: 'center',
         padding: '8px',
         boxSizing: 'border-box',
-        borderRadius: '12px',
+        borderRadius: `${borderRadius}px`,
       };
 
       return {

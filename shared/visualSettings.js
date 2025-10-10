@@ -16,6 +16,7 @@ export const DEFAULT_VISUAL_SETTINGS = {
       default: {
         width: 172,
         height: 36,
+        borderRadius: 3,
       },
       overrides: {},
     },
