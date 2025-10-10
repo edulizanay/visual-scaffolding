@@ -49,15 +49,6 @@ function App() {
   }, [edges]);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!reactFlowInstance.current) return;
-    const hasElements = nodesRef.current.length > 0 || edgesRef.current.length > 0;
-    if (!hasElements) return;
-
-    applyLayoutWithAnimation(nodesRef.current, edgesRef.current);
-  }, [visualSettings.dimensions, applyLayoutWithAnimation, isLoading]);
-
-  useEffect(() => {
     const fetchFlow = async () => {
       try {
         const flow = await loadFlow();
