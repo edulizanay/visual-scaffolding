@@ -1,3 +1,6 @@
+// ABOUTME: Default visual settings for canvas, nodes, and layout dimensions
+// ABOUTME: Includes deep merge utility to combine user overrides with defaults
+
 export const DEFAULT_VISUAL_SETTINGS = {
   colors: {
     background: 'linear-gradient(180deg, #0f0a1a 0%, #1a0f2e 100%)',

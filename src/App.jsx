@@ -61,7 +61,7 @@ function App() {
     if (!hasElements) return;
 
     applyLayoutWithAnimation(nodesRef.current, edgesRef.current);
-  }, [visualSettings, applyLayoutWithAnimation, isLoading]);
+  }, [visualSettings.dimensions, applyLayoutWithAnimation, isLoading]);
 
   useEffect(() => {
     const fetchFlow = async () => {
