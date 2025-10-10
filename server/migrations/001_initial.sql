@@ -41,3 +41,14 @@ CREATE TABLE IF NOT EXISTS undo_state (
 
 -- Initialize undo_state with default row
 INSERT OR IGNORE INTO undo_state (id, current_index) VALUES (1, -1);
+
+-- Visual settings: Stores persisted styling & layout configuration
+CREATE TABLE IF NOT EXISTS visual_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data JSON NOT NULL DEFAULT '{}',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Initialize visual_settings with empty overrides
+INSERT OR IGNORE INTO visual_settings (id, data) VALUES (1, '{}');

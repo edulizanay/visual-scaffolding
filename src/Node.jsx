@@ -8,6 +8,7 @@ const CustomNode = ({ data, id }) => {
   const [editLabelValue, setEditLabelValue] = useState(data.label);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editDescriptionValue, setEditDescriptionValue] = useState(data.description || '');
+  const textColor = data.textColor || 'white';
 
   const handleLabelDoubleClick = useCallback(() => {
     setIsEditingLabel(true);
@@ -94,7 +95,7 @@ const CustomNode = ({ data, id }) => {
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'white',
+            color: textColor,
             padding: 0,
             width: '100%',
             textAlign: 'center',
@@ -114,7 +115,7 @@ const CustomNode = ({ data, id }) => {
             opacity: isPlaceholder ? 0.4 : 0.6,
             marginTop: '4px',
             cursor: 'text',
-            color: 'white',
+            color: textColor,
           }}
         >
           {descriptionText}

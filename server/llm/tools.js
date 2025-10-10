@@ -164,6 +164,63 @@ export const toolDefinitions = [
       properties: {},
     },
   },
+  {
+    name: 'changeVisuals',
+    description: 'Updates the visual styling of the canvas background or nodes.',
+    parameters: {
+      type: 'object',
+      properties: {
+        target: {
+          type: 'string',
+          enum: ['background', 'all_nodes', 'node'],
+          description: 'Which element to update: the canvas background, all nodes, or a specific node.',
+        },
+        nodeId: {
+          type: 'string',
+          description: 'Required when target is "node". The node ID whose styling should change.',
+        },
+        color: {
+          type: 'string',
+          description: 'CSS color value to apply (hex, rgb/rgba, hsl/hsla, or named color).',
+        },
+        property: {
+          type: 'string',
+          enum: ['background', 'border', 'text'],
+          description: 'Optional: which node color to update. Defaults to background.',
+        },
+      },
+      required: ['target', 'color'],
+    },
+  },
+  {
+    name: 'changeDimensions',
+    description: 'Adjusts node sizes, zoom level, or dagre layout spacing by +/-10% increments.',
+    parameters: {
+      type: 'object',
+      properties: {
+        target: {
+          type: 'string',
+          enum: ['node', 'all_nodes', 'zoom', 'layout_spacing'],
+          description: 'What to resize: a specific node, all nodes, overall zoom, or layout spacing.',
+        },
+        nodeId: {
+          type: 'string',
+          description: 'Required when target is "node". The node ID whose dimensions should change.',
+        },
+        direction: {
+          type: 'string',
+          enum: ['increase', 'decrease'],
+          description: 'Whether to grow (increase) or shrink (decrease) the target by 10%.',
+        },
+        axis: {
+          type: 'string',
+          enum: ['horizontal', 'vertical', 'both'],
+          description: 'Which axis to affect. Defaults to both when omitted.',
+        },
+      },
+      required: ['target', 'direction'],
+    },
+  },
 ];
 
 /**

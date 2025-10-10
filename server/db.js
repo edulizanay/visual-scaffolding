@@ -4,7 +4,8 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, mkdirSync, existsSync } from 'fs';
+import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,6 +19,15 @@ let db = null;
 export function getDb() {
   if (!db) {
     const dbPath = process.env.DB_PATH || join(__dirname, 'data', 'flow.db');
+    if (dbPath !== ':memory:' && !dbPath.startsWith(__dirname)) {
+      throw new Error('DB_PATH must reside within the server directory or use :memory:');
+    }
+    if (dbPath !== ':memory:') {
+      const dirPath = dirname(dbPath);
+      if (!existsSync(dirPath) && dirPath.startsWith(__dirname)) {
+        mkdirSync(dirPath, { recursive: true });
+      }
+    }
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL'); // Better concurrency
     db.pragma('foreign_keys = ON');
@@ -45,12 +55,30 @@ export function closeDb() {
  * Get flow by user_id and name
  * Returns default empty flow if not found
  */
+function sanitizeFlowData(flowData) {
+  if (!flowData || typeof flowData !== 'object') {
+    return { nodes: [], edges: [] };
+  }
+
+  const { nodes = [], edges = [] } = flowData;
+  return { nodes, edges };
+}
+
 export function getFlow(userId = 'default', name = 'main') {
   const row = getDb()
     .prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
     .get(userId, name);
 
-  return row ? JSON.parse(row.data) : { nodes: [], edges: [] };
+  if (!row) {
+    return { nodes: [], edges: [] };
+  }
+
+  try {
+    const parsed = JSON.parse(row.data);
+    return sanitizeFlowData(parsed);
+  } catch (error) {
+    return { nodes: [], edges: [] };
+  }
 }
 
 /**
@@ -58,7 +86,8 @@ export function getFlow(userId = 'default', name = 'main') {
  * Creates new flow or updates existing one
  */
 export function saveFlow(flowData, userId = 'default', name = 'main') {
-  const data = JSON.stringify(flowData);
+  const sanitized = sanitizeFlowData(flowData);
+  const data = JSON.stringify(sanitized);
 
   getDb()
     .prepare(`
@@ -79,6 +108,42 @@ export function getFlowId(userId = 'default', name = 'main') {
     .get(userId, name);
 
   return row ? row.id : null;
+}
+
+// ==================== Visual Settings Operations ====================
+
+export function getVisualSettings() {
+  const row = getDb()
+    .prepare('SELECT data FROM visual_settings WHERE id = 1')
+    .get();
+
+  if (!row) {
+    return DEFAULT_VISUAL_SETTINGS;
+  }
+
+  try {
+    const parsed = JSON.parse(row.data || '{}');
+    return mergeWithDefaultVisualSettings(parsed);
+  } catch (error) {
+    return DEFAULT_VISUAL_SETTINGS;
+  }
+}
+
+export function saveVisualSettings(settings) {
+  const payload = settings || DEFAULT_VISUAL_SETTINGS;
+  const data = JSON.stringify(payload);
+
+  getDb()
+    .prepare(`
+      INSERT INTO visual_settings (id, data, updated_at)
+      VALUES (1, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET
+        data = excluded.data,
+        updated_at = CURRENT_TIMESTAMP
+    `)
+    .run(data);
+
+  return payload;
 }
 
 // ==================== Conversation Operations ====================
