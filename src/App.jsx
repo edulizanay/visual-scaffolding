@@ -219,7 +219,7 @@ function App() {
     [edges, updateEdgeLabel]
   );
 
-  const nodeTypes = useMemo(() => ({ default: Node }), []);
+  const nodeTypes = useMemo(() => ({ default: Node, group: Node }), []);
   const edgeTypes = useMemo(() => ({ smoothstep: Edge }), []);
 
   const onConnect = useCallback(
