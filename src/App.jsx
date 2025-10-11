@@ -160,7 +160,9 @@ function App() {
 
       const baseStyle = {
         background,
-        border: `1px solid ${border}`,
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: border,
         color: text,
         width,
         minWidth: width,
@@ -444,7 +446,7 @@ function App() {
     const groupNode = {
       id: groupId,
       type: 'group',
-      isExpanded: true,
+      isExpanded: false, // Start collapsed - group visible, children hidden
       position: { x: avgX, y: avgY - 100 }, // Position above selected nodes
       data: {
         label: groupLabel,
@@ -464,15 +466,15 @@ function App() {
 
     const finalNodes = [...updatedNodes, groupNode];
 
-    // Set initial visibility: expanded means hide group, show children
+    // Set initial visibility: collapsed means show group, hide children
     const finalNodesWithVisibility = finalNodes.map(n => {
       if (n.id === groupId) {
-        // This is the group node - hide it since we're expanded
-        return { ...n, hidden: true };
+        // This is the group node - show it since we're collapsed
+        return { ...n, hidden: false };
       }
       if (selectedNodeIds.includes(n.id)) {
-        // This is a child - show it since we're expanded
-        return { ...n, hidden: false };
+        // This is a child - hide it since we're collapsed
+        return { ...n, hidden: true };
       }
       return n;
     });
