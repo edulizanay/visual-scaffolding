@@ -1,6 +1,9 @@
 // ABOUTME: Unified group manager handling creation, collapse, visibility, and halos
 
+import { createElement, useState } from 'react';
+
 const GROUP_EDGE_PREFIX = 'group-edge-';
+export const HALO_PADDING = 24;
 
 const defaultEdgeFactory = ({ id, source, target }) => ({
   id,
@@ -140,13 +143,11 @@ export const applyGroupVisibility = (nodes, edges) => {
 
     if (node.type === 'group') {
       const isExpanded = node.isExpanded !== false;
-      const wrapperHidden = hiddenByAncestor || isExpanded === true;
 
       return {
         ...node,
         groupHidden: hiddenByAncestor,
-        wrapperHidden,
-        hidden: wrapperHidden || (previouslyHidden && !previousGroupHidden),
+        hidden: (hiddenByAncestor || isExpanded) || (previouslyHidden && !previousGroupHidden),
       };
     }
 
@@ -163,23 +164,51 @@ export const applyGroupVisibility = (nodes, edges) => {
   }, new Map());
 
   const nextEdges = edges.map((edge) => {
-    const sourceHidden = nodeHiddenLookup.get(edge.source);
-    const targetHidden = nodeHiddenLookup.get(edge.target);
+    const sourceInfo = nodeHiddenLookup.get(edge.source);
+    const targetInfo = nodeHiddenLookup.get(edge.target);
+    const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
+    const effectiveHidden = (sourceInfo?.hidden ?? false) || (targetInfo?.hidden ?? false);
 
-    const hiddenByGroup =
-      (sourceHidden?.groupHidden ?? false) || (targetHidden?.groupHidden ?? false);
-    const hiddenByNode =
-      (sourceHidden?.hidden ?? false) || (targetHidden?.hidden ?? false);
-    const effectiveHidden = hiddenByGroup || hiddenByNode;
-    const previousGroupHidden = edge.groupHidden ?? false;
-    const otherHidden = edge.hidden && !previousGroupHidden;
+    const isSynthetic = edge.data?.isSyntheticGroupEdge === true;
 
-    return {
+    // If either endpoint node is hidden, hide the edge. Simple and correct.
+    const result = {
       ...edge,
-      groupHidden: effectiveHidden,
-      hidden: effectiveHidden || otherHidden,
+      groupHidden: effectiveGroupHidden,
+      hidden: effectiveHidden,
     };
+
+    // Debug synthetic edges
+    if (isSynthetic) {
+      console.log('[DEBUG] Synthetic edge:', {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHidden: sourceInfo?.hidden,
+        targetHidden: targetInfo?.hidden,
+        effectiveHidden,
+        finalHidden: result.hidden,
+      });
+    }
+
+    return result;
   });
+
+  // Debug group nodes
+  const groupNodes = nextNodes.filter(n => n.type === 'group');
+  if (groupNodes.length > 0) {
+    console.log('[DEBUG] Group nodes:', groupNodes.map(g => ({
+      id: g.id,
+      isExpanded: g.isExpanded,
+      hidden: g.hidden,
+      groupHidden: g.groupHidden,
+    })));
+  }
+
+  const syntheticEdges = nextEdges.filter(e => e.data?.isSyntheticGroupEdge);
+  if (syntheticEdges.length > 0) {
+    console.log('[DEBUG] Total synthetic edges:', syntheticEdges.length, 'hidden:', syntheticEdges.filter(e => e.hidden).length);
+  }
 
   return { nodes: nextNodes, edges: nextEdges };
 };
@@ -386,4 +415,59 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, padding = 16) =>
 
 export const constants = {
   GROUP_EDGE_PREFIX,
+};
+
+export const GroupHaloOverlay = ({ halos, viewport, onCollapse }) => {
+  const [hoveredId, setHoveredId] = useState(null);
+
+  if (!halos || halos.length === 0) {
+    return null;
+  }
+
+  const { x = 0, y = 0, zoom = 1 } = viewport || {};
+
+  const sortedHalos = [...halos].sort((a, b) => {
+    const areaA = a.bounds.width * a.bounds.height;
+    const areaB = b.bounds.width * b.bounds.height;
+    return areaA - areaB;
+  });
+
+  return createElement(
+    'svg',
+    {
+      style: { position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1500 },
+      width: '100%',
+      height: '100%'
+    },
+    sortedHalos.map((halo) => {
+      const screenX = halo.bounds.x * zoom + x;
+      const screenY = halo.bounds.y * zoom + y;
+      const screenWidth = halo.bounds.width * zoom;
+      const screenHeight = halo.bounds.height * zoom;
+      const isHovered = hoveredId === halo.groupId;
+
+      return createElement('rect', {
+        key: halo.groupId,
+        x: screenX,
+        y: screenY,
+        width: screenWidth,
+        height: screenHeight,
+        rx: 18,
+        ry: 18,
+        fill: 'none',
+        stroke: isHovered ? 'rgba(129, 140, 248, 0.7)' : 'rgba(99, 102, 241, 0.45)',
+        strokeWidth: isHovered ? 2 : 1.5,
+        pointerEvents: 'stroke',
+        onMouseEnter: () => setHoveredId(halo.groupId),
+        onMouseLeave: () => setHoveredId((current) => (current === halo.groupId ? null : current)),
+        onDoubleClick: (event) => {
+          event.stopPropagation();
+          if (event.metaKey || event.ctrlKey) {
+            return;
+          }
+          onCollapse?.(halo.groupId);
+        }
+      });
+    })
+  );
 };

@@ -16,65 +16,6 @@ import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api'
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
-
-const HALO_PADDING = 24;
-
-const GroupHaloOverlay = ({ halos, viewport, onCollapse }) => {
-  const [hoveredId, setHoveredId] = useState(null);
-
-  if (!halos || halos.length === 0) {
-    return null;
-  }
-
-  const { x = 0, y = 0, zoom = 1 } = viewport || {};
-
-  const sortedHalos = [...halos].sort((a, b) => {
-    const areaA = a.bounds.width * a.bounds.height;
-    const areaB = b.bounds.width * b.bounds.height;
-    return areaA - areaB;
-  });
-
-  return (
-    <svg
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1500 }}
-      width="100%"
-      height="100%"
-    >
-      {sortedHalos.map((halo) => {
-        const screenX = halo.bounds.x * zoom + x;
-        const screenY = halo.bounds.y * zoom + y;
-        const screenWidth = halo.bounds.width * zoom;
-        const screenHeight = halo.bounds.height * zoom;
-        const isHovered = hoveredId === halo.groupId;
-
-        return (
-          <rect
-            key={halo.groupId}
-            x={screenX}
-            y={screenY}
-            width={screenWidth}
-            height={screenHeight}
-            rx={18}
-            ry={18}
-            fill="none"
-            stroke={isHovered ? 'rgba(129, 140, 248, 0.7)' : 'rgba(99, 102, 241, 0.45)'}
-            strokeWidth={isHovered ? 2 : 1.5}
-            pointerEvents="stroke"
-            onMouseEnter={() => setHoveredId(halo.groupId)}
-            onMouseLeave={() => setHoveredId((current) => (current === halo.groupId ? null : current))}
-            onDoubleClick={(event) => {
-              event.stopPropagation();
-              if (event.metaKey || event.ctrlKey) {
-                return;
-              }
-              onCollapse?.(halo.groupId);
-            }}
-          />
-        );
-      })}
-    </svg>
-  );
-};
 import {
   validateGroupMembership,
   getGroupDescendants,
@@ -84,6 +25,8 @@ import {
   collapseSubtreeByHandles,
   addChildNode,
   getExpandedGroupHalos,
+  GroupHaloOverlay,
+  HALO_PADDING,
 } from './utils/groupUtils.js';
 
 function App() {
@@ -299,17 +242,28 @@ function App() {
     });
   }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds, getNodeDimensions]);
 
-  const edgesWithHandlers = useMemo(() =>
-    edges.map((edge) => ({
+  const edgesWithHandlers = useMemo(() => {
+    const syntheticEdges = edges.filter(e => e.data?.isSyntheticGroupEdge);
+    const visibleSynthetic = syntheticEdges.filter(e => !e.hidden);
+
+    if (syntheticEdges.length > 0) {
+      console.log('[DEBUG APP] Synthetic edges in React Flow:', {
+        total: syntheticEdges.length,
+        visible: visibleSynthetic.length,
+        hidden: syntheticEdges.filter(e => e.hidden).length,
+        edges: syntheticEdges.map(e => ({ id: e.id, hidden: e.hidden }))
+      });
+    }
+
+    return edges.map((edge) => ({
       ...edge,
       type: 'smoothstep',
       data: {
         ...edge.data,
         onLabelChange: updateEdgeLabel,
       },
-    })),
-    [edges, updateEdgeLabel]
-  );
+    }));
+  }, [edges, updateEdgeLabel]);
 
   const nodeTypes = useMemo(() => ({ default: Node, group: Node }), []);
   const edgeTypes = useMemo(() => ({ smoothstep: Edge }), []);
@@ -481,7 +435,7 @@ function App() {
     }
   }, [handleFlowUpdate, updateHistoryStatus]);
 
-  const createGroup = useCallback(() => {
+  const handleCreateGroup = useCallback(() => {
     if (selectedNodeIds.length < 2) {
       alert('Please select at least 2 nodes to create a group');
       return;
@@ -575,13 +529,13 @@ function App() {
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
         // Cmd+G: Group
         e.preventDefault();
-        createGroup();
+        handleCreateGroup();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, createGroup, ungroupNodes]);
+  }, [handleUndo, handleRedo, handleCreateGroup, ungroupNodes]);
 
   useEffect(() => {
     updateHistoryStatus();

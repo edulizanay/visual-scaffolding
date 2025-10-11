@@ -45,6 +45,22 @@ export const getLayoutedElements = (nodes, edges, visualSettings, direction = 'L
   });
 
   const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
+
+  const syntheticEdges = edges.filter(e => e.data?.isSyntheticGroupEdge);
+  const skippedSynthetic = syntheticEdges.filter(e =>
+    !visibleNodeIds.has(e.source) || !visibleNodeIds.has(e.target)
+  );
+
+  if (skippedSynthetic.length > 0) {
+    console.log('[DEBUG DAGRE] Skipping synthetic edges:', skippedSynthetic.map(e => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceVisible: visibleNodeIds.has(e.source),
+      targetVisible: visibleNodeIds.has(e.target),
+    })));
+  }
+
   edges.forEach((edge) => {
     if (visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)) {
       dagreGraph.setEdge(edge.source, edge.target);
