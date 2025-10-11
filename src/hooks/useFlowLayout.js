@@ -254,5 +254,9 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSetti
     fitViewPadding,
     getAllDescendants,
     getLayoutedElements,
+    getAllDescendantsByGroup,
+    validateGroupMembership,
+    getAffectedNodesForCollapse,
+    getAffectedEdgesForCollapse,
   };
 }

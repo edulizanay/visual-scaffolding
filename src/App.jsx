@@ -30,7 +30,13 @@ function App() {
   const [visualSettings, setVisualSettings] = useState(DEFAULT_VISUAL_SETTINGS);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
 
-  const { applyLayoutWithAnimation, isAnimating, fitViewPadding, getAllDescendants } = useFlowLayout(
+  const {
+    applyLayoutWithAnimation,
+    isAnimating,
+    fitViewPadding,
+    getAllDescendants,
+    validateGroupMembership,
+  } = useFlowLayout(
     setNodes,
     setEdges,
     reactFlowInstance,
@@ -348,6 +354,63 @@ function App() {
     }
   }, [handleFlowUpdate, updateHistoryStatus]);
 
+  const createGroup = useCallback(() => {
+    if (selectedNodeIds.length < 2) {
+      alert('Please select at least 2 nodes to create a group');
+      return;
+    }
+
+    // Validate group membership
+    const validation = validateGroupMembership(selectedNodeIds, nodes);
+    if (!validation.valid) {
+      alert(`Cannot create group: ${validation.error}`);
+      return;
+    }
+
+    // Prompt for group label
+    const groupLabel = prompt('Enter group name:');
+    if (!groupLabel) return; // User cancelled
+
+    // Generate group node ID
+    const groupId = `group-${Date.now()}`;
+
+    // Create group node at average position of selected nodes
+    const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+    const avgX = selectedNodes.reduce((sum, n) => sum + n.position.x, 0) / selectedNodes.length;
+    const avgY = selectedNodes.reduce((sum, n) => sum + n.position.y, 0) / selectedNodes.length;
+
+    const groupNode = {
+      id: groupId,
+      type: 'group',
+      isExpanded: true,
+      position: { x: avgX, y: avgY - 100 }, // Position above selected nodes
+      data: {
+        label: groupLabel,
+        onLabelChange: updateNodeLabel,
+        onDescriptionChange: updateNodeDescription,
+      },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+    };
+
+    // Update selected nodes with parentGroupId
+    const updatedNodes = nodes.map(n =>
+      selectedNodeIds.includes(n.id)
+        ? { ...n, parentGroupId: groupId }
+        : n
+    );
+
+    const finalNodes = [...updatedNodes, groupNode];
+
+    // Clear selection
+    setSelectedNodeIds([]);
+
+    // Apply layout
+    setTimeout(() => {
+      applyLayoutWithAnimation(finalNodes, edges);
+    }, 0);
+  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, applyLayoutWithAnimation, setSelectedNodeIds]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
@@ -356,12 +419,15 @@ function App() {
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
         e.preventDefault();
         handleRedo();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
+        e.preventDefault();
+        createGroup();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo]);
+  }, [handleUndo, handleRedo, createGroup]);
 
   useEffect(() => {
     updateHistoryStatus();
