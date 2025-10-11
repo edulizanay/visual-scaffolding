@@ -140,6 +140,72 @@ describe('Flow Operations', () => {
 
     expect(retrieved).toEqual(complexFlow);
   });
+
+  it('should save and retrieve nodes with type field', () => {
+    const flowWithTypes = {
+      nodes: [
+        { id: 'node-1', type: 'regular', position: { x: 0, y: 0 }, data: { label: 'Regular Node' } },
+        { id: 'group-1', type: 'group', position: { x: 100, y: 0 }, data: { label: 'Group Node' } },
+      ],
+      edges: [],
+    };
+
+    saveFlow(flowWithTypes);
+    const retrieved = getFlow();
+
+    expect(retrieved.nodes[0].type).toBe('regular');
+    expect(retrieved.nodes[1].type).toBe('group');
+  });
+
+  it('should save and retrieve nodes with parentGroupId field', () => {
+    const flowWithGroups = {
+      nodes: [
+        { id: 'group-1', type: 'group', position: { x: 0, y: 0 }, data: { label: 'Parent Group' } },
+        { id: 'node-1', type: 'regular', parentGroupId: 'group-1', position: { x: 50, y: 50 }, data: { label: 'Child Node' } },
+        { id: 'node-2', type: 'regular', parentGroupId: 'group-1', position: { x: 50, y: 100 }, data: { label: 'Another Child' } },
+      ],
+      edges: [],
+    };
+
+    saveFlow(flowWithGroups);
+    const retrieved = getFlow();
+
+    expect(retrieved.nodes[1].parentGroupId).toBe('group-1');
+    expect(retrieved.nodes[2].parentGroupId).toBe('group-1');
+  });
+
+  it('should save and retrieve nodes with isExpanded field', () => {
+    const flowWithCollapsedGroup = {
+      nodes: [
+        { id: 'group-1', type: 'group', isExpanded: false, position: { x: 0, y: 0 }, data: { label: 'Collapsed Group' } },
+        { id: 'node-1', parentGroupId: 'group-1', hidden: true, position: { x: 50, y: 50 }, data: { label: 'Hidden Child' } },
+      ],
+      edges: [],
+    };
+
+    saveFlow(flowWithCollapsedGroup);
+    const retrieved = getFlow();
+
+    expect(retrieved.nodes[0].isExpanded).toBe(false);
+    expect(retrieved.nodes[1].hidden).toBe(true);
+  });
+
+  it('should handle nested groups correctly', () => {
+    const flowWithNestedGroups = {
+      nodes: [
+        { id: 'group-outer', type: 'group', isExpanded: true, position: { x: 0, y: 0 }, data: { label: 'Outer' } },
+        { id: 'group-inner', type: 'group', isExpanded: true, parentGroupId: 'group-outer', position: { x: 50, y: 50 }, data: { label: 'Inner' } },
+        { id: 'node-1', parentGroupId: 'group-inner', position: { x: 100, y: 100 }, data: { label: 'Deeply Nested' } },
+      ],
+      edges: [],
+    };
+
+    saveFlow(flowWithNestedGroups);
+    const retrieved = getFlow();
+
+    expect(retrieved.nodes[1].parentGroupId).toBe('group-outer');
+    expect(retrieved.nodes[2].parentGroupId).toBe('group-inner');
+  });
 });
 
 describe('Visual Settings Operations', () => {
