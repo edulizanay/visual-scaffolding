@@ -422,9 +422,8 @@ function App() {
       return;
     }
 
-    // Prompt for group label
-    const groupLabel = prompt('Enter group name:');
-    if (!groupLabel) return; // User cancelled
+    // Auto-generate group label
+    const groupLabel = `Group ${Date.now()}`;
 
     // Generate group node ID
     const groupId = `group-${Date.now()}`;
@@ -457,14 +456,46 @@ function App() {
 
     const finalNodes = [...updatedNodes, groupNode];
 
+    // Create group edges to connect group node to external nodes
+    const selectedSet = new Set(selectedNodeIds);
+    const newGroupEdges = [];
+
+    edges.forEach(edge => {
+      const sourceInGroup = selectedSet.has(edge.source);
+      const targetInGroup = selectedSet.has(edge.target);
+
+      // Edge going OUT of group (member → external)
+      if (sourceInGroup && !targetInGroup) {
+        newGroupEdges.push({
+          id: `group-edge-${groupId}-to-${edge.target}-${Date.now()}`,
+          source: groupId,
+          target: edge.target,
+          type: 'smoothstep',
+          data: { onLabelChange: updateEdgeLabel },
+        });
+      }
+      // Edge coming INTO group (external → member)
+      else if (!sourceInGroup && targetInGroup) {
+        newGroupEdges.push({
+          id: `group-edge-${edge.source}-to-${groupId}-${Date.now()}`,
+          source: edge.source,
+          target: groupId,
+          type: 'smoothstep',
+          data: { onLabelChange: updateEdgeLabel },
+        });
+      }
+    });
+
+    const finalEdges = [...edges, ...newGroupEdges];
+
     // Clear selection
     setSelectedNodeIds([]);
 
     // Apply layout
     setTimeout(() => {
-      applyLayoutWithAnimation(finalNodes, edges);
+      applyLayoutWithAnimation(finalNodes, finalEdges);
     }, 0);
-  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, applyLayoutWithAnimation, setSelectedNodeIds]);
+  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation, setSelectedNodeIds]);
 
   const ungroupNodes = useCallback(() => {
     if (selectedNodeIds.length !== 1) {
