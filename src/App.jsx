@@ -247,12 +247,20 @@ function App() {
         // Get all descendant nodes (including nested groups)
         const descendantIds = getAffectedNodesForCollapse(node.id, nodes);
 
-        // Mark descendants as hidden (collapse) or visible (expand)
-        const finalNodes = updatedNodes.map(n =>
-          descendantIds.includes(n.id)
-            ? { ...n, hidden: !isCurrentlyExpanded }
-            : n
-        );
+        const newExpandedState = !isCurrentlyExpanded;
+
+        // Mark descendants and group node with explicit visibility
+        const finalNodes = updatedNodes.map(n => {
+          // Handle descendants: hide when collapsing, show when expanding
+          if (descendantIds.includes(n.id)) {
+            return { ...n, hidden: !newExpandedState };
+          }
+          // Handle group node: show when collapsed, hide when expanded
+          if (n.id === node.id) {
+            return { ...n, hidden: newExpandedState };
+          }
+          return n;
+        });
 
         // Mark affected edges as hidden
         const affectedEdgeIds = getAffectedEdgesForCollapse(descendantIds, edges);
@@ -456,6 +464,19 @@ function App() {
 
     const finalNodes = [...updatedNodes, groupNode];
 
+    // Set initial visibility: expanded means hide group, show children
+    const finalNodesWithVisibility = finalNodes.map(n => {
+      if (n.id === groupId) {
+        // This is the group node - hide it since we're expanded
+        return { ...n, hidden: true };
+      }
+      if (selectedNodeIds.includes(n.id)) {
+        // This is a child - show it since we're expanded
+        return { ...n, hidden: false };
+      }
+      return n;
+    });
+
     // Create group edges to connect group node to external nodes
     const selectedSet = new Set(selectedNodeIds);
     const newGroupEdges = [];
@@ -502,7 +523,7 @@ function App() {
       groupLabel,
       selectedNodeIds,
       newGroupEdges: newGroupEdges.length,
-      finalNodes: finalNodes.length,
+      finalNodes: finalNodesWithVisibility.length,
       finalEdges: finalEdges.length
     });
 
@@ -510,13 +531,13 @@ function App() {
     setSelectedNodeIds([]);
 
     // Set nodes first, then edges after a brief delay to ensure nodes are mounted
-    setNodes(finalNodes);
+    setNodes(finalNodesWithVisibility);
 
     setTimeout(() => {
       setEdges(finalEdges);
       // Then apply layout animation
       setTimeout(() => {
-        applyLayoutWithAnimation(finalNodes, finalEdges);
+        applyLayoutWithAnimation(finalNodesWithVisibility, finalEdges);
       }, 50);
     }, 50);
   }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation, setSelectedNodeIds, setNodes, setEdges]);
