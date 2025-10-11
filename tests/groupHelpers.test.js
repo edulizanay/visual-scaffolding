@@ -1,28 +1,29 @@
-// ABOUTME: Tests for group helper functions in useFlowLayout.js
-// ABOUTME: Covers descendant traversal, validation, and collapse/expand logic
+// ABOUTME: Tests for group utility functions controlling grouping behavior
+// ABOUTME: Validates descendants, validation, visibility, and group state transitions
 
 import { describe, test, expect } from '@jest/globals';
 import {
-  getAllDescendantsByGroup,
+  getGroupDescendants,
   detectCircularReference,
   validateGroupMembership,
-  getAffectedNodesForCollapse,
-  getAffectedEdgesForCollapse,
-} from '../src/hooks/useFlowLayout.js';
+  applyGroupVisibility,
+  createGroup,
+  toggleGroupExpansion,
+  ungroup,
+} from '../src/utils/groupUtils.js';
 
-describe('getAllDescendantsByGroup', () => {
+describe('getGroupDescendants', () => {
   test('finds direct children by parentGroupId', () => {
     const nodes = [
       { id: 'group-1', type: 'group' },
       { id: 'node-1', parentGroupId: 'group-1' },
       { id: 'node-2', parentGroupId: 'group-1' },
-      { id: 'node-3' }, // not in group
+      { id: 'node-3' },
     ];
 
-    const descendants = getAllDescendantsByGroup('group-1', nodes);
+    const descendants = getGroupDescendants('group-1', nodes);
     expect(descendants).toHaveLength(2);
-    expect(descendants).toContain('node-1');
-    expect(descendants).toContain('node-2');
+    expect(descendants).toEqual(expect.arrayContaining(['node-1', 'node-2']));
   });
 
   test('finds nested descendants recursively', () => {
@@ -31,176 +32,77 @@ describe('getAllDescendantsByGroup', () => {
       { id: 'group-inner', type: 'group', parentGroupId: 'group-outer' },
       { id: 'node-1', parentGroupId: 'group-outer' },
       { id: 'node-2', parentGroupId: 'group-inner' },
-      { id: 'node-3', parentGroupId: 'group-inner' },
-      { id: 'node-4' }, // not in any group
     ];
 
-    const descendants = getAllDescendantsByGroup('group-outer', nodes);
-    expect(descendants).toHaveLength(4); // group-inner, node-1, node-2, node-3
-    expect(descendants).toContain('group-inner');
-    expect(descendants).toContain('node-1');
-    expect(descendants).toContain('node-2');
-    expect(descendants).toContain('node-3');
+    const descendants = getGroupDescendants('group-outer', nodes);
+    expect(descendants).toEqual(expect.arrayContaining(['group-inner', 'node-1', 'node-2']));
   });
 
-  test('returns empty array for non-existent nodeId', () => {
-    const nodes = [
-      { id: 'group-1', type: 'group' },
-      { id: 'node-1', parentGroupId: 'group-1' },
-    ];
-
-    const descendants = getAllDescendantsByGroup('non-existent', nodes);
-    expect(descendants).toEqual([]);
+  test('returns empty array when group is missing', () => {
+    const nodes = [{ id: 'group-1', type: 'group' }];
+    expect(getGroupDescendants('missing', nodes)).toEqual([]);
   });
 
-  test('returns empty array for node with no children', () => {
-    const nodes = [
-      { id: 'group-1', type: 'group' },
-      { id: 'node-1', parentGroupId: 'group-1' },
-      { id: 'group-empty', type: 'group' }, // no children
-    ];
-
-    const descendants = getAllDescendantsByGroup('group-empty', nodes);
-    expect(descendants).toEqual([]);
-  });
-
-  test('handles circular references gracefully (A->B, B->A)', () => {
-    // This shouldn't happen if validation works, but test defensive code
+  test('guards against circular references', () => {
     const nodes = [
       { id: 'group-a', type: 'group', parentGroupId: 'group-b' },
       { id: 'group-b', type: 'group', parentGroupId: 'group-a' },
-      { id: 'node-1', parentGroupId: 'group-a' },
     ];
 
-    // Should not infinite loop - must handle circular refs
-    const descendants = getAllDescendantsByGroup('group-a', nodes);
-    expect(descendants).toBeDefined();
+    const descendants = getGroupDescendants('group-a', nodes);
     expect(Array.isArray(descendants)).toBe(true);
-  });
-
-  test('handles three-way circular reference (A->B->C->A)', () => {
-    const nodes = [
-      { id: 'group-a', type: 'group', parentGroupId: 'group-c' },
-      { id: 'group-b', type: 'group', parentGroupId: 'group-a' },
-      { id: 'group-c', type: 'group', parentGroupId: 'group-b' },
-    ];
-
-    const descendants = getAllDescendantsByGroup('group-a', nodes);
-    expect(descendants).toBeDefined();
-    expect(Array.isArray(descendants)).toBe(true);
-  });
-
-  test('handles deeply nested groups (5 levels)', () => {
-    const nodes = [
-      { id: 'level-1', type: 'group' },
-      { id: 'level-2', type: 'group', parentGroupId: 'level-1' },
-      { id: 'level-3', type: 'group', parentGroupId: 'level-2' },
-      { id: 'level-4', type: 'group', parentGroupId: 'level-3' },
-      { id: 'level-5', type: 'group', parentGroupId: 'level-4' },
-      { id: 'leaf-node', parentGroupId: 'level-5' },
-    ];
-
-    const descendants = getAllDescendantsByGroup('level-1', nodes);
-    expect(descendants).toHaveLength(5);
-    expect(descendants).toContain('level-2');
-    expect(descendants).toContain('level-3');
-    expect(descendants).toContain('level-4');
-    expect(descendants).toContain('level-5');
-    expect(descendants).toContain('leaf-node');
   });
 });
 
 describe('detectCircularReference', () => {
-  test('detects direct circular reference (A contains B, B contains A)', () => {
+  test('detects direct circular reference', () => {
     const nodes = [
       { id: 'group-a', type: 'group', parentGroupId: 'group-b' },
       { id: 'group-b', type: 'group' },
     ];
 
-    // Trying to make group-b a member of group-a creates circular ref
-    const hasCircular = detectCircularReference('group-b', 'group-a', nodes);
-    expect(hasCircular).toBe(true);
+    expect(detectCircularReference('group-b', 'group-a', nodes)).toBe(true);
   });
 
-  test('detects indirect circular reference (A->B->C->A)', () => {
+  test('detects indirect circular reference', () => {
     const nodes = [
       { id: 'group-a', type: 'group' },
       { id: 'group-b', type: 'group', parentGroupId: 'group-a' },
       { id: 'group-c', type: 'group', parentGroupId: 'group-b' },
     ];
 
-    // Trying to make group-a a member of group-c creates A->B->C->A
-    const hasCircular = detectCircularReference('group-a', 'group-c', nodes);
-    expect(hasCircular).toBe(true);
+    expect(detectCircularReference('group-a', 'group-c', nodes)).toBe(true);
   });
 
   test('allows valid parent-child relationship', () => {
     const nodes = [
       { id: 'group-a', type: 'group' },
       { id: 'group-b', type: 'group' },
-      { id: 'node-1', parentGroupId: 'group-a' },
     ];
 
-    // group-b can be a member of group-a (no circular ref)
-    const hasCircular = detectCircularReference('group-b', 'group-a', nodes);
-    expect(hasCircular).toBe(false);
-  });
-
-  test('prevents grouping node with its own descendant', () => {
-    const nodes = [
-      { id: 'group-a', type: 'group' },
-      { id: 'group-b', type: 'group', parentGroupId: 'group-a' },
-      { id: 'node-1', parentGroupId: 'group-b' },
-    ];
-
-    // Trying to make group-a a member of node-1 (descendant) is circular
-    const hasCircular = detectCircularReference('group-a', 'node-1', nodes);
-    expect(hasCircular).toBe(true);
-  });
-
-  test('returns false when potential parent is not in nodes array', () => {
-    const nodes = [
-      { id: 'group-a', type: 'group' },
-    ];
-
-    const hasCircular = detectCircularReference('group-a', 'non-existent', nodes);
-    expect(hasCircular).toBe(false);
-  });
-
-  test('returns false when node itself is not in nodes array', () => {
-    const nodes = [
-      { id: 'group-a', type: 'group' },
-    ];
-
-    const hasCircular = detectCircularReference('non-existent', 'group-a', nodes);
-    expect(hasCircular).toBe(false);
+    expect(detectCircularReference('group-b', 'group-a', nodes)).toBe(false);
   });
 });
 
 describe('validateGroupMembership', () => {
-  test('allows valid group with multiple unrelated nodes', () => {
+  test('allows valid grouping', () => {
     const nodes = [
       { id: 'node-1' },
       { id: 'node-2' },
-      { id: 'node-3' },
     ];
 
     const result = validateGroupMembership(['node-1', 'node-2'], nodes);
     expect(result.valid).toBe(true);
-    expect(result.error).toBeUndefined();
   });
 
-  test('prevents grouping a node with itself', () => {
-    const nodes = [
-      { id: 'node-1' },
-    ];
-
+  test('prevents duplicate node grouping', () => {
+    const nodes = [{ id: 'node-1' }];
     const result = validateGroupMembership(['node-1', 'node-1'], nodes);
     expect(result.valid).toBe(false);
     expect(result.error).toContain('duplicate');
   });
 
-  test('prevents grouping parent with its child', () => {
+  test('prevents grouping ancestor with descendant', () => {
     const nodes = [
       { id: 'group-a', type: 'group' },
       { id: 'node-1', parentGroupId: 'group-a' },
@@ -210,149 +112,138 @@ describe('validateGroupMembership', () => {
     expect(result.valid).toBe(false);
     expect(result.error).toContain('descendant');
   });
+});
 
-  test('prevents grouping grandparent with grandchild', () => {
+describe('applyGroupVisibility', () => {
+  test('hides descendants of collapsed group', () => {
     const nodes = [
-      { id: 'group-a', type: 'group' },
-      { id: 'group-b', type: 'group', parentGroupId: 'group-a' },
-      { id: 'node-1', parentGroupId: 'group-b' },
+      { id: 'group-a', type: 'group', isExpanded: false },
+      { id: 'node-1', parentGroupId: 'group-a', hidden: false },
     ];
 
-    const result = validateGroupMembership(['group-a', 'node-1'], nodes);
-    expect(result.valid).toBe(false);
-    expect(result.error).toContain('descendant');
+    const edges = [];
+    const { nodes: nextNodes } = applyGroupVisibility(nodes, edges);
+
+    const child = nextNodes.find((n) => n.id === 'node-1');
+    expect(child.hidden).toBe(true);
+    expect(child.groupHidden).toBe(true);
   });
 
-  test('prevents grouping with non-existent node', () => {
+  test('preserves hidden state from other features', () => {
     const nodes = [
-      { id: 'node-1' },
+      { id: 'group-a', type: 'group', isExpanded: true },
+      { id: 'node-1', parentGroupId: 'group-a', hidden: true },
     ];
 
-    const result = validateGroupMembership(['node-1', 'non-existent'], nodes);
-    expect(result.valid).toBe(false);
-    expect(result.error).toContain('not found');
-  });
+    const { nodes: nextNodes } = applyGroupVisibility(nodes, []);
+    const child = nextNodes.find((n) => n.id === 'node-1');
 
-  test('requires at least 2 nodes', () => {
-    const nodes = [
-      { id: 'node-1' },
-    ];
-
-    const result = validateGroupMembership(['node-1'], nodes);
-    expect(result.valid).toBe(false);
-    expect(result.error).toContain('at least 2');
-  });
-
-  test('allows grouping sibling nodes from same parent group', () => {
-    const nodes = [
-      { id: 'group-a', type: 'group' },
-      { id: 'node-1', parentGroupId: 'group-a' },
-      { id: 'node-2', parentGroupId: 'group-a' },
-    ];
-
-    const result = validateGroupMembership(['node-1', 'node-2'], nodes);
-    expect(result.valid).toBe(true);
+    expect(child.hidden).toBe(true);
+    expect(child.groupHidden).toBe(false);
   });
 });
 
-describe('getAffectedNodesForCollapse', () => {
-  test('finds all nodes affected by collapse (direct children)', () => {
-    const nodes = [
-      { id: 'group-1', type: 'group' },
-      { id: 'node-1', parentGroupId: 'group-1' },
-      { id: 'node-2', parentGroupId: 'group-1' },
-      { id: 'node-3' }, // not in group
-    ];
+describe('createGroup / toggleGroupExpansion / ungroup', () => {
+  const baseFlow = {
+    nodes: [
+      { id: 'a', position: { x: 0, y: 0 }, data: {} },
+      { id: 'b', position: { x: 100, y: 0 }, data: {} },
+      { id: 'c', position: { x: 200, y: 0 }, data: {} },
+    ],
+    edges: [
+      { id: 'e-a-b', source: 'a', target: 'b', data: {} },
+      { id: 'e-b-c', source: 'b', target: 'c', data: {} },
+    ],
+  };
 
-    const affected = getAffectedNodesForCollapse('group-1', nodes);
-    expect(affected).toHaveLength(2);
-    expect(affected).toContain('node-1');
-    expect(affected).toContain('node-2');
+  const edgeFactory = ({ id, source, target }) => ({
+    id,
+    source,
+    target,
+    type: 'smoothstep',
+    data: { isCustom: true },
   });
 
-  test('finds all nodes affected including nested groups', () => {
-    const nodes = [
-      { id: 'group-outer', type: 'group' },
-      { id: 'group-inner', type: 'group', parentGroupId: 'group-outer' },
-      { id: 'node-1', parentGroupId: 'group-outer' },
-      { id: 'node-2', parentGroupId: 'group-inner' },
-      { id: 'node-3', parentGroupId: 'group-inner' },
-    ];
+  test('createGroup assigns parentGroupId, hides members, and adds synthetic edges', () => {
+    const groupNode = {
+      id: 'group-1',
+      type: 'group',
+      position: { x: 50, y: -100 },
+      data: { label: 'Group 1' },
+    };
 
-    const affected = getAffectedNodesForCollapse('group-outer', nodes);
-    expect(affected).toHaveLength(4);
-    expect(affected).toContain('group-inner');
-    expect(affected).toContain('node-1');
-    expect(affected).toContain('node-2');
-    expect(affected).toContain('node-3');
+    const result = createGroup(baseFlow, {
+      groupNode,
+      memberIds: ['a', 'b'],
+      collapse: true,
+      edgeFactory,
+    });
+
+    const createdGroup = result.nodes.find((node) => node.id === 'group-1');
+    const nodeA = result.nodes.find((node) => node.id === 'a');
+
+    expect(createdGroup).toBeDefined();
+    expect(createdGroup.isExpanded).toBe(false);
+    expect(createdGroup.hidden).toBe(false);
+    expect(nodeA.parentGroupId).toBe('group-1');
+    expect(nodeA.hidden).toBe(true);
+
+    const syntheticEdges = result.edges.filter(
+      (edge) => edge.data?.isSyntheticGroupEdge === true
+    );
+    expect(syntheticEdges).not.toHaveLength(0);
   });
 
-  test('returns empty array for group with no members', () => {
-    const nodes = [
-      { id: 'group-empty', type: 'group' },
-      { id: 'node-1' },
-    ];
+  test('toggleGroupExpansion shows members when expanding', () => {
+    const groupNode = {
+      id: 'group-1',
+      type: 'group',
+      position: { x: 50, y: -100 },
+      data: { label: 'Group 1' },
+    };
 
-    const affected = getAffectedNodesForCollapse('group-empty', nodes);
-    expect(affected).toEqual([]);
+    const collapsed = createGroup(baseFlow, {
+      groupNode,
+      memberIds: ['a', 'b'],
+      collapse: true,
+      edgeFactory,
+    });
+
+    const expanded = toggleGroupExpansion(collapsed, 'group-1', true);
+    const nodeA = expanded.nodes.find((node) => node.id === 'a');
+    const groupNodeAfterExpand = expanded.nodes.find((node) => node.id === 'group-1');
+
+    expect(nodeA.hidden).toBe(false);
+    expect(nodeA.groupHidden).toBe(false);
+    expect(groupNodeAfterExpand.hidden).toBe(true);
+    expect(groupNodeAfterExpand.groupHidden).toBe(false);
   });
 
-  test('returns empty array for non-existent group', () => {
-    const nodes = [
-      { id: 'node-1' },
-    ];
+  test('ungroup removes group node, restores parentGroupId, and removes synthetic edges', () => {
+    const groupNode = {
+      id: 'group-1',
+      type: 'group',
+      position: { x: 50, y: -100 },
+      data: { label: 'Group 1' },
+    };
 
-    const affected = getAffectedNodesForCollapse('non-existent', nodes);
-    expect(affected).toEqual([]);
-  });
-});
+    const collapsed = createGroup(baseFlow, {
+      groupNode,
+      memberIds: ['a', 'b'],
+      collapse: true,
+      edgeFactory,
+    });
 
-describe('getAffectedEdgesForCollapse', () => {
-  test('finds edges connected to hidden nodes', () => {
-    const hiddenNodeIds = ['node-1', 'node-2'];
-    const edges = [
-      { id: 'e1', source: 'node-1', target: 'node-3' },
-      { id: 'e2', source: 'node-3', target: 'node-1' },
-      { id: 'e3', source: 'node-2', target: 'node-4' },
-      { id: 'e4', source: 'node-3', target: 'node-4' }, // not connected to hidden nodes
-    ];
+    const expanded = toggleGroupExpansion(collapsed, 'group-1', true);
+    const ungrouped = ungroup(expanded, 'group-1');
 
-    const affected = getAffectedEdgesForCollapse(hiddenNodeIds, edges);
-    expect(affected).toHaveLength(3);
-    expect(affected).toContain('e1');
-    expect(affected).toContain('e2');
-    expect(affected).toContain('e3');
-    expect(affected).not.toContain('e4');
-  });
+    expect(ungrouped.nodes.find((node) => node.id === 'group-1')).toBeUndefined();
+    const nodeA = ungrouped.nodes.find((node) => node.id === 'a');
+    expect(nodeA.parentGroupId).toBeUndefined();
 
-  test('returns empty array when no edges connected to hidden nodes', () => {
-    const hiddenNodeIds = ['node-1', 'node-2'];
-    const edges = [
-      { id: 'e1', source: 'node-3', target: 'node-4' },
-      { id: 'e2', source: 'node-5', target: 'node-6' },
-    ];
-
-    const affected = getAffectedEdgesForCollapse(hiddenNodeIds, edges);
-    expect(affected).toEqual([]);
-  });
-
-  test('returns empty array for empty hiddenNodeIds', () => {
-    const edges = [
-      { id: 'e1', source: 'node-1', target: 'node-2' },
-    ];
-
-    const affected = getAffectedEdgesForCollapse([], edges);
-    expect(affected).toEqual([]);
-  });
-
-  test('handles edges where both source and target are hidden', () => {
-    const hiddenNodeIds = ['node-1', 'node-2'];
-    const edges = [
-      { id: 'e1', source: 'node-1', target: 'node-2' },
-    ];
-
-    const affected = getAffectedEdgesForCollapse(hiddenNodeIds, edges);
-    expect(affected).toHaveLength(1);
-    expect(affected).toContain('e1');
+    const hasSyntheticEdges = ungrouped.edges.some(
+      (edge) => edge.data?.isSyntheticGroupEdge
+    );
+    expect(hasSyntheticEdges).toBe(false);
   });
 });

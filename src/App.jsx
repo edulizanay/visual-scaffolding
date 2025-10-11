@@ -16,6 +16,13 @@ import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api'
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
+import {
+  validateGroupMembership,
+  getGroupDescendants,
+  createGroup as createGroupState,
+  toggleGroupExpansion,
+  ungroup as ungroupGroupState,
+} from './utils/groupUtils.js';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -35,10 +42,6 @@ function App() {
     isAnimating,
     fitViewPadding,
     getAllDescendants,
-    validateGroupMembership,
-    getAllDescendantsByGroup,
-    getAffectedNodesForCollapse,
-    getAffectedEdgesForCollapse,
   } = useFlowLayout(
     setNodes,
     setEdges,
@@ -153,10 +156,7 @@ function App() {
       const isSelected = selectedNodeIds.includes(node.id);
 
       // Count members if collapsed
-      let memberCount = 0;
-      if (isCollapsed) {
-        memberCount = getAffectedNodesForCollapse(node.id, nodes).length;
-      }
+      const memberCount = isCollapsed ? getGroupDescendants(node.id, nodes).length : 0;
 
       const baseStyle = {
         background,
@@ -207,7 +207,7 @@ function App() {
         },
       };
     });
-  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds, getAffectedNodesForCollapse]);
+  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds]);
 
   const edgesWithHandlers = useMemo(() =>
     edges.map((edge) => ({
@@ -237,44 +237,16 @@ function App() {
     (event, node) => {
       // Double-click on group node: toggle collapse/expand
       if (node.type === 'group') {
-        const isCurrentlyExpanded = node.isExpanded !== false; // Default to true if undefined
-
-        // Toggle isExpanded on group node
-        const updatedNodes = nodes.map(n =>
-          n.id === node.id
-            ? { ...n, isExpanded: !isCurrentlyExpanded }
-            : n
+        const nextFlow = toggleGroupExpansion(
+          { nodes, edges },
+          node.id,
         );
 
-        // Get all descendant nodes (including nested groups)
-        const descendantIds = getAffectedNodesForCollapse(node.id, nodes);
+        setNodes(nextFlow.nodes);
+        setEdges(nextFlow.edges);
 
-        const newExpandedState = !isCurrentlyExpanded;
-
-        // Mark descendants and group node with explicit visibility
-        const finalNodes = updatedNodes.map(n => {
-          // Handle descendants: hide when collapsing, show when expanding
-          if (descendantIds.includes(n.id)) {
-            return { ...n, hidden: !newExpandedState };
-          }
-          // Handle group node: show when collapsed, hide when expanded
-          if (n.id === node.id) {
-            return { ...n, hidden: newExpandedState };
-          }
-          return n;
-        });
-
-        // Mark affected edges as hidden
-        const affectedEdgeIds = getAffectedEdgesForCollapse(descendantIds, edges);
-        const finalEdges = edges.map(e =>
-          affectedEdgeIds.includes(e.id)
-            ? { ...e, hidden: !isCurrentlyExpanded }
-            : e
-        );
-
-        // Apply layout
         setTimeout(() => {
-          applyLayoutWithAnimation(finalNodes, finalEdges);
+          applyLayoutWithAnimation(nextFlow.nodes, nextFlow.edges);
         }, 0);
       }
       // Cmd+Double-click: Create child node (existing behavior)
@@ -309,7 +281,7 @@ function App() {
         }, 0);
       }
     },
-    [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel, getAffectedNodesForCollapse, getAffectedEdgesForCollapse],
+    [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
   );
 
   const onNodeClick = useCallback(
@@ -425,29 +397,25 @@ function App() {
       return;
     }
 
-    // Validate group membership
     const validation = validateGroupMembership(selectedNodeIds, nodes);
     if (!validation.valid) {
       alert(`Cannot create group: ${validation.error}`);
       return;
     }
 
-    // Auto-generate group label
-    const groupLabel = `Group ${Date.now()}`;
+    const timestamp = Date.now();
+    const groupId = `group-${timestamp}`;
+    const groupLabel = `Group ${timestamp}`;
 
-    // Generate group node ID
-    const groupId = `group-${Date.now()}`;
-
-    // Create group node at average position of selected nodes
-    const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+    const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
     const avgX = selectedNodes.reduce((sum, n) => sum + n.position.x, 0) / selectedNodes.length;
     const avgY = selectedNodes.reduce((sum, n) => sum + n.position.y, 0) / selectedNodes.length;
 
     const groupNode = {
       id: groupId,
       type: 'group',
-      isExpanded: false, // Start collapsed - group visible, children hidden
-      position: { x: avgX, y: avgY - 100 }, // Position above selected nodes
+      isExpanded: false,
+      position: { x: avgX, y: avgY - 100 },
       data: {
         label: groupLabel,
         onLabelChange: updateNodeLabel,
@@ -457,92 +425,30 @@ function App() {
       targetPosition: Position.Left,
     };
 
-    // Update selected nodes with parentGroupId
-    const updatedNodes = nodes.map(n =>
-      selectedNodeIds.includes(n.id)
-        ? { ...n, parentGroupId: groupId }
-        : n
+    const nextFlow = createGroupState(
+      { nodes, edges },
+      {
+        groupNode,
+        memberIds: selectedNodeIds,
+        collapse: true,
+        edgeFactory: ({ id, source, target }) => ({
+          id,
+          source,
+          target,
+          type: 'smoothstep',
+          data: { onLabelChange: updateEdgeLabel },
+        }),
+      }
     );
 
-    const finalNodes = [...updatedNodes, groupNode];
-
-    // Set initial visibility: collapsed means show group, hide children
-    const finalNodesWithVisibility = finalNodes.map(n => {
-      if (n.id === groupId) {
-        // This is the group node - show it since we're collapsed
-        return { ...n, hidden: false };
-      }
-      if (selectedNodeIds.includes(n.id)) {
-        // This is a child - hide it since we're collapsed
-        return { ...n, hidden: true };
-      }
-      return n;
-    });
-
-    // Create group edges to connect group node to external nodes
-    const selectedSet = new Set(selectedNodeIds);
-    const newGroupEdges = [];
-    const groupEdgeMap = new Map(); // Deduplicate edges
-
-    edges.forEach(edge => {
-      const sourceInGroup = selectedSet.has(edge.source);
-      const targetInGroup = selectedSet.has(edge.target);
-
-      // Edge going OUT of group (member → external)
-      if (sourceInGroup && !targetInGroup) {
-        const edgeKey = `${groupId}-to-${edge.target}`;
-        if (!groupEdgeMap.has(edgeKey)) {
-          groupEdgeMap.set(edgeKey, {
-            id: `group-edge-${edgeKey}`,
-            source: groupId,
-            target: edge.target,
-            type: 'smoothstep',
-            data: { onLabelChange: updateEdgeLabel },
-          });
-        }
-      }
-      // Edge coming INTO group (external → member)
-      else if (!sourceInGroup && targetInGroup) {
-        const edgeKey = `${edge.source}-to-${groupId}`;
-        if (!groupEdgeMap.has(edgeKey)) {
-          groupEdgeMap.set(edgeKey, {
-            id: `group-edge-${edgeKey}`,
-            source: edge.source,
-            target: groupId,
-            type: 'smoothstep',
-            data: { onLabelChange: updateEdgeLabel },
-          });
-        }
-      }
-    });
-
-    newGroupEdges.push(...groupEdgeMap.values());
-
-    const finalEdges = [...edges, ...newGroupEdges];
-
-    console.log('Creating group:', {
-      groupId,
-      groupLabel,
-      selectedNodeIds,
-      newGroupEdges: newGroupEdges.length,
-      finalNodes: finalNodesWithVisibility.length,
-      finalEdges: finalEdges.length
-    });
-
-    // Clear selection
     setSelectedNodeIds([]);
-
-    // Set nodes first, then edges after a brief delay to ensure nodes are mounted
-    setNodes(finalNodesWithVisibility);
+    setNodes(nextFlow.nodes);
+    setEdges(nextFlow.edges);
 
     setTimeout(() => {
-      setEdges(finalEdges);
-      // Then apply layout animation
-      setTimeout(() => {
-        applyLayoutWithAnimation(finalNodesWithVisibility, finalEdges);
-      }, 50);
-    }, 50);
-  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation, setSelectedNodeIds, setNodes, setEdges]);
+      applyLayoutWithAnimation(nextFlow.nodes, nextFlow.edges);
+    }, 0);
+  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation]);
 
   const ungroupNodes = useCallback(() => {
     if (selectedNodeIds.length !== 1) {
@@ -551,7 +457,7 @@ function App() {
     }
 
     const groupId = selectedNodeIds[0];
-    const groupNode = nodes.find(n => n.id === groupId);
+    const groupNode = nodes.find((n) => n.id === groupId);
 
     if (!groupNode || groupNode.type !== 'group') {
       alert('Selected node is not a group');
@@ -559,40 +465,22 @@ function App() {
     }
 
     // Find all direct children of this group
-    const memberIds = nodes
-      .filter(n => n.parentGroupId === groupId)
-      .map(n => n.id);
+    const memberIds = nodes.filter((n) => n.parentGroupId === groupId);
 
     if (memberIds.length === 0) {
       alert('Group has no members');
       return;
     }
 
-    // Remove parentGroupId from all members (including nested groups)
-    const updatedNodes = nodes
-      .filter(n => n.id !== groupId) // Remove group node
-      .map(n =>
-        memberIds.includes(n.id)
-          ? { ...n, parentGroupId: undefined, hidden: false } // Free members and unhide
-          : n
-      );
-
-    // Unhide any edges connected to freed nodes
-    const freedNodeIds = new Set(memberIds);
-    const updatedEdges = edges.map(e =>
-      (freedNodeIds.has(e.source) || freedNodeIds.has(e.target))
-        ? { ...e, hidden: false }
-        : e
-    );
-
-    // Clear selection
     setSelectedNodeIds([]);
+    const nextFlow = ungroupGroupState({ nodes, edges }, groupId);
+    setNodes(nextFlow.nodes);
+    setEdges(nextFlow.edges);
 
-    // Apply layout
     setTimeout(() => {
-      applyLayoutWithAnimation(updatedNodes, updatedEdges);
+      applyLayoutWithAnimation(nextFlow.nodes, nextFlow.edges);
     }, 0);
-  }, [selectedNodeIds, nodes, edges, applyLayoutWithAnimation, setSelectedNodeIds]);
+  }, [selectedNodeIds, nodes, edges, applyLayoutWithAnimation]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
