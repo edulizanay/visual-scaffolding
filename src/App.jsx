@@ -28,6 +28,7 @@ function App() {
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
   const [visualSettings, setVisualSettings] = useState(DEFAULT_VISUAL_SETTINGS);
+  const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
 
   const { applyLayoutWithAnimation, isAnimating, fitViewPadding, getAllDescendants } = useFlowLayout(
     setNodes,
@@ -131,6 +132,8 @@ function App() {
       const border = nodeColorOverrides.border ?? globalColors.border;
       const text = nodeColorOverrides.text ?? globalColors.text;
 
+      const isSelected = selectedNodeIds.includes(node.id);
+
       const baseStyle = {
         background,
         border: `1px solid ${border}`,
@@ -165,10 +168,18 @@ function App() {
                 borderColor: 'rgba(255, 255, 255, 0.4)',
               }
             : {}),
+          // Selection visual: 40% more prominent stroke
+          ...(isSelected
+            ? {
+                borderWidth: '2.4px',
+                borderColor: 'rgba(96, 165, 250, 0.8)',
+                boxShadow: '0 0 0 2px rgba(96, 165, 250, 0.3)',
+              }
+            : {}),
         },
       };
     });
-  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings]);
+  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds]);
 
   const edgesWithHandlers = useMemo(() =>
     edges.map((edge) => ({
@@ -189,6 +200,10 @@ function App() {
     (params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', data: { onLabelChange: updateEdgeLabel } }, eds)),
     [setEdges, updateEdgeLabel],
   );
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeIds([]);
+  }, [setSelectedNodeIds]);
 
   const onNodeDoubleClick = useCallback(
     (event, node) => {
@@ -228,6 +243,7 @@ function App() {
 
   const onNodeClick = useCallback(
     (event, node) => {
+      // Alt+Click: Collapse/expand subtree (existing behavior)
       if (event.altKey) {
         const isCurrentlyCollapsed = node.data.collapsed || false;
 
@@ -256,8 +272,24 @@ function App() {
           applyLayoutWithAnimation(finalNodes, finalEdges);
         }, 0);
       }
+      // Cmd+Click: Toggle selection
+      else if (event.metaKey || event.ctrlKey) {
+        setSelectedNodeIds(prev => {
+          if (prev.includes(node.id)) {
+            // Deselect
+            return prev.filter(id => id !== node.id);
+          } else {
+            // Select
+            return [...prev, node.id];
+          }
+        });
+      }
+      // Regular click: Clear selection
+      else {
+        setSelectedNodeIds([]);
+      }
     },
-    [nodes, edges, applyLayoutWithAnimation]
+    [nodes, edges, applyLayoutWithAnimation, setSelectedNodeIds]
   );
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
@@ -360,6 +392,7 @@ function App() {
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -371,6 +404,32 @@ function App() {
       >
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
+
+      {/* Tooltip section (bottom-right corner) */}
+      {selectedNodeIds.length >= 2 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: 'rgba(30, 30, 30, 0.95)',
+          border: '1px solid rgba(96, 165, 250, 0.3)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          animation: 'slideIn 0.3s ease-out',
+        }}>
+          <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
+            {selectedNodeIds.length} nodes selected
+          </span>
+          <div style={{ width: '1px', height: '16px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
+          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>⌘ G</Kbd>
+          <span style={{ color: '#9ca3af', fontSize: '13px' }}>to group</span>
+        </div>
+      )}
+
       {toast && (
         <div style={{
           position: 'fixed',
