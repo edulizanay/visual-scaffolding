@@ -36,6 +36,9 @@ function App() {
     fitViewPadding,
     getAllDescendants,
     validateGroupMembership,
+    getAllDescendantsByGroup,
+    getAffectedNodesForCollapse,
+    getAffectedEdgesForCollapse,
   } = useFlowLayout(
     setNodes,
     setEdges,
@@ -128,17 +131,32 @@ function App() {
     const perNodeColors = visualSettings.colors?.perNode ?? {};
 
     return nodes.map((node) => {
+      const isGroupNode = node.type === 'group';
+      const isCollapsed = isGroupNode && node.isExpanded === false;
+
+      // HARDCODED: Group dimensions 50% larger than regular nodes
       const override = overrides[node.id] || {};
-      const width = override.width ?? defaultNode.width;
-      const height = override.height ?? defaultNode.height;
+      const baseWidth = isGroupNode ? defaultNode.width * 1.5 : defaultNode.width;
+      const baseHeight = isGroupNode ? defaultNode.height * 1.5 : defaultNode.height;
+      const width = override.width ?? baseWidth;
+      const height = override.height ?? baseHeight;
       const borderRadius = override.borderRadius ?? defaultNode.borderRadius;
 
       const nodeColorOverrides = perNodeColors[node.id] || {};
-      const background = nodeColorOverrides.background ?? globalColors.background;
-      const border = nodeColorOverrides.border ?? globalColors.border;
+      // HARDCODED: Group node colors (distinct from regular nodes)
+      const defaultBackground = isGroupNode ? '#3730a3' : globalColors.background; // Indigo for groups
+      const defaultBorder = isGroupNode ? '#6366f1' : globalColors.border; // Lighter indigo border
+      const background = nodeColorOverrides.background ?? defaultBackground;
+      const border = nodeColorOverrides.border ?? defaultBorder;
       const text = nodeColorOverrides.text ?? globalColors.text;
 
       const isSelected = selectedNodeIds.includes(node.id);
+
+      // Count members if collapsed
+      let memberCount = 0;
+      if (isCollapsed) {
+        memberCount = getAffectedNodesForCollapse(node.id, nodes).length;
+      }
 
       const baseStyle = {
         background,
@@ -164,6 +182,8 @@ function App() {
           onLabelChange: updateNodeLabel,
           onDescriptionChange: updateNodeDescription,
           textColor: text,
+          // Show member count for collapsed groups
+          label: isCollapsed ? `${node.data.label} (${memberCount} nodes)` : node.data.label,
         },
         style: {
           ...(node.style || {}),
@@ -185,7 +205,7 @@ function App() {
         },
       };
     });
-  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds]);
+  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds, getAffectedNodesForCollapse]);
 
   const edgesWithHandlers = useMemo(() =>
     edges.map((edge) => ({
@@ -213,7 +233,42 @@ function App() {
 
   const onNodeDoubleClick = useCallback(
     (event, node) => {
-      if (event.metaKey || event.ctrlKey) {
+      // Double-click on group node: toggle collapse/expand
+      if (node.type === 'group') {
+        const isCurrentlyExpanded = node.isExpanded !== false; // Default to true if undefined
+
+        // Toggle isExpanded on group node
+        const updatedNodes = nodes.map(n =>
+          n.id === node.id
+            ? { ...n, isExpanded: !isCurrentlyExpanded }
+            : n
+        );
+
+        // Get all descendant nodes (including nested groups)
+        const descendantIds = getAffectedNodesForCollapse(node.id, nodes);
+
+        // Mark descendants as hidden (collapse) or visible (expand)
+        const finalNodes = updatedNodes.map(n =>
+          descendantIds.includes(n.id)
+            ? { ...n, hidden: !isCurrentlyExpanded }
+            : n
+        );
+
+        // Mark affected edges as hidden
+        const affectedEdgeIds = getAffectedEdgesForCollapse(descendantIds, edges);
+        const finalEdges = edges.map(e =>
+          affectedEdgeIds.includes(e.id)
+            ? { ...e, hidden: !isCurrentlyExpanded }
+            : e
+        );
+
+        // Apply layout
+        setTimeout(() => {
+          applyLayoutWithAnimation(finalNodes, finalEdges);
+        }, 0);
+      }
+      // Cmd+Double-click: Create child node (existing behavior)
+      else if (event.metaKey || event.ctrlKey) {
         const newNodeId = `${Date.now()}`;
         const newNode = {
           id: newNodeId,
@@ -244,7 +299,7 @@ function App() {
         }, 0);
       }
     },
-    [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
+    [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel, getAffectedNodesForCollapse, getAffectedEdgesForCollapse],
   );
 
   const onNodeClick = useCallback(
@@ -411,6 +466,56 @@ function App() {
     }, 0);
   }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, applyLayoutWithAnimation, setSelectedNodeIds]);
 
+  const ungroupNodes = useCallback(() => {
+    if (selectedNodeIds.length !== 1) {
+      alert('Please select exactly 1 group node to ungroup');
+      return;
+    }
+
+    const groupId = selectedNodeIds[0];
+    const groupNode = nodes.find(n => n.id === groupId);
+
+    if (!groupNode || groupNode.type !== 'group') {
+      alert('Selected node is not a group');
+      return;
+    }
+
+    // Find all direct children of this group
+    const memberIds = nodes
+      .filter(n => n.parentGroupId === groupId)
+      .map(n => n.id);
+
+    if (memberIds.length === 0) {
+      alert('Group has no members');
+      return;
+    }
+
+    // Remove parentGroupId from all members (including nested groups)
+    const updatedNodes = nodes
+      .filter(n => n.id !== groupId) // Remove group node
+      .map(n =>
+        memberIds.includes(n.id)
+          ? { ...n, parentGroupId: undefined, hidden: false } // Free members and unhide
+          : n
+      );
+
+    // Unhide any edges connected to freed nodes
+    const freedNodeIds = new Set(memberIds);
+    const updatedEdges = edges.map(e =>
+      (freedNodeIds.has(e.source) || freedNodeIds.has(e.target))
+        ? { ...e, hidden: false }
+        : e
+    );
+
+    // Clear selection
+    setSelectedNodeIds([]);
+
+    // Apply layout
+    setTimeout(() => {
+      applyLayoutWithAnimation(updatedNodes, updatedEdges);
+    }, 0);
+  }, [selectedNodeIds, nodes, edges, applyLayoutWithAnimation, setSelectedNodeIds]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
@@ -419,7 +524,12 @@ function App() {
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
         e.preventDefault();
         handleRedo();
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'G') {
+        // Cmd+Shift+G: Ungroup
+        e.preventDefault();
+        ungroupNodes();
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
+        // Cmd+G: Group
         e.preventDefault();
         createGroup();
       }
@@ -427,7 +537,7 @@ function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, createGroup]);
+  }, [handleUndo, handleRedo, createGroup, ungroupNodes]);
 
   useEffect(() => {
     updateHistoryStatus();
