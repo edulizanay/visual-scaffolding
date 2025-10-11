@@ -459,6 +459,7 @@ function App() {
     // Create group edges to connect group node to external nodes
     const selectedSet = new Set(selectedNodeIds);
     const newGroupEdges = [];
+    const groupEdgeMap = new Map(); // Deduplicate edges
 
     edges.forEach(edge => {
       const sourceInGroup = selectedSet.has(edge.source);
@@ -466,27 +467,44 @@ function App() {
 
       // Edge going OUT of group (member → external)
       if (sourceInGroup && !targetInGroup) {
-        newGroupEdges.push({
-          id: `group-edge-${groupId}-to-${edge.target}-${Date.now()}`,
-          source: groupId,
-          target: edge.target,
-          type: 'smoothstep',
-          data: { onLabelChange: updateEdgeLabel },
-        });
+        const edgeKey = `${groupId}-to-${edge.target}`;
+        if (!groupEdgeMap.has(edgeKey)) {
+          groupEdgeMap.set(edgeKey, {
+            id: `group-edge-${edgeKey}`,
+            source: groupId,
+            target: edge.target,
+            type: 'smoothstep',
+            data: { onLabelChange: updateEdgeLabel },
+          });
+        }
       }
       // Edge coming INTO group (external → member)
       else if (!sourceInGroup && targetInGroup) {
-        newGroupEdges.push({
-          id: `group-edge-${edge.source}-to-${groupId}-${Date.now()}`,
-          source: edge.source,
-          target: groupId,
-          type: 'smoothstep',
-          data: { onLabelChange: updateEdgeLabel },
-        });
+        const edgeKey = `${edge.source}-to-${groupId}`;
+        if (!groupEdgeMap.has(edgeKey)) {
+          groupEdgeMap.set(edgeKey, {
+            id: `group-edge-${edgeKey}`,
+            source: edge.source,
+            target: groupId,
+            type: 'smoothstep',
+            data: { onLabelChange: updateEdgeLabel },
+          });
+        }
       }
     });
 
+    newGroupEdges.push(...groupEdgeMap.values());
+
     const finalEdges = [...edges, ...newGroupEdges];
+
+    console.log('Creating group:', {
+      groupId,
+      groupLabel,
+      selectedNodeIds,
+      newGroupEdges: newGroupEdges.length,
+      finalNodes: finalNodes.length,
+      finalEdges: finalEdges.length
+    });
 
     // Clear selection
     setSelectedNodeIds([]);
