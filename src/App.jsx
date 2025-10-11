@@ -509,11 +509,17 @@ function App() {
     // Clear selection
     setSelectedNodeIds([]);
 
-    // Apply layout
+    // Set nodes first, then edges after a brief delay to ensure nodes are mounted
+    setNodes(finalNodes);
+
     setTimeout(() => {
-      applyLayoutWithAnimation(finalNodes, finalEdges);
-    }, 0);
-  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation, setSelectedNodeIds]);
+      setEdges(finalEdges);
+      // Then apply layout animation
+      setTimeout(() => {
+        applyLayoutWithAnimation(finalNodes, finalEdges);
+      }, 50);
+    }, 50);
+  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation, setSelectedNodeIds, setNodes, setEdges]);
 
   const ungroupNodes = useCallback(() => {
     if (selectedNodeIds.length !== 1) {
