@@ -1,5 +1,4 @@
-// ABOUTME: Utility functions to manage group node state, visibility, and edges
-// ABOUTME: Centralizes group operations for consistency across the app
+// ABOUTME: Unified group manager handling creation, collapse, visibility, and halos
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
 
@@ -21,8 +20,14 @@ const cloneEdgeWithSyntheticFlag = (edge) => {
   };
 };
 
+const buildNodeMap = (nodes) =>
+  nodes.reduce((acc, node) => {
+    acc.set(node.id, node);
+    return acc;
+  }, new Map());
+
 /**
- * Traverse descendants by parentGroupId (for group operations).
+ * Traverse descendants by parentGroupId (used by multiple operations).
  */
 export const getGroupDescendants = (nodeId, nodes) => {
   const node = nodes.find((n) => n.id === nodeId);
@@ -46,9 +51,6 @@ export const getGroupDescendants = (nodeId, nodes) => {
   return descendants;
 };
 
-/**
- * Detect if making nodeId a member of potentialParentId would create circular reference.
- */
 export const detectCircularReference = (nodeId, potentialParentId, nodes) => {
   const node = nodes.find((n) => n.id === nodeId);
   const potentialParent = nodes.find((n) => n.id === potentialParentId);
@@ -59,9 +61,6 @@ export const detectCircularReference = (nodeId, potentialParentId, nodes) => {
   return descendants.includes(potentialParentId);
 };
 
-/**
- * Validate that a set of nodes can be grouped together.
- */
 export const validateGroupMembership = (selectedIds, nodes) => {
   if (selectedIds.length < 2) {
     return { valid: false, error: 'Group must contain at least 2 nodes' };
@@ -81,16 +80,16 @@ export const validateGroupMembership = (selectedIds, nodes) => {
 
   for (let i = 0; i < selectedIds.length; i += 1) {
     for (let j = i + 1; j < selectedIds.length; j += 1) {
-      const id1 = selectedIds[i];
-      const id2 = selectedIds[j];
+      const a = selectedIds[i];
+      const b = selectedIds[j];
 
-      const descendants1 = getGroupDescendants(id1, nodes);
-      if (descendants1.includes(id2)) {
+      const descendantsA = getGroupDescendants(a, nodes);
+      if (descendantsA.includes(b)) {
         return { valid: false, error: 'Cannot group node with its descendant' };
       }
 
-      const descendants2 = getGroupDescendants(id2, nodes);
-      if (descendants2.includes(id1)) {
+      const descendantsB = getGroupDescendants(b, nodes);
+      if (descendantsB.includes(a)) {
         return { valid: false, error: 'Cannot group node with its descendant' };
       }
     }
@@ -99,51 +98,15 @@ export const validateGroupMembership = (selectedIds, nodes) => {
   return { valid: true };
 };
 
-const buildSyntheticEdges = ({ edges, memberSet, groupId, edgeFactory }) => {
-  const factory = edgeFactory || defaultEdgeFactory;
-  const syntheticEdges = new Map();
-
-  edges.forEach((edge) => {
-    const sourceInGroup = memberSet.has(edge.source);
-    const targetInGroup = memberSet.has(edge.target);
-
-    if (sourceInGroup && !targetInGroup) {
-      const key = `${groupId}->${edge.target}`;
-      if (!syntheticEdges.has(key)) {
-        const id = `${GROUP_EDGE_PREFIX}${key}`;
-        const newEdge = factory({ id, source: groupId, target: edge.target, originalEdge: edge });
-        syntheticEdges.set(key, cloneEdgeWithSyntheticFlag(newEdge));
-      }
-    } else if (!sourceInGroup && targetInGroup) {
-      const key = `${edge.source}->${groupId}`;
-      if (!syntheticEdges.has(key)) {
-        const id = `${GROUP_EDGE_PREFIX}${key}`;
-        const newEdge = factory({ id, source: edge.source, target: groupId, originalEdge: edge });
-        syntheticEdges.set(key, cloneEdgeWithSyntheticFlag(newEdge));
-      }
-    }
-  });
-
-  return Array.from(syntheticEdges.values());
-};
-
-const buildNodeMap = (nodes) =>
-  nodes.reduce((acc, node) => {
-    acc.set(node.id, node);
-    return acc;
-  }, new Map());
-
-const computeGroupHiddenSet = (nodes) => {
+const computeAncestorHiddenSet = (nodes) => {
   const nodeMap = buildNodeMap(nodes);
   const memo = new Map();
 
-  const isHidden = (node) => {
-    if (memo.has(node.id)) {
-      return memo.get(node.id);
-    }
+  const isHiddenByAncestor = (node) => {
+    if (memo.has(node.id)) return memo.get(node.id);
 
     let current = node;
-    while (current && current.parentGroupId) {
+    while (current?.parentGroupId) {
       const parent = nodeMap.get(current.parentGroupId);
       if (!parent) break;
       if (parent.isExpanded === false) {
@@ -157,51 +120,45 @@ const computeGroupHiddenSet = (nodes) => {
     return false;
   };
 
-  const hiddenSet = new Set();
+  const hidden = new Set();
   nodes.forEach((node) => {
-    if (isHidden(node)) {
-      hiddenSet.add(node.id);
+    if (isHiddenByAncestor(node)) {
+      hidden.add(node.id);
     }
   });
 
-  return hiddenSet;
+  return hidden;
 };
 
-/**
- * Recalculate hidden states for nodes and edges based on collapsed groups.
- */
 export const applyGroupVisibility = (nodes, edges) => {
-  const hiddenSet = computeGroupHiddenSet(nodes);
+  const ancestorHidden = computeAncestorHiddenSet(nodes);
 
   const nextNodes = nodes.map((node) => {
-    const isGroup = node.type === 'group';
+    const hiddenByAncestor = ancestorHidden.has(node.id);
+    const previousGroupHidden = node.groupHidden ?? false;
+    const previouslyHidden = node.hidden ?? false;
 
-    if (isGroup) {
+    if (node.type === 'group') {
       const isExpanded = node.isExpanded !== false;
-      const previousGroupHidden = node.groupHidden ?? false;
-      const otherHidden = node.hidden && !previousGroupHidden;
-      const forcedHidden = isExpanded;
+      const wrapperHidden = hiddenByAncestor || isExpanded === true;
 
       return {
         ...node,
-        groupHidden: false,
-        hidden: forcedHidden || otherHidden,
+        groupHidden: hiddenByAncestor,
+        wrapperHidden,
+        hidden: wrapperHidden || (previouslyHidden && !previousGroupHidden),
       };
     }
 
-    const groupHidden = hiddenSet.has(node.id);
-    const previousGroupHidden = node.groupHidden ?? false;
-    const otherHidden = node.hidden && !previousGroupHidden;
-
     return {
       ...node,
-      groupHidden,
-      hidden: groupHidden || otherHidden,
+      groupHidden: hiddenByAncestor,
+      hidden: hiddenByAncestor || (previouslyHidden && !previousGroupHidden),
     };
   });
 
   const nodeHiddenLookup = nextNodes.reduce((acc, node) => {
-    acc.set(node.id, { groupHidden: node.groupHidden, hidden: node.hidden });
+    acc.set(node.id, { hidden: node.hidden, groupHidden: node.groupHidden });
     return acc;
   }, new Map());
 
@@ -209,27 +166,54 @@ export const applyGroupVisibility = (nodes, edges) => {
     const sourceHidden = nodeHiddenLookup.get(edge.source);
     const targetHidden = nodeHiddenLookup.get(edge.target);
 
-    const groupHidden =
+    const hiddenByGroup =
       (sourceHidden?.groupHidden ?? false) || (targetHidden?.groupHidden ?? false);
-    const connectedNodeHidden =
+    const hiddenByNode =
       (sourceHidden?.hidden ?? false) || (targetHidden?.hidden ?? false);
-    const effectiveGroupHidden = groupHidden || connectedNodeHidden;
+    const effectiveHidden = hiddenByGroup || hiddenByNode;
     const previousGroupHidden = edge.groupHidden ?? false;
     const otherHidden = edge.hidden && !previousGroupHidden;
 
     return {
       ...edge,
-      groupHidden: effectiveGroupHidden,
-      hidden: effectiveGroupHidden || otherHidden,
+      groupHidden: effectiveHidden,
+      hidden: effectiveHidden || otherHidden,
     };
   });
 
   return { nodes: nextNodes, edges: nextEdges };
 };
 
-/**
- * Create a collapsed or expanded group with synthetic edges.
- */
+const buildSyntheticEdges = ({ edges, memberSet, groupId, edgeFactory }) => {
+  const factory = edgeFactory || defaultEdgeFactory;
+  const synthetic = new Map();
+
+  edges.forEach((edge) => {
+    const inSource = memberSet.has(edge.source);
+    const inTarget = memberSet.has(edge.target);
+
+    if (inSource && !inTarget) {
+      const key = `${groupId}->${edge.target}`;
+      if (!synthetic.has(key)) {
+        const id = `${GROUP_EDGE_PREFIX}${key}`;
+        const newEdge = factory({ id, source: groupId, target: edge.target, originalEdge: edge });
+        synthetic.set(key, cloneEdgeWithSyntheticFlag(newEdge));
+      }
+    } else if (!inSource && inTarget) {
+      const key = `${edge.source}->${groupId}`;
+      if (!synthetic.has(key)) {
+        const id = `${GROUP_EDGE_PREFIX}${key}`;
+        const newEdge = factory({ id, source: edge.source, target: groupId, originalEdge: edge });
+        synthetic.set(key, cloneEdgeWithSyntheticFlag(newEdge));
+      }
+    }
+  });
+
+  return Array.from(synthetic.values());
+};
+
+const normalizeState = (nodes, edges) => applyGroupVisibility(nodes, edges);
+
 export const createGroup = (flow, options) => {
   const { nodes, edges } = flow;
   const {
@@ -247,41 +231,28 @@ export const createGroup = (flow, options) => {
   const memberSet = new Set(memberIds);
 
   const updatedNodes = nodes.map((node) =>
-    memberSet.has(node.id)
-      ? { ...node, parentGroupId: groupId }
-      : node
+    memberSet.has(node.id) ? { ...node, parentGroupId: groupId } : node
   );
 
   const normalizedGroupNode = {
     ...groupNode,
-    type: groupNode.type ?? 'group',
+    type: 'group',
     isExpanded: collapse ? false : groupNode.isExpanded ?? true,
     hidden: false,
     groupHidden: false,
   };
 
-  const syntheticEdges = buildSyntheticEdges({
-    edges,
-    memberSet,
-    groupId,
-    edgeFactory,
-  });
-
+  const syntheticEdges = buildSyntheticEdges({ edges, memberSet, groupId, edgeFactory });
   const nextNodes = [...updatedNodes, normalizedGroupNode];
   const nextEdges = [...edges.map((edge) => ({ ...edge })), ...syntheticEdges];
 
-  return applyGroupVisibility(nextNodes, nextEdges);
+  return normalizeState(nextNodes, nextEdges);
 };
 
-/**
- * Toggle (or explicitly set) group expansion state and re-apply visibility.
- */
 export const toggleGroupExpansion = (flow, groupId, expandState = null) => {
   const { nodes, edges } = flow;
   const groupNode = nodes.find((node) => node.id === groupId && node.type === 'group');
-  if (!groupNode) {
-    return flow;
-  }
+  if (!groupNode) return flow;
 
   const currentExpanded = groupNode.isExpanded !== false;
   const nextExpanded = expandState === null ? !currentExpanded : expandState;
@@ -292,18 +263,13 @@ export const toggleGroupExpansion = (flow, groupId, expandState = null) => {
       : node
   );
 
-  return applyGroupVisibility(updatedNodes, edges);
+  return normalizeState(updatedNodes, edges);
 };
 
-/**
- * Remove a group node, unassign members, and clean up synthetic edges.
- */
 export const ungroup = (flow, groupId) => {
   const { nodes, edges } = flow;
   const groupNode = nodes.find((node) => node.id === groupId && node.type === 'group');
-  if (!groupNode) {
-    return flow;
-  }
+  if (!groupNode) return flow;
 
   const updatedNodes = nodes
     .filter((node) => node.id !== groupId)
@@ -317,7 +283,105 @@ export const ungroup = (flow, groupId) => {
     .filter((edge) => edge.source !== groupId && edge.target !== groupId)
     .map((edge) => ({ ...edge }));
 
-  return applyGroupVisibility(updatedNodes, updatedEdges);
+  return normalizeState(updatedNodes, updatedEdges);
+};
+
+export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendantsFn = null) => {
+  const { nodes, edges } = flow;
+  const target = nodes.find((node) => node.id === nodeId);
+  if (!target) return flow;
+
+  const descendants = getDescendantsFn
+    ? getDescendantsFn(nodeId, nodes, edges).map((entry) => (typeof entry === 'string' ? entry : entry.id))
+    : getGroupDescendants(nodeId, nodes);
+  const descendantSet = new Set(descendants);
+
+  const updatedNodes = nodes.map((node) => {
+    if (node.id === nodeId) {
+      return { ...node, data: { ...node.data, collapsed } };
+    }
+    if (descendantSet.has(node.id)) {
+      return { ...node, hidden: collapsed };
+    }
+    return node;
+  });
+
+  const updatedEdges = edges.map((edge) =>
+    descendantSet.has(edge.source) || descendantSet.has(edge.target)
+      ? { ...edge, hidden: collapsed }
+      : edge
+  );
+
+  return { nodes: updatedNodes, edges: updatedEdges };
+};
+
+export const addChildNode = (flow, parentId, factory) => {
+  const { nodes, edges } = flow;
+  const parent = nodes.find((node) => node.id === parentId);
+  if (!parent) return flow;
+
+  const { node: newNode, edge: newEdge } = factory(parent);
+
+  const nextNodes = [...nodes, newNode];
+  const nextEdges = [...edges, newEdge];
+
+  return normalizeState(nextNodes, nextEdges);
+};
+
+export const getExpandedGroupHalos = (nodes, getNodeDimensions, padding = 16) => {
+  if (!Array.isArray(nodes) || !nodes.length) return [];
+
+  const halos = [];
+
+  nodes.forEach((groupNode) => {
+    if (groupNode?.type !== 'group') return;
+    if (groupNode.groupHidden) return;
+
+    const isExpanded = groupNode.isExpanded !== false;
+    if (!isExpanded) return;
+
+    const descendantIds = getGroupDescendants(groupNode.id, nodes);
+    if (!descendantIds.length) return;
+
+    const descendants = descendantIds
+      .map((id) => nodes.find((node) => node.id === id))
+      .filter((node) => node && !node.hidden && !node.groupHidden);
+
+    if (!descendants.length) return;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    descendants.forEach((node) => {
+      const { width = 0, height = 0 } = getNodeDimensions ? getNodeDimensions(node) : {};
+      const x = node?.position?.x ?? 0;
+      const y = node?.position?.y ?? 0;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      return;
+    }
+
+    halos.push({
+      groupId: groupNode.id,
+      label: groupNode?.data?.label ?? 'Group',
+      bounds: {
+        x: minX - padding,
+        y: minY - padding,
+        width: (maxX - minX) + padding * 2,
+        height: (maxY - minY) + padding * 2,
+      },
+    });
+  });
+
+  return halos;
 };
 
 export const constants = {

@@ -16,12 +16,74 @@ import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api'
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
+
+const HALO_PADDING = 24;
+
+const GroupHaloOverlay = ({ halos, viewport, onCollapse }) => {
+  const [hoveredId, setHoveredId] = useState(null);
+
+  if (!halos || halos.length === 0) {
+    return null;
+  }
+
+  const { x = 0, y = 0, zoom = 1 } = viewport || {};
+
+  const sortedHalos = [...halos].sort((a, b) => {
+    const areaA = a.bounds.width * a.bounds.height;
+    const areaB = b.bounds.width * b.bounds.height;
+    return areaA - areaB;
+  });
+
+  return (
+    <svg
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1500 }}
+      width="100%"
+      height="100%"
+    >
+      {sortedHalos.map((halo) => {
+        const screenX = halo.bounds.x * zoom + x;
+        const screenY = halo.bounds.y * zoom + y;
+        const screenWidth = halo.bounds.width * zoom;
+        const screenHeight = halo.bounds.height * zoom;
+        const isHovered = hoveredId === halo.groupId;
+
+        return (
+          <rect
+            key={halo.groupId}
+            x={screenX}
+            y={screenY}
+            width={screenWidth}
+            height={screenHeight}
+            rx={18}
+            ry={18}
+            fill="none"
+            stroke={isHovered ? 'rgba(129, 140, 248, 0.7)' : 'rgba(99, 102, 241, 0.45)'}
+            strokeWidth={isHovered ? 2 : 1.5}
+            pointerEvents="stroke"
+            onMouseEnter={() => setHoveredId(halo.groupId)}
+            onMouseLeave={() => setHoveredId((current) => (current === halo.groupId ? null : current))}
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+              if (event.metaKey || event.ctrlKey) {
+                return;
+              }
+              onCollapse?.(halo.groupId);
+            }}
+          />
+        );
+      })}
+    </svg>
+  );
+};
 import {
   validateGroupMembership,
   getGroupDescendants,
-  createGroup as createGroupState,
+  createGroup,
   toggleGroupExpansion,
-  ungroup as ungroupGroupState,
+  ungroup,
+  collapseSubtreeByHandles,
+  addChildNode,
+  getExpandedGroupHalos,
 } from './utils/groupUtils.js';
 
 function App() {
@@ -36,6 +98,7 @@ function App() {
   const edgesRef = useRef([]);
   const [visualSettings, setVisualSettings] = useState(DEFAULT_VISUAL_SETTINGS);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
 
   const {
     applyLayoutWithAnimation,
@@ -51,6 +114,10 @@ function App() {
 
   const onInit = useCallback((instance) => {
     reactFlowInstance.current = instance;
+    const initialViewport = instance?.toObject?.();
+    if (initialViewport) {
+      setViewport(initialViewport);
+    }
   }, []);
 
   useEffect(() => {
@@ -127,23 +194,46 @@ function App() {
     );
   }, [setEdges]);
 
-  const nodesWithHandlers = useMemo(() => {
-    const defaultNode = visualSettings.dimensions?.node?.default ?? DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
+  const getNodeDimensions = useCallback((node) => {
+    const defaultNodeDimensions = visualSettings.dimensions?.node?.default ?? DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
     const overrides = visualSettings.dimensions?.node?.overrides ?? {};
+    const override = overrides[node.id] || {};
+    const baseWidth = defaultNodeDimensions.width;
+    const baseHeight = defaultNodeDimensions.height;
+
+    return {
+      width: override.width ?? baseWidth,
+      height: override.height ?? baseHeight,
+      borderRadius: override.borderRadius ?? defaultNodeDimensions.borderRadius,
+    };
+  }, [visualSettings]);
+
+  const scheduleLayout = useCallback((nextNodes, nextEdges) => {
+    setTimeout(() => {
+      applyLayoutWithAnimation(nextNodes, nextEdges);
+    }, 0);
+  }, [applyLayoutWithAnimation]);
+
+  const commitFlow = useCallback((nextFlow, { selection = null, layout = true } = {}) => {
+    if (!nextFlow) return;
+    setNodes(nextFlow.nodes);
+    setEdges(nextFlow.edges);
+    if (selection) {
+      setSelectedNodeIds(selection);
+    }
+    if (layout) {
+      scheduleLayout(nextFlow.nodes, nextFlow.edges);
+    }
+  }, [scheduleLayout, setNodes, setEdges]);
+
+  const nodesWithHandlers = useMemo(() => {
     const globalColors = visualSettings.colors?.allNodes ?? DEFAULT_VISUAL_SETTINGS.colors.allNodes;
     const perNodeColors = visualSettings.colors?.perNode ?? {};
 
     return nodes.map((node) => {
       const isGroupNode = node.type === 'group';
       const isCollapsed = isGroupNode && node.isExpanded === false;
-
-      // HARDCODED: Group dimensions 50% larger than regular nodes
-      const override = overrides[node.id] || {};
-      const baseWidth = isGroupNode ? defaultNode.width * 1.5 : defaultNode.width;
-      const baseHeight = isGroupNode ? defaultNode.height * 1.5 : defaultNode.height;
-      const width = override.width ?? baseWidth;
-      const height = override.height ?? baseHeight;
-      const borderRadius = override.borderRadius ?? defaultNode.borderRadius;
+      const { width, height, borderRadius } = getNodeDimensions(node);
 
       const nodeColorOverrides = perNodeColors[node.id] || {};
       // HARDCODED: Group node colors (distinct from regular nodes)
@@ -207,7 +297,7 @@ function App() {
         },
       };
     });
-  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds]);
+  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds, getNodeDimensions]);
 
   const edgesWithHandlers = useMemo(() =>
     edges.map((edge) => ({
@@ -233,87 +323,87 @@ function App() {
     setSelectedNodeIds([]);
   }, [setSelectedNodeIds]);
 
+  const handleViewportChange = useCallback((_, nextViewport) => {
+    setViewport(nextViewport);
+  }, []);
+
+  const applyGroupExpansion = useCallback((groupId, expandState = null) => {
+    const nextFlow = toggleGroupExpansion(
+      { nodes: nodesRef.current, edges: edgesRef.current },
+      groupId,
+      expandState,
+    );
+
+    commitFlow(nextFlow);
+  }, [commitFlow]);
+
+  const groupHalos = useMemo(
+    () => getExpandedGroupHalos(nodes, getNodeDimensions, HALO_PADDING),
+    [nodes, getNodeDimensions],
+  );
+
+  const collapseExpandedGroup = useCallback(
+    (groupId) => applyGroupExpansion(groupId, false),
+    [applyGroupExpansion],
+  );
+
   const onNodeDoubleClick = useCallback(
     (event, node) => {
       // Double-click on group node: toggle collapse/expand
       if (node.type === 'group') {
-        const nextFlow = toggleGroupExpansion(
-          { nodes, edges },
-          node.id,
-        );
-
-        setNodes(nextFlow.nodes);
-        setEdges(nextFlow.edges);
-
-        setTimeout(() => {
-          applyLayoutWithAnimation(nextFlow.nodes, nextFlow.edges);
-        }, 0);
+        applyGroupExpansion(node.id);
+        return;
       }
       // Cmd+Double-click: Create child node (existing behavior)
       else if (event.metaKey || event.ctrlKey) {
-        const newNodeId = `${Date.now()}`;
-        const newNode = {
-          id: newNodeId,
-          position: { x: node.position.x + 200, y: node.position.y },
-          data: {
-            label: `Node ${newNodeId}`,
-            description: '',
-            onLabelChange: updateNodeLabel,
-            onDescriptionChange: updateNodeDescription,
-          },
-          sourcePosition: Position.Right,
-          targetPosition: Position.Left,
-        };
+        const nextFlow = addChildNode(
+          { nodes: nodesRef.current, edges: edgesRef.current },
+          node.id,
+          (parent) => {
+            const newNodeId = `${Date.now()}`;
+            return {
+              node: {
+                id: newNodeId,
+                position: { x: parent.position.x + 200, y: parent.position.y },
+                data: {
+                  label: `Node ${newNodeId}`,
+                  description: '',
+                  onLabelChange: updateNodeLabel,
+                  onDescriptionChange: updateNodeDescription,
+                },
+                sourcePosition: Position.Right,
+                targetPosition: Position.Left,
+              },
+              edge: {
+                id: `e${parent.id}-${newNodeId}`,
+                source: parent.id,
+                target: newNodeId,
+                type: 'smoothstep',
+                data: { onLabelChange: updateEdgeLabel },
+              },
+            };
+          }
+        );
 
-        const newEdge = {
-          id: `e${node.id}-${newNodeId}`,
-          source: node.id,
-          target: newNodeId,
-          type: 'smoothstep',
-          data: { onLabelChange: updateEdgeLabel },
-        };
-
-        const updatedNodes = [...nodes, newNode];
-        const updatedEdges = [...edges, newEdge];
-
-        setTimeout(() => {
-          applyLayoutWithAnimation(updatedNodes, updatedEdges);
-        }, 0);
+        commitFlow(nextFlow);
       }
     },
-    [nodes, edges, applyLayoutWithAnimation, updateNodeLabel, updateNodeDescription, updateEdgeLabel],
+    [applyGroupExpansion, updateNodeLabel, updateNodeDescription, updateEdgeLabel, commitFlow],
   );
 
   const onNodeClick = useCallback(
     (event, node) => {
       // Alt+Click: Collapse/expand subtree (existing behavior)
       if (event.altKey) {
-        const isCurrentlyCollapsed = node.data.collapsed || false;
-
-        const updatedNodes = nodes.map(n =>
-          n.id === node.id
-            ? { ...n, data: { ...n.data, collapsed: !isCurrentlyCollapsed }}
-            : n
+        const isCurrentlyCollapsed = node.data?.collapsed || false;
+        const nextFlow = collapseSubtreeByHandles(
+          { nodes: nodesRef.current, edges: edgesRef.current },
+          node.id,
+          !isCurrentlyCollapsed,
+          getAllDescendants
         );
 
-        const descendants = getAllDescendants(node.id, nodes, edges);
-        const descendantIds = descendants.map(d => d.id);
-
-        const finalNodes = updatedNodes.map(n =>
-          descendantIds.includes(n.id)
-            ? { ...n, hidden: !isCurrentlyCollapsed }
-            : n
-        );
-
-        const finalEdges = edges.map(e =>
-          (descendantIds.includes(e.source) || descendantIds.includes(e.target))
-            ? { ...e, hidden: !isCurrentlyCollapsed }
-            : e
-        );
-
-        setTimeout(() => {
-          applyLayoutWithAnimation(finalNodes, finalEdges);
-        }, 0);
+        commitFlow(nextFlow);
       }
       // Cmd+Click: Toggle selection
       else if (event.metaKey || event.ctrlKey) {
@@ -332,7 +422,7 @@ function App() {
         setSelectedNodeIds([]);
       }
     },
-    [nodes, edges, applyLayoutWithAnimation, setSelectedNodeIds]
+    [commitFlow, setSelectedNodeIds, getAllDescendants]
   );
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
@@ -425,7 +515,7 @@ function App() {
       targetPosition: Position.Left,
     };
 
-    const nextFlow = createGroupState(
+    const nextFlow = createGroup(
       { nodes, edges },
       {
         groupNode,
@@ -441,14 +531,8 @@ function App() {
       }
     );
 
-    setSelectedNodeIds([]);
-    setNodes(nextFlow.nodes);
-    setEdges(nextFlow.edges);
-
-    setTimeout(() => {
-      applyLayoutWithAnimation(nextFlow.nodes, nextFlow.edges);
-    }, 0);
-  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, applyLayoutWithAnimation]);
+    commitFlow(nextFlow, { selection: [] });
+  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, commitFlow]);
 
   const ungroupNodes = useCallback(() => {
     if (selectedNodeIds.length !== 1) {
@@ -472,15 +556,9 @@ function App() {
       return;
     }
 
-    setSelectedNodeIds([]);
-    const nextFlow = ungroupGroupState({ nodes, edges }, groupId);
-    setNodes(nextFlow.nodes);
-    setEdges(nextFlow.edges);
-
-    setTimeout(() => {
-      applyLayoutWithAnimation(nextFlow.nodes, nextFlow.edges);
-    }, 0);
-  }, [selectedNodeIds, nodes, edges, applyLayoutWithAnimation]);
+    const nextFlow = ungroup({ nodes, edges }, groupId);
+    commitFlow(nextFlow, { selection: [] });
+  }, [selectedNodeIds, nodes, edges, commitFlow]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -525,7 +603,7 @@ function App() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edgesWithHandlers}
@@ -535,6 +613,7 @@ function App() {
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onMove={handleViewportChange}
         onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -545,6 +624,7 @@ function App() {
         proOptions={{ hideAttribution: true }}
       >
       </ReactFlow>
+      <GroupHaloOverlay halos={groupHalos} viewport={viewport} onCollapse={collapseExpandedGroup} />
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
 
       {/* Tooltip section (bottom-right corner) */}

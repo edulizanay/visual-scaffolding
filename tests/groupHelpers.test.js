@@ -10,6 +10,8 @@ import {
   createGroup,
   toggleGroupExpansion,
   ungroup,
+  getExpandedGroupHalos,
+  collapseSubtreeByHandles,
 } from '../src/utils/groupUtils.js';
 
 describe('getGroupDescendants', () => {
@@ -51,6 +53,59 @@ describe('getGroupDescendants', () => {
 
     const descendants = getGroupDescendants('group-a', nodes);
     expect(Array.isArray(descendants)).toBe(true);
+  });
+});
+
+describe('getExpandedGroupHalos', () => {
+  const dimensions = (node) => ({
+    width: node.width ?? 200,
+    height: node.height ?? 120,
+  });
+
+  test('returns empty array when no groups are expanded', () => {
+    const nodes = [
+      { id: 'group-1', type: 'group', isExpanded: false },
+      { id: 'a', parentGroupId: 'group-1', position: { x: 0, y: 0 }, width: 100, height: 60 },
+    ];
+
+    const halos = getExpandedGroupHalos(nodes, dimensions, 16);
+    expect(halos).toEqual([]);
+  });
+
+  test('computes padded bounding box for expanded group', () => {
+    const nodes = [
+      { id: 'group-1', type: 'group', isExpanded: true, data: { label: 'Checkout' } },
+      { id: 'a', parentGroupId: 'group-1', position: { x: 100, y: 100 }, width: 120, height: 80 },
+      { id: 'b', parentGroupId: 'group-1', position: { x: 300, y: 220 }, width: 140, height: 100 },
+    ];
+
+    const halos = getExpandedGroupHalos(nodes, dimensions, 20);
+    expect(halos).toHaveLength(1);
+    expect(halos[0].groupId).toBe('group-1');
+    expect(halos[0].label).toBe('Checkout');
+    // Bounding box should include padding on all sides
+    expect(halos[0].bounds).toEqual({
+      x: 80,
+      y: 80,
+      width: 380,
+      height: 260,
+    });
+  });
+
+  test('includes nested descendants in bounding box', () => {
+    const nodes = [
+      { id: 'group-outer', type: 'group', isExpanded: true },
+      { id: 'group-inner', type: 'group', parentGroupId: 'group-outer', isExpanded: false, position: { x: 400, y: 200 }, width: 150, height: 120 },
+      { id: 'node-1', parentGroupId: 'group-inner', position: { x: 450, y: 260 }, width: 80, height: 50 },
+    ];
+
+    const halos = getExpandedGroupHalos(nodes, dimensions, 10);
+    expect(halos).toHaveLength(1);
+    const bounds = halos[0].bounds;
+    expect(bounds.x).toBe(390);
+    expect(bounds.y).toBe(190);
+    expect(bounds.width).toBe(170);
+    expect(bounds.height).toBe(140);
   });
 });
 
@@ -140,6 +195,20 @@ describe('applyGroupVisibility', () => {
 
     expect(child.hidden).toBe(true);
     expect(child.groupHidden).toBe(false);
+  });
+
+  test('collapsing parent group hides nested group wrapper', () => {
+    const nodes = [
+      { id: 'outer', type: 'group', isExpanded: false },
+      { id: 'inner', type: 'group', parentGroupId: 'outer', isExpanded: true },
+      { id: 'leaf', parentGroupId: 'inner' },
+    ];
+
+    const { nodes: nextNodes } = applyGroupVisibility(nodes, []);
+    const innerGroup = nextNodes.find((n) => n.id === 'inner');
+
+    expect(innerGroup.hidden).toBe(true);
+    expect(innerGroup.groupHidden).toBe(true);
   });
 });
 
@@ -245,5 +314,57 @@ describe('createGroup / toggleGroupExpansion / ungroup', () => {
       (edge) => edge.data?.isSyntheticGroupEdge
     );
     expect(hasSyntheticEdges).toBe(false);
+  });
+
+  test('collapsing nested groups removes halos for hidden children', () => {
+    const initial = createGroup(baseFlow, {
+      groupNode: { id: 'group-1', type: 'group', position: { x: 50, y: -100 }, data: { label: 'Outer' } },
+      memberIds: ['a', 'b'],
+      collapse: false,
+      edgeFactory,
+    });
+
+    const withInner = createGroup(initial, {
+      groupNode: { id: 'group-2', type: 'group', position: { x: 60, y: -50 }, data: { label: 'Inner' } },
+      memberIds: ['a'],
+      collapse: false,
+      edgeFactory,
+    });
+
+    // Nest inner group under outer manually to simulate UI grouping inside parent
+    withInner.nodes = withInner.nodes.map((node) =>
+      node.id === 'group-2' ? { ...node, parentGroupId: 'group-1' } : node
+    );
+
+    const collapsedOuter = toggleGroupExpansion(withInner, 'group-1', false);
+    const halos = getExpandedGroupHalos(collapsedOuter.nodes, (node) => ({ width: 180, height: 100 }), 16);
+
+    expect(halos.find((halo) => halo.groupId === 'group-2')).toBeUndefined();
+  });
+});
+
+describe('collapseSubtreeByHandles', () => {
+  test('hides descendant nodes and edges when collapsing', () => {
+    const flow = {
+      nodes: [
+        { id: 'root', data: { collapsed: false } },
+        { id: 'child', data: {}, parentGroupId: null },
+      ],
+      edges: [
+        { id: 'e1', source: 'root', target: 'child' },
+      ],
+    };
+
+    const result = collapseSubtreeByHandles(
+      flow,
+      'root',
+      true,
+      () => ['child']
+    );
+    const child = result.nodes.find((n) => n.id === 'child');
+    const edge = result.edges.find((e) => e.id === 'e1');
+
+    expect(child.hidden).toBe(true);
+    expect(edge.hidden).toBe(true);
   });
 });

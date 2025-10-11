@@ -44,8 +44,11 @@ export const getLayoutedElements = (nodes, edges, visualSettings, direction = 'L
     dagreGraph.setNode(node.id, { width, height });
   });
 
+  const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
   edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
+    if (visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)) {
+      dagreGraph.setEdge(edge.source, edge.target);
+    }
   });
 
   dagre.layout(dagreGraph);
