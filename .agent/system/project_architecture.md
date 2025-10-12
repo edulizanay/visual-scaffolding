@@ -36,6 +36,8 @@ visual-scaffolding/
 │   ├── api.js                    # Frontend API client
 │   ├── hooks/
 │   │   └── useFlowLayout.js      # Auto-layout with dagre
+│   ├── utils/
+│   │   └── groupUtils.js         # Group node management and visibility
 │   └── main.jsx                  # React entry point
 │
 ├── server/                       # Backend Express server
@@ -103,7 +105,10 @@ visual-scaffolding/
 - Interactive node-based canvas using React Flow
 - Manual node creation via double-click (⌘/Ctrl + Double-click)
 - Drag-and-drop positioning
-- Collapsible subtrees (Alt + Click)
+- **Group nodes** - combine multiple nodes into collapsible groups (⌘/Ctrl + G)
+- **Dual collapse systems**:
+  - Group collapse: Uses `isCollapsed` on group nodes, managed via backend API
+  - Subtree collapse: Uses `data.collapsed` on any node, frontend-only (Alt + Click)
 - Auto-layout using dagre algorithm
 - Smooth animations for layout transitions
 - Real-time autosave (500ms debounce)
@@ -115,6 +120,7 @@ visual-scaffolding/
 - Automatic retry mechanism for failed tool executions (max 3 iterations)
 - Context-aware responses using conversation history
 - Support for batch operations (create multiple nodes in one request)
+- Group management via natural language (create, ungroup, expand/collapse)
 - Visual customization commands (colors, dimensions, zoom, dagre spacing)
 
 ### 3. Persistence & History
@@ -141,15 +147,15 @@ See [database_schema.md](./database_schema.md) for detailed schema documentation
 - `GET /api/flow/history-status` - Get undo/redo availability
 
 **Unified Flow Command Operations:**
-- `POST /api/node` - Create node (optionally with parent connection)
+- `POST /api/node` - Create node (optionally with parent or group)
 - `PUT /api/node/:id` - Update node properties (label, description, position)
 - `DELETE /api/node/:id` - Delete node and connected edges
 - `POST /api/edge` - Create edge between nodes
 - `PUT /api/edge/:id` - Update edge label
 - `DELETE /api/edge/:id` - Delete edge
-- `POST /api/group` - Create group containing multiple nodes
+- `POST /api/group` - Create group from selected nodes
 - `DELETE /api/group/:id` - Ungroup and restore member nodes
-- `PUT /api/group/:id/expand` - Expand or collapse group
+- `PUT /api/group/:id/expand` - Toggle group expansion (collapse/expand)
 
 **Conversation Operations:**
 - `POST /api/conversation/message` - Send message to AI
@@ -175,15 +181,15 @@ XML format with `<thinking>` and `<response>` tags containing JSON tool calls. S
 
 The AI can execute the following operations on flows:
 
-1. **addNode** - Create node (optionally with parent connection)
-2. **updateNode** - Modify node properties
+1. **addNode** - Create node (optionally with parent connection or group membership)
+2. **updateNode** - Modify node properties (label, description, position)
 3. **deleteNode** - Remove node and connected edges
 4. **addEdge** - Create connection between nodes
 5. **updateEdge** - Modify edge label
 6. **deleteEdge** - Remove connection
-7. **createGroup** - Create group containing multiple nodes
-8. **ungroup** - Remove group and restore member nodes
-9. **toggleGroupExpansion** - Expand or collapse group
+7. **createGroup** - Create group from multiple nodes (starts collapsed by default)
+8. **ungroup** - Remove group and restore member nodes to root level
+9. **toggleGroupExpansion** - Toggle group between collapsed and expanded states
 10. **undo** - Revert last change
 11. **redo** - Reapply undone change
 12. **changeVisuals** - Update background or node colors (global or per-node overrides)
@@ -195,16 +201,31 @@ Automatic retry mechanism for failed tool executions (max 3 iterations). Failed 
 
 ## Key Design Patterns
 
-### 1. Tool Execution Chain
+### 1. Unified Flow Commands
+All flow mutations (node CRUD, grouping, visual changes) follow a unified pattern:
+- Backend command defined in `server/tools/executor.js`
+- Exposed to both LLM tools and REST API endpoints
+- Frontend calls via helpers in `src/api.js`
+- See [unified-flow-commands SOP](../SOP/unified-flow-commands.md)
+
+### 2. Group Node Architecture
+Two independent collapse systems coexist:
+- **Group collapse**: `isCollapsed` property on group nodes, backend-managed, generates synthetic edges
+- **Subtree collapse**: `data.collapsed` on any node, frontend-only, hides descendants via edges
+- Visibility computed via `applyGroupVisibility()` in `src/utils/groupUtils.js`
+- Synthetic edges dynamically generated for collapsed groups on every state change
+- See [groupUtils.js](../../src/utils/groupUtils.js:1-22) for detailed documentation
+
+### 3. Tool Execution Chain
 Tools executed sequentially with state passed between them. All changes batched in single DB write.
 
-### 2. Undo/Redo State Management
+### 4. Undo/Redo State Management
 Snapshots stored in `undo_history` table with deduplication. Current position tracked in `undo_state` table. 50 snapshot limit with automatic truncation.
 
-### 3. Autosave with Debouncing
+### 5. Autosave with Debouncing
 Frontend debounces saves by 500ms to avoid excessive writes during canvas manipulation.
 
-### 4. LLM Context Building
+### 6. LLM Context Building
 Each request includes: system prompt, last 6 conversation turns, current flow state, available tools, and user message. See [llm_integration.md](./llm_integration.md).
 
 ## Development Workflow

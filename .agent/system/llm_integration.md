@@ -84,6 +84,7 @@ Located in `server/llm/tools.js`. Defined in OpenAI function calling format with
    - Smart ID generation from label
    - Auto-edge creation if `parentNodeId` provided
    - Optional edge labeling
+   - Inherits parent's `parentGroupId` if parent belongs to a group
 
 2. **updateNode** - Modify existing node
    - Update label, description, or position
@@ -96,18 +97,34 @@ Located in `server/llm/tools.js`. Defined in OpenAI function calling format with
 
 6. **deleteEdge** - Remove connection
 
-7. **undo** - Revert last change
+7. **createGroup** - Create group from multiple nodes
+   - Accepts array of `nodeIds` to group
+   - Optional `groupId`, `label`, `description`
+   - Groups start collapsed by default
+   - Validates no circular references or duplicate grouping
 
-8. **redo** - Reapply undone change
+8. **ungroup** - Remove group and restore members
+   - Removes group node
+   - Restores member nodes to root level (removes `parentGroupId`)
 
-9. **changeVisuals** - Update background or node colors (global or per-node overrides)
+9. **toggleGroupExpansion** - Toggle group collapse state
+   - Accepts `groupId` and optional `collapse` boolean
+   - If `collapse` not provided, toggles current state
+   - Expanded groups show members; collapsed groups show as single node
 
-10. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by a fixed percentage
+10. **undo** - Revert last change
+
+11. **redo** - Reapply undone change
+
+12. **changeVisuals** - Update background or node colors (global or per-node overrides)
+
+13. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by a fixed percentage
 
 **Key Features:**
 - `addNode` accepts label as `parentNodeId` (auto-matches to node)
-- Sanitization: labels converted to IDs (e.g., "My Node" → "my_node") to help LLMs perform multiple node creation and connections in fewer calls.
+- Sanitization: labels converted to IDs (e.g., "My Node" → "my_node") to help LLMs perform multiple node creation and connections in fewer calls
 - Validation: all params validated before execution
+- Group operations validate circular references and prevent invalid hierarchies
 
 ## Response Parsing
 

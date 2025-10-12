@@ -49,6 +49,25 @@ CREATE INDEX idx_flows_user_name ON flows(user_id, name);
         "label": "Login",
         "description": "User authentication page"
       }
+    },
+    {
+      "id": "auth_group",
+      "type": "group",
+      "position": {"x": 100, "y": 100},
+      "isCollapsed": true,
+      "data": {
+        "label": "Authentication Group",
+        "description": "Group of auth-related nodes"
+      }
+    },
+    {
+      "id": "signup",
+      "type": "default",
+      "position": {"x": 150, "y": 150},
+      "parentGroupId": "auth_group",
+      "data": {
+        "label": "Signup"
+      }
     }
   ],
   "edges": [
@@ -61,6 +80,16 @@ CREATE INDEX idx_flows_user_name ON flows(user_id, name);
   ]
 }
 ```
+
+**Node Types:**
+- `type: "default"` - Regular flow node
+- `type: "group"` - Group container node (can contain other nodes via `parentGroupId`)
+
+**Group-Related Fields:**
+- `parentGroupId` - (Optional) ID of parent group node. If present, this node is a member of that group
+- `isCollapsed` - (Optional, group nodes only) Boolean indicating if group is collapsed (true) or expanded (false)
+- `hidden` - (Optional) Boolean indicating if node should be hidden (computed during visibility processing)
+- `groupHidden` - (Optional) Boolean indicating if node is hidden because an ancestor group is collapsed
 
 **API Functions:**
 - `getFlow(userId, name)` - Retrieve flow data
@@ -243,11 +272,18 @@ canRedo = totalSnapshots > 0 && current_index < maxId
 6. Snapshot deduplicated/truncated as needed
 7. Visual updates triggered by AI tools persist via `saveVisualSettings()`
 
+**Group-Specific Saving:**
+- Group nodes stored with `type: "group"` and `isCollapsed` property
+- Member nodes stored with `parentGroupId` pointing to group
+- Synthetic edges are NOT persisted (computed dynamically on load)
+- Group visibility states (hidden, groupHidden) are NOT persisted (computed on every render)
+
 ### Loading Flow Data
 1. Frontend calls `GET /api/flow` on mount
 2. `getFlow()` reads from `flows` table and merges `visual_settings`
 3. Returns `{nodes: [], edges: [], settings: {...}}`
 4. Frontend initializes React Flow and applies visual settings
+5. Frontend calls `applyGroupVisibility()` to compute synthetic edges for collapsed groups
 
 ### LLM Message Processing
 1. User sends message via `POST /api/conversation/message`
