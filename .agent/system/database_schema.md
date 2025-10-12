@@ -9,7 +9,7 @@ Visual Scaffolding uses SQLite with Better-SQLite3 for synchronous database oper
 - **Migrations**: Located in `server/migrations/`
 - **Test Mode**: Uses `:memory:` database via `DB_PATH` env var
 
-## Tables
+## Tables (4 total)
 
 ### flows
 
@@ -95,61 +95,6 @@ CREATE INDEX idx_flows_user_name ON flows(user_id, name);
 - `getFlow(userId, name)` - Retrieve flow data
 - `saveFlow(flowData, userId, name)` - Upsert flow data
 - `getFlowId(userId, name)` - Get flow ID
-
-### visual_settings
-
-Stores persistent overrides for canvas styling and layout.
-
-```sql
-CREATE TABLE visual_settings (
-  id INTEGER PRIMARY KEY CHECK (id = 1),
-  data JSON NOT NULL DEFAULT '{}',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT OR IGNORE INTO visual_settings (id, data) VALUES (1, '{}');
-```
-
-**Fields:**
-- `id` - Always 1 (single row)
-- `data` - JSON blob containing color and dimension overrides
-- `created_at` / `updated_at` - Audit timestamps
-
-**Data Structure (merged with defaults on read):**
-```json
-{
-  "colors": {
-    "background": "linear-gradient(180deg, #0f0a1a 0%, #1a0f2e 100%)",
-    "allNodes": {
-      "background": "#1a192b",
-      "border": "#2b2253",
-      "text": "#ffffff"
-    },
-    "perNode": {
-      "example_node": {
-        "background": "#ffcc00",
-        "text": "#111111"
-      }
-    }
-  },
-  "dimensions": {
-    "node": {
-      "default": { "width": 172, "height": 36 },
-      "overrides": {
-        "example_node": { "width": 189.2, "height": 32.4 }
-      }
-    },
-    "zoom": 1,
-    "dagre": { "horizontal": 50, "vertical": 50 },
-    "fitViewPadding": 0.25
-  }
-}
-```
-
-**API Functions:**
-- `getVisualSettings()` - Returns merged defaults + overrides
-- `saveVisualSettings(settings)` - Persists new configuration snapshot
 
 ### conversation_history
 
@@ -270,7 +215,6 @@ canRedo = totalSnapshots > 0 && current_index < maxId
 4. `saveFlow()` upserts to `flows` table
 5. `pushSnapshot()` creates undo snapshot
 6. Snapshot deduplicated/truncated as needed
-7. Visual updates triggered by AI tools persist via `saveVisualSettings()`
 
 **Group-Specific Saving:**
 - Group nodes stored with `type: "group"` and `isCollapsed` property
@@ -280,9 +224,9 @@ canRedo = totalSnapshots > 0 && current_index < maxId
 
 ### Loading Flow Data
 1. Frontend calls `GET /api/flow` on mount
-2. `getFlow()` reads from `flows` table and merges `visual_settings`
-3. Returns `{nodes: [], edges: [], settings: {...}}`
-4. Frontend initializes React Flow and applies visual settings
+2. `getFlow()` reads from `flows` table
+3. Returns `{nodes: [], edges: []}`
+4. Frontend initializes React Flow with hardcoded theme from `src/constants/theme.js`
 5. Frontend calls `applyGroupVisibility()` to compute synthetic edges for collapsed groups
 
 ### LLM Message Processing
@@ -291,12 +235,10 @@ canRedo = totalSnapshots > 0 && current_index < maxId
 3. `buildLLMContext()` loads:
    - Last 6 interactions from `conversation_history`
    - Current flow from `flows`
-   - Visual settings snapshot from `visual_settings`
    - System prompt and tool definitions
 4. LLM responds with tool calls
 5. Tools executed, flow updated in `flows`
-6. Visual/dimension tools persist changes via `saveVisualSettings()`
-7. `addAssistantMessage()` saves response to `conversation_history`
+6. `addAssistantMessage()` saves response to `conversation_history`
 7. If tools fail, retry message added and cycle repeats (max 3 times)
 
 ### Undo/Redo Flow
@@ -312,10 +254,14 @@ canRedo = totalSnapshots > 0 && current_index < maxId
 ### 001_initial.sql
 - Initial schema creation
 - Migrated from JSON file storage (`server/data/flow-data.json`)
-- Created all four tables
+- Created all tables including flows, conversation_history, undo_history, undo_state, visual_settings
 - Established indexes and constraints
 
-**Migration applied automatically on server startup** via `db.js`:
+### 002_remove_visual_settings.sql
+- Removed visual_settings table
+- Theme constants moved to frontend (`src/constants/theme.js`)
+
+**Migrations applied automatically on server startup** via `db.js`:
 ```javascript
 const schema = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
 db.exec(schema);

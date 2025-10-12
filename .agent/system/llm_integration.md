@@ -32,17 +32,11 @@ Every LLM request includes (`buildLLMContext` in `llmService.js`):
 - All edges with: id, source, target, label
 - JSON stringified for readability
 
-### 3. Visual Settings Snapshot
-- Background color/gradient
-- Global node colors and per-node overrides
-- Node dimensions (defaults + overrides), zoom level, dagre spacing, fit view padding
-- Gives the LLM awareness of current presentation before issuing adjustments
-
-### 4. Available Tools
+### 3. Available Tools
 - Tool definitions with names, descriptions, parameters
 - OpenAI function calling format
 
-### 5. User Message
+### 4. User Message
 - The current request from user
 - Can be initial request or retry message
 
@@ -78,7 +72,7 @@ User Request: add a home page after login
 
 Located in `server/llm/tools.js`. Defined in OpenAI function calling format with name, description, and parameter schemas.
 
-### Available Tools
+### Available Tools (11 total)
 
 1. **addNode** - Create node with optional parent connection
    - Smart ID generation from label
@@ -116,10 +110,6 @@ Located in `server/llm/tools.js`. Defined in OpenAI function calling format with
 
 11. **redo** - Reapply undone change
 
-12. **changeVisuals** - Update background or node colors (global or per-node overrides)
-
-13. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by a fixed percentage
-
 **Key Features:**
 - `addNode` accepts label as `parentNodeId` (auto-matches to node)
 - Sanitization: labels converted to IDs (e.g., "My Node" → "my_node") to help LLMs perform multiple node creation and connections in fewer calls
@@ -132,7 +122,7 @@ LLM responses are parsed in `parseToolCalls()`. Extracts `<thinking>` and `<resp
 
 ## Tool Execution
 
-Located in `server/tools/executor.js`. Tools are executed sequentially with state passed between them. Flow edits are batched in a single DB write with automatic undo snapshot, while visual/dimension changes persist through `saveVisualSettings()`.
+Located in `server/tools/executor.js`. Tools are executed sequentially with state passed between them. All flow changes are batched in a single DB write with automatic undo snapshot.
 
 ### Result Format
 ```javascript

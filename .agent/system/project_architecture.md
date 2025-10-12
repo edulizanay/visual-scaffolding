@@ -55,8 +55,9 @@ visual-scaffolding/
 │   └── data/
 │       └── flow.db               # SQLite database file
 │
-├── shared/                       # Shared constants between server & client
-│   └── visualSettings.js         # Default visual settings + merge helper
+├── src/
+│   ├── constants/
+│   │   └── theme.js               # Hardcoded theme constants
 │
 ├── tests/                        # Comprehensive test suite
 │   ├── db.test.js               # Database layer tests
@@ -86,7 +87,6 @@ visual-scaffolding/
 ### State Management
 - React Flow hooks (`useNodesState`, `useEdgesState`) for canvas state
 - Local state for UI (loading, toast notifications, backend processing flag)
-- Visual settings state merged from backend and applied to node/background styling
 - No global state management (Redux/Zustand) - props and callbacks
 
 ### Key Hooks
@@ -94,7 +94,7 @@ visual-scaffolding/
 - React Flow built-ins - `onNodesChange`, `onEdgesChange`, `onConnect`
 
 ### Data Flow
-1. Load flow from backend on mount → Initialize React Flow
+1. Load flow from backend on mount → Initialize React Flow with hardcoded theme
 2. User edits (drag, edit labels) → Debounced autosave (500ms)
 3. AI chat message → Backend processes → Frontend receives updated flow → Auto-layout
 4. Undo/Redo → Fetch snapshot from backend → Update React Flow state
@@ -112,7 +112,6 @@ visual-scaffolding/
 - Auto-layout using dagre algorithm
 - Smooth animations for layout transitions
 - Real-time autosave (500ms debounce)
-- Dynamic background & node styling driven by persisted settings
 
 ### 2. AI-Powered Flow Generation
 - Natural language interface for flow creation
@@ -121,11 +120,9 @@ visual-scaffolding/
 - Context-aware responses using conversation history
 - Support for batch operations (create multiple nodes in one request)
 - Group management via natural language (create, ungroup, expand/collapse)
-- Visual customization commands (colors, dimensions, zoom, dagre spacing)
 
 ### 3. Persistence & History
 - SQLite database for all data
-- Visual settings stored in dedicated table and merged with defaults
 - Undo/redo functionality (⌘Z / ⌘Y)
 - Conversation history tracking (last 6 interactions sent to LLM)
 - Auto-snapshot on every change (50 snapshot limit)
@@ -140,7 +137,7 @@ See [database_schema.md](./database_schema.md) for detailed schema documentation
 ### Frontend ↔ Backend API
 
 **Flow Operations:**
-- `GET /api/flow` - Load current flow state and visual settings snapshot
+- `GET /api/flow` - Load current flow state
 - `POST /api/flow` - Save flow state
 - `POST /api/flow/undo` - Undo last change
 - `POST /api/flow/redo` - Redo undone change
@@ -179,7 +176,7 @@ XML format with `<thinking>` and `<response>` tags containing JSON tool calls. S
 
 ## Available Tools
 
-The AI can execute the following operations on flows:
+The AI can execute the following operations on flows (11 tools total):
 
 1. **addNode** - Create node (optionally with parent connection or group membership)
 2. **updateNode** - Modify node properties (label, description, position)
@@ -192,8 +189,6 @@ The AI can execute the following operations on flows:
 9. **toggleGroupExpansion** - Toggle group between collapsed and expanded states
 10. **undo** - Revert last change
 11. **redo** - Reapply undone change
-12. **changeVisuals** - Update background or node colors (global or per-node overrides)
-13. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by ±10%
 
 ## Error Recovery System
 
