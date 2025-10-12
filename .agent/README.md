@@ -29,9 +29,7 @@ Feature-specific PRDs and implementation plans:
 
 | Task | Status | Description |
 |------|--------|-------------|
-| **[1.remove-visual-customization.md](./Tasks/1.remove-visual-customization.md)** | Not Started | Remove dynamic visual customization, simplify to single default style |
 | **[hotkeys-visual-and-logic-centralization.md](./Tasks/hotkeys-visual-and-logic-centralization.md)** | Planning | Centralize keyboard shortcuts in single registry, improve UX hints |
-| **[test-suite-followup.md](./Tasks/test-suite-followup.md)** | Reference | Test suite improvements and coverage notes |
 
 ## 🛠️ Standard Operating Procedures (SOPs)
 
@@ -103,9 +101,10 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 
 ---
 
-**Last Updated**: October 2025
+**Last Updated**: October 12, 2025
 **Major Updates**:
-- Added group_nodes_system.md documenting complete group feature
-- Updated all system docs with group functionality
-- Added unified-flow-commands SOP
-- Updated Tasks index with current backlog
+- Completed visual customization removal (migration 002, hardcoded theme in src/constants/theme.js)
+- All tests passing (230 tests, 9 test suites)
+- Test coverage includes comprehensive frontend and integration tests
+- Database now has 4 tables (removed visual_settings)
+- Updated all system documentation to reflect current state

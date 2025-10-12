@@ -42,7 +42,7 @@ visual-scaffolding/
 │
 ├── server/                       # Backend Express server
 │   ├── server.js                 # Main server & API routes
-│   ├── db.js                     # SQLite database layer
+│   ├── db.js                     # SQLite database layer with migration runner
 │   ├── conversationService.js    # Conversation history management
 │   ├── historyService.js         # Undo/redo state management
 │   ├── llm/
@@ -51,7 +51,8 @@ visual-scaffolding/
 │   ├── tools/
 │   │   └── executor.js           # Tool execution logic
 │   ├── migrations/
-│   │   └── 001_initial.sql       # Database schema
+│   │   ├── 001_initial.sql       # Initial database schema
+│   │   └── 002_remove_visual_settings.sql  # Remove visual customization
 │   └── data/
 │       └── flow.db               # SQLite database file
 │
@@ -59,14 +60,16 @@ visual-scaffolding/
 │   ├── constants/
 │   │   └── theme.js               # Hardcoded theme constants
 │
-├── tests/                        # Comprehensive test suite
+├── tests/                        # Comprehensive test suite (230 tests, ~8200 lines)
 │   ├── db.test.js               # Database layer tests
 │   ├── conversationService.test.js
 │   ├── historyService.test.js
-│   ├── toolExecution.test.js
+│   ├── toolExecution.test.js    # Tool execution with group tests
 │   ├── api-contracts.test.js
+│   ├── groupHelpers.test.js     # Group utility functions
 │   ├── llm/                     # LLM service tests
-│   ├── integration/             # Integration tests
+│   ├── integration/             # Integration tests (message retry, conversation)
+│   ├── unit/frontend/           # Frontend unit tests
 │   └── security/                # Security tests (XSS prevention)
 │
 ├── .agent/                      # Project documentation

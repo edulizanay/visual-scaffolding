@@ -11,6 +11,8 @@ Visual Scaffolding uses SQLite with Better-SQLite3 for synchronous database oper
 
 ## Tables (4 total)
 
+The database contains 4 tables after the removal of `visual_settings` in migration 002.
+
 ### flows
 
 Stores flow graph data (nodes and edges) as JSON.
@@ -258,13 +260,18 @@ canRedo = totalSnapshots > 0 && current_index < maxId
 - Established indexes and constraints
 
 ### 002_remove_visual_settings.sql
-- Removed visual_settings table
-- Theme constants moved to frontend (`src/constants/theme.js`)
+- Removed visual_settings table (simplified from dynamic customization to hardcoded theme)
+- Theme constants now maintained in frontend (`src/constants/theme.js`)
+- Reduced table count from 5 to 4
 
 **Migrations applied automatically on server startup** via `db.js`:
 ```javascript
-const schema = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
-db.exec(schema);
+// Migrations run in order on every server start
+const migration001 = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
+db.exec(migration001);
+
+const migration002 = readFileSync(join(__dirname, 'migrations', '002_remove_visual_settings.sql'), 'utf-8');
+db.exec(migration002);
 ```
 
 ## Performance Considerations
