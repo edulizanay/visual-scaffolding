@@ -28,7 +28,7 @@ import {
 } from './api';
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
-import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
+import { THEME } from './constants/theme.js';
 import {
   validateGroupMembership,
   getGroupDescendants,
@@ -50,7 +50,6 @@ function App() {
   const reactFlowInstance = useRef(null);
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
-  const [visualSettings, setVisualSettings] = useState(DEFAULT_VISUAL_SETTINGS);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
 
   const {
@@ -61,8 +60,7 @@ function App() {
   } = useFlowLayout(
     setNodes,
     setEdges,
-    reactFlowInstance,
-    visualSettings
+    reactFlowInstance
   );
 
   const onInit = useCallback((instance) => {
@@ -81,8 +79,6 @@ function App() {
     const fetchFlow = async () => {
       try {
         const flow = await loadFlow();
-        const settings = mergeWithDefaultVisualSettings(flow.settings || {});
-        setVisualSettings(settings);
 
         const nodesWithPosition = flow.nodes.map(node => ({
           ...node,
@@ -124,9 +120,6 @@ function App() {
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
     if (!updatedFlow) return;
-
-    const mergedSettings = mergeWithDefaultVisualSettings(updatedFlow.settings || {});
-    setVisualSettings(mergedSettings);
 
     const nodesWithPosition = updatedFlow.nodes.map(node => ({
       ...node,
@@ -204,18 +197,12 @@ function App() {
   }, [handleFlowUpdate]);
 
   const getNodeDimensions = useCallback((node) => {
-    const defaultNodeDimensions = visualSettings.dimensions?.node?.default ?? DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
-    const overrides = visualSettings.dimensions?.node?.overrides ?? {};
-    const override = overrides[node.id] || {};
-    const baseWidth = defaultNodeDimensions.width;
-    const baseHeight = defaultNodeDimensions.height;
-
     return {
-      width: override.width ?? baseWidth,
-      height: override.height ?? baseHeight,
-      borderRadius: override.borderRadius ?? defaultNodeDimensions.borderRadius,
+      width: THEME.dimensions.node.width,
+      height: THEME.dimensions.node.height,
+      borderRadius: THEME.dimensions.node.borderRadius,
     };
-  }, [visualSettings]);
+  }, []);
 
   const scheduleLayout = useCallback((nextNodes, nextEdges) => {
     setTimeout(() => {
@@ -236,21 +223,16 @@ function App() {
   }, [scheduleLayout, setNodes, setEdges]);
 
   const nodesWithHandlers = useMemo(() => {
-    const globalColors = visualSettings.colors?.allNodes ?? DEFAULT_VISUAL_SETTINGS.colors.allNodes;
-    const groupColors = visualSettings.colors?.groupNodes ?? DEFAULT_VISUAL_SETTINGS.colors.groupNodes;
-    const perNodeColors = visualSettings.colors?.perNode ?? {};
-
     return nodes.map((node) => {
       const isGroupNode = node.type === 'group';
       const isCollapsed = isGroupNode && node.isCollapsed === true;
       const { width, height, borderRadius } = getNodeDimensions(node);
 
-      const nodeColorOverrides = perNodeColors[node.id] || {};
       // Use group-specific colors for group nodes, regular colors for others
-      const defaultColors = isGroupNode ? groupColors : globalColors;
-      const background = nodeColorOverrides.background ?? defaultColors.background;
-      const border = nodeColorOverrides.border ?? defaultColors.border;
-      const text = nodeColorOverrides.text ?? defaultColors.text;
+      const nodeColors = isGroupNode ? THEME.colors.groupNode : THEME.colors.node;
+      const background = nodeColors.background;
+      const border = nodeColors.border;
+      const text = nodeColors.text;
 
       const isSelected = selectedNodeIds.includes(node.id);
 
@@ -306,7 +288,7 @@ function App() {
         },
       };
     });
-  }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds, getNodeDimensions]);
+  }, [nodes, updateNodeLabel, updateNodeDescription, selectedNodeIds, getNodeDimensions]);
 
   const edgesWithHandlers = useMemo(() => {
     return edges.map((edge) => ({
@@ -576,7 +558,7 @@ function App() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode="dark"
-        style={{ background: visualSettings.colors?.background ?? DEFAULT_VISUAL_SETTINGS.colors.background }}
+        style={{ background: THEME.colors.background }}
         fitView
         fitViewOptions={{ padding: fitViewPadding }}
         proOptions={{ hideAttribution: true }}

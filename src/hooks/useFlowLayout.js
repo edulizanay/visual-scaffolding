@@ -4,7 +4,7 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 import { timer } from 'd3-timer';
 import { getOutgoers } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
-import { DEFAULT_VISUAL_SETTINGS } from '../../shared/visualSettings.js';
+import { THEME } from '../constants/theme.js';
 
 // Traverse descendants by edges (for Alt+Click collapse)
 export const getAllDescendants = (nodeId, nodes, edges) => {
@@ -21,27 +21,23 @@ export const getAllDescendants = (nodeId, nodes, edges) => {
   return descendants;
 };
 
-export const getLayoutedElements = (nodes, edges, visualSettings, direction = 'LR') => {
+export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
   const isHorizontal = direction === 'LR';
-  const settings = visualSettings || DEFAULT_VISUAL_SETTINGS;
-  const dagreSpacing = settings.dimensions?.dagre || DEFAULT_VISUAL_SETTINGS.dimensions.dagre;
-  const defaultNode = settings.dimensions?.node?.default || DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
-  const overrides = settings.dimensions?.node?.overrides || {};
 
   dagreGraph.setGraph({
     rankdir: direction,
-    ranksep: dagreSpacing.horizontal ?? DEFAULT_VISUAL_SETTINGS.dimensions.dagre.horizontal,
-    nodesep: dagreSpacing.vertical ?? DEFAULT_VISUAL_SETTINGS.dimensions.dagre.vertical,
+    ranksep: THEME.dimensions.dagre.horizontal,
+    nodesep: THEME.dimensions.dagre.vertical,
   });
 
   const visibleNodes = nodes.filter(node => !node.hidden);
 
   visibleNodes.forEach((node) => {
-    const override = overrides[node.id] || {};
-    const width = override.width ?? defaultNode.width;
-    const height = override.height ?? defaultNode.height;
-    dagreGraph.setNode(node.id, { width, height });
+    dagreGraph.setNode(node.id, {
+      width: THEME.dimensions.node.width,
+      height: THEME.dimensions.node.height
+    });
   });
 
   const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
@@ -75,17 +71,13 @@ export const getLayoutedElements = (nodes, edges, visualSettings, direction = 'L
     const nodeWithPosition = dagreGraph.node(node.id);
     if (!nodeWithPosition) return node;
 
-    const override = overrides[node.id] || {};
-    const width = override.width ?? defaultNode.width;
-    const height = override.height ?? defaultNode.height;
-
     return {
       ...node,
       targetPosition: isHorizontal ? 'left' : 'top',
       sourcePosition: isHorizontal ? 'right' : 'bottom',
       position: {
-        x: nodeWithPosition.x - width / 2,
-        y: nodeWithPosition.y - height / 2,
+        x: nodeWithPosition.x - THEME.dimensions.node.width / 2,
+        y: nodeWithPosition.y - THEME.dimensions.node.height / 2,
       },
     };
   });
@@ -93,11 +85,10 @@ export const getLayoutedElements = (nodes, edges, visualSettings, direction = 'L
   return { nodes: newNodes, edges };
 };
 
-export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSettings) {
+export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef(null);
-  const settings = visualSettings || DEFAULT_VISUAL_SETTINGS;
-  const fitViewPadding = settings.dimensions?.fitViewPadding ?? DEFAULT_VISUAL_SETTINGS.dimensions.fitViewPadding;
+  const fitViewPadding = THEME.dimensions.fitViewPadding;
 
   const applyLayoutWithAnimation = useCallback((currentNodes, currentEdges) => {
     // Stop any existing animation
@@ -109,7 +100,6 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSetti
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       currentNodes,
       currentEdges,
-      visualSettings,
       'LR'
     );
 
@@ -158,7 +148,7 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance, visualSetti
       }
     });
 
-  }, [setNodes, setEdges, reactFlowInstance, visualSettings, fitViewPadding]);
+  }, [setNodes, setEdges, reactFlowInstance, fitViewPadding]);
 
   // Cleanup animation on unmount
   useEffect(() => {
