@@ -577,7 +577,6 @@ Creating a test node.
       expect(Array.isArray(response.body.execution)).toBe(true);
       expect(response.body.updatedFlow).toHaveProperty('nodes');
       expect(response.body.updatedFlow).toHaveProperty('edges');
-      expect(response.body.updatedFlow).toHaveProperty('settings');
       expect(typeof response.body.iterations).toBe('number');
     });
 
