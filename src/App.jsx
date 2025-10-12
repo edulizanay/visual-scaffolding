@@ -325,16 +325,16 @@ function App() {
     setSelectedNodeIds([]);
   }, [setSelectedNodeIds]);
 
-  const applyGroupExpansion = useCallback(async (groupId, collapseState = null) => {
+  const applyGroupExpansion = useCallback(async (groupId, expandState = null) => {
     try {
-      // If collapseState is null, toggle based on current state
-      let collapse = collapseState;
-      if (collapse === null) {
+      // If expandState is null, toggle based on current state
+      let expand = expandState;
+      if (expand === null) {
         const groupNode = nodesRef.current.find(n => n.id === groupId);
-        collapse = !groupNode?.isCollapsed;
+        expand = groupNode?.isCollapsed ?? false;
       }
 
-      const result = await apiToggleGroupExpansion(groupId, collapse);
+      const result = await apiToggleGroupExpansion(groupId, expand);
       if (result.success) {
         handleFlowUpdate(result.flow);
       } else {
