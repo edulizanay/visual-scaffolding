@@ -12,16 +12,26 @@ import {
 import '@xyflow/react/dist/style.css';
 import Node from './Node';
 import Edge from './Edge';
-import { loadFlow, saveFlow, undoFlow, redoFlow, getHistoryStatus } from './api';
+import { 
+  loadFlow, 
+  saveFlow, 
+  undoFlow, 
+  redoFlow, 
+  getHistoryStatus,
+  createNode,
+  updateNode,
+  createEdge,
+  updateEdge,
+  createGroup as apiCreateGroup,
+  ungroup as apiUngroup,
+  toggleGroupExpansion as apiToggleGroupExpansion
+} from './api';
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
 import {
   validateGroupMembership,
   getGroupDescendants,
-  createGroup,
-  toggleGroupExpansion,
-  ungroup,
   collapseSubtreeByHandles,
   addChildNode,
   getExpandedGroupHalos,
@@ -108,29 +118,83 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [nodes, edges, isLoading, canUndo, isAnimating, isBackendProcessing]);
 
-  const updateNodeLabel = useCallback((nodeId, newLabel) => {
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === nodeId ? { ...n, data: { ...n.data, label: newLabel } } : n
-      )
-    );
-  }, [setNodes]);
+  const handleFlowUpdate = useCallback((updatedFlow) => {
+    if (!updatedFlow) return;
 
-  const updateNodeDescription = useCallback((nodeId, newDescription) => {
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === nodeId ? { ...n, data: { ...n.data, description: newDescription } } : n
-      )
-    );
-  }, [setNodes]);
+    const mergedSettings = mergeWithDefaultVisualSettings(updatedFlow.settings || {});
+    setVisualSettings(mergedSettings);
 
-  const updateEdgeLabel = useCallback((edgeId, newLabel) => {
-    setEdges((eds) =>
-      eds.map((e) =>
-        e.id === edgeId ? { ...e, data: { ...e.data, label: newLabel } } : e
-      )
-    );
-  }, [setEdges]);
+    const nodesWithPosition = updatedFlow.nodes.map(node => ({
+      ...node,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+    }));
+
+    setNodes(nodesWithPosition);
+    setEdges(updatedFlow.edges);
+
+    // Auto-layout when LLM adds nodes
+    setTimeout(() => {
+      applyLayoutWithAnimation(nodesWithPosition, updatedFlow.edges);
+    }, 100);
+  }, [setNodes, setEdges, applyLayoutWithAnimation]);
+
+  const updateNodeLabel = useCallback(async (nodeId, newLabel) => {
+    try {
+      const result = await updateNode(nodeId, { label: newLabel });
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+      } else {
+        console.error('Failed to update node label:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating node label:', error);
+    }
+  }, [handleFlowUpdate]);
+
+  const updateNodeDescription = useCallback(async (nodeId, newDescription) => {
+    try {
+      const result = await updateNode(nodeId, { description: newDescription });
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+      } else {
+        console.error('Failed to update node description:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating node description:', error);
+    }
+  }, [handleFlowUpdate]);
+
+  const updateEdgeLabel = useCallback(async (edgeId, newLabel) => {
+    try {
+      const result = await updateEdge(edgeId, { label: newLabel });
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+      } else {
+        console.error('Failed to update edge label:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating edge label:', error);
+    }
+  }, [handleFlowUpdate]);
+
+  const createChildNode = useCallback(async (parentNodeId) => {
+    try {
+      const result = await createNode({
+        label: `Node ${Date.now()}`,
+        description: '',
+        parentNodeId: parentNodeId,
+        edgeLabel: ''
+      });
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+      } else {
+        console.error('Failed to create child node:', result.error);
+      }
+    } catch (error) {
+      console.error('Error creating child node:', error);
+    }
+  }, [handleFlowUpdate]);
 
   const getNodeDimensions = useCallback((node) => {
     const defaultNodeDimensions = visualSettings.dimensions?.node?.default ?? DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
@@ -263,24 +327,46 @@ function App() {
   const nodeTypes = useMemo(() => ({ default: Node, group: Node }), []);
   const edgeTypes = useMemo(() => ({ smoothstep: Edge }), []);
 
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', data: { onLabelChange: updateEdgeLabel } }, eds)),
-    [setEdges, updateEdgeLabel],
-  );
+  const onConnect = useCallback(async (params) => {
+    try {
+      const result = await createEdge({
+        sourceNodeId: params.source,
+        targetNodeId: params.target,
+        label: ''
+      });
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+      } else {
+        console.error('Failed to create edge:', result.error);
+      }
+    } catch (error) {
+      console.error('Error creating edge:', error);
+    }
+  }, [handleFlowUpdate]);
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeIds([]);
   }, [setSelectedNodeIds]);
 
-  const applyGroupExpansion = useCallback((groupId, expandState = null) => {
-    const nextFlow = toggleGroupExpansion(
-      { nodes: nodesRef.current, edges: edgesRef.current },
-      groupId,
-      expandState,
-    );
+  const applyGroupExpansion = useCallback(async (groupId, expandState = null) => {
+    try {
+      // If expandState is null, toggle based on current state
+      let expand = expandState;
+      if (expand === null) {
+        const groupNode = nodesRef.current.find(n => n.id === groupId);
+        expand = !groupNode?.isExpanded;
+      }
 
-    commitFlow(nextFlow);
-  }, [commitFlow]);
+      const result = await apiToggleGroupExpansion(groupId, expand);
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+      } else {
+        console.error('Failed to toggle group expansion:', result.error);
+      }
+    } catch (error) {
+      console.error('Error toggling group expansion:', error);
+    }
+  }, [handleFlowUpdate]);
 
   const groupHalos = useMemo(
     () => getExpandedGroupHalos(nodes, getNodeDimensions, HALO_PADDING),
@@ -301,39 +387,10 @@ function App() {
       }
       // Cmd+Double-click: Create child node (existing behavior)
       else if (event.metaKey || event.ctrlKey) {
-        const nextFlow = addChildNode(
-          { nodes: nodesRef.current, edges: edgesRef.current },
-          node.id,
-          (parent) => {
-            const newNodeId = `${Date.now()}`;
-            return {
-              node: {
-                id: newNodeId,
-                position: { x: parent.position.x + 200, y: parent.position.y },
-                data: {
-                  label: `Node ${newNodeId}`,
-                  description: '',
-                  onLabelChange: updateNodeLabel,
-                  onDescriptionChange: updateNodeDescription,
-                },
-                sourcePosition: Position.Right,
-                targetPosition: Position.Left,
-              },
-              edge: {
-                id: `e${parent.id}-${newNodeId}`,
-                source: parent.id,
-                target: newNodeId,
-                type: 'smoothstep',
-                data: { onLabelChange: updateEdgeLabel },
-              },
-            };
-          }
-        );
-
-        commitFlow(nextFlow);
+        createChildNode(node.id);
       }
     },
-    [applyGroupExpansion, updateNodeLabel, updateNodeDescription, updateEdgeLabel, commitFlow],
+    [applyGroupExpansion, createChildNode],
   );
 
   const onNodeClick = useCallback(
@@ -370,27 +427,6 @@ function App() {
     [commitFlow, setSelectedNodeIds, getAllDescendants]
   );
 
-  const handleFlowUpdate = useCallback((updatedFlow) => {
-    if (!updatedFlow) return;
-
-    const mergedSettings = mergeWithDefaultVisualSettings(updatedFlow.settings || {});
-    setVisualSettings(mergedSettings);
-
-    const nodesWithPosition = updatedFlow.nodes.map(node => ({
-      ...node,
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-    }));
-
-    setNodes(nodesWithPosition);
-    setEdges(updatedFlow.edges);
-
-    // Auto-layout when LLM adds nodes
-    setTimeout(() => {
-      applyLayoutWithAnimation(nodesWithPosition, updatedFlow.edges);
-    }, 100);
-  }, [setNodes, setEdges, applyLayoutWithAnimation]);
-
   const updateHistoryStatus = useCallback(async () => {
     try {
       const status = await getHistoryStatus();
@@ -426,7 +462,7 @@ function App() {
     }
   }, [handleFlowUpdate, updateHistoryStatus]);
 
-  const handleCreateGroup = useCallback(() => {
+  const handleCreateGroup = useCallback(async () => {
     if (selectedNodeIds.length < 2) {
       alert('Please select at least 2 nodes to create a group');
       return;
@@ -438,48 +474,24 @@ function App() {
       return;
     }
 
-    const timestamp = Date.now();
-    const groupId = `group-${timestamp}`;
-    const groupLabel = `Group ${timestamp}`;
-
-    const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
-    const avgX = selectedNodes.reduce((sum, n) => sum + n.position.x, 0) / selectedNodes.length;
-    const avgY = selectedNodes.reduce((sum, n) => sum + n.position.y, 0) / selectedNodes.length;
-
-    const groupNode = {
-      id: groupId,
-      type: 'group',
-      isExpanded: false,
-      position: { x: avgX, y: avgY - 100 },
-      data: {
-        label: groupLabel,
-        onLabelChange: updateNodeLabel,
-        onDescriptionChange: updateNodeDescription,
-      },
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-    };
-
-    const nextFlow = createGroup(
-      { nodes, edges },
-      {
-        groupNode,
+    try {
+      const result = await apiCreateGroup({
         memberIds: selectedNodeIds,
-        collapse: true,
-        edgeFactory: ({ id, source, target }) => ({
-          id,
-          source,
-          target,
-          type: 'smoothstep',
-          data: { onLabelChange: updateEdgeLabel },
-        }),
+        label: `Group ${Date.now()}`
+      });
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+        setSelectedNodeIds([]);
+      } else {
+        alert(`Failed to create group: ${result.error}`);
       }
-    );
+    } catch (error) {
+      console.error('Error creating group:', error);
+      alert('Failed to create group');
+    }
+  }, [selectedNodeIds, nodes, validateGroupMembership, handleFlowUpdate, setSelectedNodeIds]);
 
-    commitFlow(nextFlow, { selection: [] });
-  }, [selectedNodeIds, nodes, edges, validateGroupMembership, updateNodeLabel, updateNodeDescription, updateEdgeLabel, commitFlow]);
-
-  const ungroupNodes = useCallback(() => {
+  const ungroupNodes = useCallback(async () => {
     if (selectedNodeIds.length !== 1) {
       alert('Please select exactly 1 group node to ungroup');
       return;
@@ -493,17 +505,19 @@ function App() {
       return;
     }
 
-    // Find all direct children of this group
-    const memberIds = nodes.filter((n) => n.parentGroupId === groupId);
-
-    if (memberIds.length === 0) {
-      alert('Group has no members');
-      return;
+    try {
+      const result = await apiUngroup(groupId);
+      if (result.success) {
+        handleFlowUpdate(result.flow);
+        setSelectedNodeIds([]);
+      } else {
+        alert(`Failed to ungroup: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error ungrouping:', error);
+      alert('Failed to ungroup');
     }
-
-    const nextFlow = ungroup({ nodes, edges }, groupId);
-    commitFlow(nextFlow, { selection: [] });
-  }, [selectedNodeIds, nodes, edges, commitFlow]);
+  }, [selectedNodeIds, nodes, handleFlowUpdate, setSelectedNodeIds]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {

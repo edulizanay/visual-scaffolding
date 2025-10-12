@@ -72,10 +72,13 @@ describe('executeTool - addNode', () => {
     expect(flow.edges[0].data.label).toBe('Navigate');
   });
 
-  it('should fail when label is missing', async () => {
+  it('should auto-generate label when missing', async () => {
     const result = await executeTool('addNode', {});
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('label');
+    expect(result.success).toBe(true);
+    expect(result.nodeId).toBeDefined();
+    const flow = await loadFlow();
+    const newNode = flow.nodes.find(n => n.id === result.nodeId);
+    expect(newNode.data.label).toMatch(/Node \d+/);
   });
 
   it('should fail when parentNodeId does not exist', async () => {

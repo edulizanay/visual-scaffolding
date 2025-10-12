@@ -140,6 +140,17 @@ See [database_schema.md](./database_schema.md) for detailed schema documentation
 - `POST /api/flow/redo` - Redo undone change
 - `GET /api/flow/history-status` - Get undo/redo availability
 
+**Unified Flow Command Operations:**
+- `POST /api/node` - Create node (optionally with parent connection)
+- `PUT /api/node/:id` - Update node properties (label, description, position)
+- `DELETE /api/node/:id` - Delete node and connected edges
+- `POST /api/edge` - Create edge between nodes
+- `PUT /api/edge/:id` - Update edge label
+- `DELETE /api/edge/:id` - Delete edge
+- `POST /api/group` - Create group containing multiple nodes
+- `DELETE /api/group/:id` - Ungroup and restore member nodes
+- `PUT /api/group/:id/expand` - Expand or collapse group
+
 **Conversation Operations:**
 - `POST /api/conversation/message` - Send message to AI
 - `GET /api/conversation/debug` - View conversation history
@@ -170,10 +181,13 @@ The AI can execute the following operations on flows:
 4. **addEdge** - Create connection between nodes
 5. **updateEdge** - Modify edge label
 6. **deleteEdge** - Remove connection
-7. **undo** - Revert last change
-8. **redo** - Reapply undone change
-9. **changeVisuals** - Update background or node colors (global or per-node overrides)
-10. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by ±10%
+7. **createGroup** - Create group containing multiple nodes
+8. **ungroup** - Remove group and restore member nodes
+9. **toggleGroupExpansion** - Expand or collapse group
+10. **undo** - Revert last change
+11. **redo** - Reapply undone change
+12. **changeVisuals** - Update background or node colors (global or per-node overrides)
+13. **changeDimensions** - Adjust node sizing, zoom level, or dagre spacing by ±10%
 
 ## Error Recovery System
 

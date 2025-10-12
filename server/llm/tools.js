@@ -221,6 +221,65 @@ export const toolDefinitions = [
       required: ['target', 'direction'],
     },
   },
+  {
+    name: 'createGroup',
+    description: 'Creates a group containing multiple nodes. Groups allow organizing related nodes together and can be collapsed/expanded.',
+    parameters: {
+      type: 'object',
+      properties: {
+        memberIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of node IDs to include in the group. Must contain at least 2 nodes.',
+        },
+        label: {
+          type: ['string', 'null'],
+          description: 'Optional label for the group. If omitted, a default name will be generated.',
+        },
+        position: {
+          type: ['object', 'null'],
+          description: 'Optional position for the group node. If omitted, position will be calculated from member nodes.',
+          properties: {
+            x: { type: 'number' },
+            y: { type: 'number' },
+          },
+        },
+      },
+      required: ['memberIds'],
+    },
+  },
+  {
+    name: 'ungroup',
+    description: 'Removes a group and restores its member nodes to the main flow. All synthetic group edges are removed.',
+    parameters: {
+      type: 'object',
+      properties: {
+        groupId: {
+          type: 'string',
+          description: 'The ID of the group to remove.',
+        },
+      },
+      required: ['groupId'],
+    },
+  },
+  {
+    name: 'toggleGroupExpansion',
+    description: 'Expands or collapses a group. When collapsed, member nodes are hidden. When expanded, member nodes are visible.',
+    parameters: {
+      type: 'object',
+      properties: {
+        groupId: {
+          type: 'string',
+          description: 'The ID of the group to expand or collapse.',
+        },
+        expand: {
+          type: 'boolean',
+          description: 'True to expand the group (show members), false to collapse (hide members).',
+        },
+      },
+      required: ['groupId', 'expand'],
+    },
+  },
 ];
 
 /**

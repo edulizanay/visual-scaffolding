@@ -127,3 +127,177 @@ export const getHistoryStatus = async () => {
     throw error;
   }
 };
+
+// Unified Flow Command API Helpers
+// These functions provide consistent API access to all flow operations
+
+// Node operations
+export const createNode = async (params) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/node`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create node');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating node:', error);
+    throw error;
+  }
+};
+
+export const updateNode = async (nodeId, params) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/node/${nodeId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update node');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating node:', error);
+    throw error;
+  }
+};
+
+export const deleteNode = async (nodeId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/node/${nodeId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete node');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting node:', error);
+    throw error;
+  }
+};
+
+// Edge operations
+export const createEdge = async (params) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/edge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create edge');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating edge:', error);
+    throw error;
+  }
+};
+
+export const updateEdge = async (edgeId, params) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/edge/${edgeId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update edge');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating edge:', error);
+    throw error;
+  }
+};
+
+export const deleteEdge = async (edgeId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/edge/${edgeId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete edge');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting edge:', error);
+    throw error;
+  }
+};
+
+// Group operations
+export const createGroup = async (params) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/group`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create group');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating group:', error);
+    throw error;
+  }
+};
+
+export const ungroup = async (groupId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/group/${groupId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to ungroup');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error ungrouping:', error);
+    throw error;
+  }
+};
+
+export const toggleGroupExpansion = async (groupId, expand) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/group/${groupId}/expand`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expand }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to toggle group expansion');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error toggling group expansion:', error);
+    throw error;
+  }
+};
