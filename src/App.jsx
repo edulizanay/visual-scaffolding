@@ -37,6 +37,7 @@ import {
   getExpandedGroupHalos,
   GroupHaloOverlay,
   HALO_PADDING,
+  applyGroupVisibility,
 } from './utils/groupUtils.js';
 
 function App() {
@@ -89,8 +90,11 @@ function App() {
           targetPosition: Position.Left,
         }));
 
-        setNodes(nodesWithPosition);
-        setEdges(flow.edges);
+        // Apply group visibility to compute synthetic edges
+        const normalizedFlow = applyGroupVisibility(nodesWithPosition, flow.edges);
+
+        setNodes(normalizedFlow.nodes);
+        setEdges(normalizedFlow.edges);
       } catch (error) {
         console.error('Failed to load flow:', error);
       } finally {
@@ -130,12 +134,15 @@ function App() {
       targetPosition: Position.Left,
     }));
 
-    setNodes(nodesWithPosition);
-    setEdges(updatedFlow.edges);
+    // Apply group visibility to compute synthetic edges
+    const normalizedFlow = applyGroupVisibility(nodesWithPosition, updatedFlow.edges);
+
+    setNodes(normalizedFlow.nodes);
+    setEdges(normalizedFlow.edges);
 
     // Auto-layout when LLM adds nodes
     setTimeout(() => {
-      applyLayoutWithAnimation(nodesWithPosition, updatedFlow.edges);
+      applyLayoutWithAnimation(normalizedFlow.nodes, normalizedFlow.edges);
     }, 100);
   }, [setNodes, setEdges, applyLayoutWithAnimation]);
 
