@@ -351,7 +351,7 @@ function App() {
   );
 
   const collapseExpandedGroup = useCallback(
-    (groupId) => applyGroupExpansion(groupId, true),
+    (groupId) => applyGroupExpansion(groupId, false),
     [applyGroupExpansion],
   );
 
