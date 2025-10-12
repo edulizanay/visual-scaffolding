@@ -57,7 +57,7 @@ describe('POST /api/group', () => {
     expect(groupNode).toBeDefined();
     expect(groupNode.type).toBe('group');
     expect(groupNode.data.label).toBe('Test Group');
-    expect(groupNode.isExpanded).toBe(false);
+    expect(groupNode.isCollapsed).toBe(true);
 
     // Check member nodes have parentGroupId
     const member1 = flow.nodes.find(n => n.id === node1Result.nodeId);
@@ -232,7 +232,7 @@ describe('PUT /api/group/:id/expand', () => {
 
     // Check group is expanded
     const groupNode = flow.nodes.find(n => n.id === groupResult.groupId);
-    expect(groupNode.isExpanded).toBe(true);
+    expect(groupNode.isCollapsed).toBe(false);
 
     // Check members are visible
     const member1 = flow.nodes.find(n => n.id === node1Result.nodeId);
@@ -271,7 +271,7 @@ describe('PUT /api/group/:id/expand', () => {
 
     // Check group is collapsed
     const groupNode = flow.nodes.find(n => n.id === groupResult.groupId);
-    expect(groupNode.isExpanded).toBe(false);
+    expect(groupNode.isCollapsed).toBe(true);
 
     // Check members are hidden
     const member1 = flow.nodes.find(n => n.id === node1Result.nodeId);

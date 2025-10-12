@@ -113,7 +113,7 @@ const computeAncestorHiddenSet = (nodes) => {
     while (current?.parentGroupId) {
       const parent = nodeMap.get(current.parentGroupId);
       if (!parent) break;
-      if (parent.isExpanded === false) {
+      if (parent.isCollapsed === true) {
         memo.set(node.id, true);
         return true;
       }
@@ -143,12 +143,13 @@ export const applyGroupVisibility = (nodes, edges) => {
     const previouslyHidden = node.hidden ?? false;
 
     if (node.type === 'group') {
-      const isExpanded = node.isExpanded !== false;
-
+      const isCollapsed = node.isCollapsed === true;
+      // Group node is visible when collapsed, hidden when expanded (shows members instead)
+      // Also hidden if inside a collapsed ancestor group
       return {
         ...node,
         groupHidden: hiddenByAncestor,
-        hidden: (hiddenByAncestor || isExpanded) || (previouslyHidden && !previousGroupHidden),
+        hidden: hiddenByAncestor || !isCollapsed,
       };
     }
 
@@ -170,46 +171,13 @@ export const applyGroupVisibility = (nodes, edges) => {
     const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
     const effectiveHidden = (sourceInfo?.hidden ?? false) || (targetInfo?.hidden ?? false);
 
-    const isSynthetic = edge.data?.isSyntheticGroupEdge === true;
-
-    // If either endpoint node is hidden, hide the edge. Simple and correct.
-    const result = {
+    // If either endpoint node is hidden, hide the edge
+    return {
       ...edge,
       groupHidden: effectiveGroupHidden,
       hidden: effectiveHidden,
     };
-
-    // Debug synthetic edges
-    if (isSynthetic) {
-      console.log('[DEBUG] Synthetic edge:', {
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        sourceHidden: sourceInfo?.hidden,
-        targetHidden: targetInfo?.hidden,
-        effectiveHidden,
-        finalHidden: result.hidden,
-      });
-    }
-
-    return result;
   });
-
-  // Debug group nodes
-  const groupNodes = nextNodes.filter(n => n.type === 'group');
-  if (groupNodes.length > 0) {
-    console.log('[DEBUG] Group nodes:', groupNodes.map(g => ({
-      id: g.id,
-      isExpanded: g.isExpanded,
-      hidden: g.hidden,
-      groupHidden: g.groupHidden,
-    })));
-  }
-
-  const syntheticEdges = nextEdges.filter(e => e.data?.isSyntheticGroupEdge);
-  if (syntheticEdges.length > 0) {
-    console.log('[DEBUG] Total synthetic edges:', syntheticEdges.length, 'hidden:', syntheticEdges.filter(e => e.hidden).length);
-  }
 
   return { nodes: nextNodes, edges: nextEdges };
 };
@@ -267,7 +235,7 @@ export const createGroup = (flow, options) => {
   const normalizedGroupNode = {
     ...groupNode,
     type: 'group',
-    isExpanded: collapse ? false : groupNode.isExpanded ?? true,
+    isCollapsed: collapse ? true : groupNode.isCollapsed ?? false,
     hidden: false,
     groupHidden: false,
   };
@@ -279,17 +247,17 @@ export const createGroup = (flow, options) => {
   return normalizeState(nextNodes, nextEdges);
 };
 
-export const toggleGroupExpansion = (flow, groupId, expandState = null) => {
+export const toggleGroupExpansion = (flow, groupId, collapseState = null) => {
   const { nodes, edges } = flow;
   const groupNode = nodes.find((node) => node.id === groupId && node.type === 'group');
   if (!groupNode) return flow;
 
-  const currentExpanded = groupNode.isExpanded !== false;
-  const nextExpanded = expandState === null ? !currentExpanded : expandState;
+  const currentCollapsed = groupNode.isCollapsed === true;
+  const nextCollapsed = collapseState === null ? !currentCollapsed : collapseState;
 
   const updatedNodes = nodes.map((node) =>
     node.id === groupId
-      ? { ...node, isExpanded: nextExpanded, hidden: false, groupHidden: false }
+      ? { ...node, isCollapsed: nextCollapsed, hidden: false, groupHidden: false }
       : node
   );
 
@@ -367,8 +335,8 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, padding = 16) =>
     if (groupNode?.type !== 'group') return;
     if (groupNode.groupHidden) return;
 
-    const isExpanded = groupNode.isExpanded !== false;
-    if (!isExpanded) return;
+    const isCollapsed = groupNode.isCollapsed === true;
+    if (isCollapsed) return;
 
     const descendantIds = getGroupDescendants(groupNode.id, nodes);
     if (!descendantIds.length) return;

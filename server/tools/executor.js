@@ -529,7 +529,7 @@ async function executeCreateGroup(params, flow) {
   const groupNode = {
     id: groupId,
     type: 'group',
-    isExpanded: false,
+    isCollapsed: true,
     position: groupPosition,
     data: { label: groupLabel }
   };
@@ -610,22 +610,25 @@ async function executeToggleGroupExpansion(params, flow) {
   // Find all member nodes
   const memberNodes = flow.nodes.filter(n => n.parentGroupId === groupId);
 
-  // Update group expansion state
+  // Convert expand to collapse (inverted semantics)
+  const collapse = !expand;
+
+  // Update group collapse state
   const updatedNodes = flow.nodes.map(node => {
     if (node.id === groupId) {
-      return { ...node, isExpanded: expand };
+      return { ...node, isCollapsed: collapse };
     }
     if (memberNodes.some(member => member.id === node.id)) {
-      return { ...node, hidden: !expand };
+      return { ...node, hidden: collapse };
     }
     return node;
   });
 
   // Update synthetic edges visibility
   const updatedEdges = flow.edges.map(edge => {
-    if (edge.data?.isSyntheticGroupEdge && 
+    if (edge.data?.isSyntheticGroupEdge &&
         (edge.source === groupId || memberNodes.some(member => member.id === edge.target))) {
-      return { ...edge, hidden: !expand };
+      return { ...edge, hidden: collapse };
     }
     return edge;
   });

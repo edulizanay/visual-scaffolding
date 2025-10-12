@@ -64,7 +64,7 @@ describe('getExpandedGroupHalos', () => {
 
   test('returns empty array when no groups are expanded', () => {
     const nodes = [
-      { id: 'group-1', type: 'group', isExpanded: false },
+      { id: 'group-1', type: 'group', isCollapsed: true },
       { id: 'a', parentGroupId: 'group-1', position: { x: 0, y: 0 }, width: 100, height: 60 },
     ];
 
@@ -74,7 +74,7 @@ describe('getExpandedGroupHalos', () => {
 
   test('computes padded bounding box for expanded group', () => {
     const nodes = [
-      { id: 'group-1', type: 'group', isExpanded: true, data: { label: 'Checkout' } },
+      { id: 'group-1', type: 'group', isCollapsed: false, data: { label: 'Checkout' } },
       { id: 'a', parentGroupId: 'group-1', position: { x: 100, y: 100 }, width: 120, height: 80 },
       { id: 'b', parentGroupId: 'group-1', position: { x: 300, y: 220 }, width: 140, height: 100 },
     ];
@@ -94,8 +94,8 @@ describe('getExpandedGroupHalos', () => {
 
   test('includes nested descendants in bounding box', () => {
     const nodes = [
-      { id: 'group-outer', type: 'group', isExpanded: true },
-      { id: 'group-inner', type: 'group', parentGroupId: 'group-outer', isExpanded: false, position: { x: 400, y: 200 }, width: 150, height: 120 },
+      { id: 'group-outer', type: 'group', isCollapsed: false },
+      { id: 'group-inner', type: 'group', parentGroupId: 'group-outer', isCollapsed: true, position: { x: 400, y: 200 }, width: 150, height: 120 },
       { id: 'node-1', parentGroupId: 'group-inner', position: { x: 450, y: 260 }, width: 80, height: 50 },
     ];
 
@@ -172,7 +172,7 @@ describe('validateGroupMembership', () => {
 describe('applyGroupVisibility', () => {
   test('hides descendants of collapsed group', () => {
     const nodes = [
-      { id: 'group-a', type: 'group', isExpanded: false },
+      { id: 'group-a', type: 'group', isCollapsed: true },
       { id: 'node-1', parentGroupId: 'group-a', hidden: false },
     ];
 
@@ -186,7 +186,7 @@ describe('applyGroupVisibility', () => {
 
   test('preserves hidden state from other features', () => {
     const nodes = [
-      { id: 'group-a', type: 'group', isExpanded: true },
+      { id: 'group-a', type: 'group', isCollapsed: false },
       { id: 'node-1', parentGroupId: 'group-a', hidden: true },
     ];
 
@@ -199,8 +199,8 @@ describe('applyGroupVisibility', () => {
 
   test('collapsing parent group hides nested group wrapper', () => {
     const nodes = [
-      { id: 'outer', type: 'group', isExpanded: false },
-      { id: 'inner', type: 'group', parentGroupId: 'outer', isExpanded: true },
+      { id: 'outer', type: 'group', isCollapsed: true },
+      { id: 'inner', type: 'group', parentGroupId: 'outer', isCollapsed: false },
       { id: 'leaf', parentGroupId: 'inner' },
     ];
 
@@ -252,7 +252,7 @@ describe('createGroup / toggleGroupExpansion / ungroup', () => {
     const nodeA = result.nodes.find((node) => node.id === 'a');
 
     expect(createdGroup).toBeDefined();
-    expect(createdGroup.isExpanded).toBe(false);
+    expect(createdGroup.isCollapsed).toBe(true);
     expect(createdGroup.hidden).toBe(false);
     expect(nodeA.parentGroupId).toBe('group-1');
     expect(nodeA.hidden).toBe(true);
@@ -278,7 +278,7 @@ describe('createGroup / toggleGroupExpansion / ungroup', () => {
       edgeFactory,
     });
 
-    const expanded = toggleGroupExpansion(collapsed, 'group-1', true);
+    const expanded = toggleGroupExpansion(collapsed, 'group-1', false);
     const nodeA = expanded.nodes.find((node) => node.id === 'a');
     const groupNodeAfterExpand = expanded.nodes.find((node) => node.id === 'group-1');
 
@@ -303,7 +303,7 @@ describe('createGroup / toggleGroupExpansion / ungroup', () => {
       edgeFactory,
     });
 
-    const expanded = toggleGroupExpansion(collapsed, 'group-1', true);
+    const expanded = toggleGroupExpansion(collapsed, 'group-1', false);
     const ungrouped = ungroup(expanded, 'group-1');
 
     expect(ungrouped.nodes.find((node) => node.id === 'group-1')).toBeUndefined();
@@ -336,7 +336,7 @@ describe('createGroup / toggleGroupExpansion / ungroup', () => {
       node.id === 'group-2' ? { ...node, parentGroupId: 'group-1' } : node
     );
 
-    const collapsedOuter = toggleGroupExpansion(withInner, 'group-1', false);
+    const collapsedOuter = toggleGroupExpansion(withInner, 'group-1', true);
     const halos = getExpandedGroupHalos(collapsedOuter.nodes, (node) => ({ width: 180, height: 100 }), 16);
 
     expect(halos.find((halo) => halo.groupId === 'group-2')).toBeUndefined();

@@ -234,7 +234,7 @@ function App() {
 
     return nodes.map((node) => {
       const isGroupNode = node.type === 'group';
-      const isCollapsed = isGroupNode && node.isExpanded === false;
+      const isCollapsed = isGroupNode && node.isCollapsed === true;
       const { width, height, borderRadius } = getNodeDimensions(node);
 
       const nodeColorOverrides = perNodeColors[node.id] || {};
@@ -302,18 +302,6 @@ function App() {
   }, [nodes, updateNodeLabel, updateNodeDescription, visualSettings, selectedNodeIds, getNodeDimensions]);
 
   const edgesWithHandlers = useMemo(() => {
-    const syntheticEdges = edges.filter(e => e.data?.isSyntheticGroupEdge);
-    const visibleSynthetic = syntheticEdges.filter(e => !e.hidden);
-
-    if (syntheticEdges.length > 0) {
-      console.log('[DEBUG APP] Synthetic edges in React Flow:', {
-        total: syntheticEdges.length,
-        visible: visibleSynthetic.length,
-        hidden: syntheticEdges.filter(e => e.hidden).length,
-        edges: syntheticEdges.map(e => ({ id: e.id, hidden: e.hidden }))
-      });
-    }
-
     return edges.map((edge) => ({
       ...edge,
       type: 'smoothstep',
@@ -348,16 +336,16 @@ function App() {
     setSelectedNodeIds([]);
   }, [setSelectedNodeIds]);
 
-  const applyGroupExpansion = useCallback(async (groupId, expandState = null) => {
+  const applyGroupExpansion = useCallback(async (groupId, collapseState = null) => {
     try {
-      // If expandState is null, toggle based on current state
-      let expand = expandState;
-      if (expand === null) {
+      // If collapseState is null, toggle based on current state
+      let collapse = collapseState;
+      if (collapse === null) {
         const groupNode = nodesRef.current.find(n => n.id === groupId);
-        expand = !groupNode?.isExpanded;
+        collapse = !groupNode?.isCollapsed;
       }
 
-      const result = await apiToggleGroupExpansion(groupId, expand);
+      const result = await apiToggleGroupExpansion(groupId, collapse);
       if (result.success) {
         handleFlowUpdate(result.flow);
       } else {
@@ -374,7 +362,7 @@ function App() {
   );
 
   const collapseExpandedGroup = useCallback(
-    (groupId) => applyGroupExpansion(groupId, false),
+    (groupId) => applyGroupExpansion(groupId, true),
     [applyGroupExpansion],
   );
 
