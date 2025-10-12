@@ -237,6 +237,7 @@ function App() {
 
   const nodesWithHandlers = useMemo(() => {
     const globalColors = visualSettings.colors?.allNodes ?? DEFAULT_VISUAL_SETTINGS.colors.allNodes;
+    const groupColors = visualSettings.colors?.groupNodes ?? DEFAULT_VISUAL_SETTINGS.colors.groupNodes;
     const perNodeColors = visualSettings.colors?.perNode ?? {};
 
     return nodes.map((node) => {
@@ -245,12 +246,11 @@ function App() {
       const { width, height, borderRadius } = getNodeDimensions(node);
 
       const nodeColorOverrides = perNodeColors[node.id] || {};
-      // HARDCODED: Group node colors (distinct from regular nodes)
-      const defaultBackground = isGroupNode ? '#3730a3' : globalColors.background; // Indigo for groups
-      const defaultBorder = isGroupNode ? '#6366f1' : globalColors.border; // Lighter indigo border
-      const background = nodeColorOverrides.background ?? defaultBackground;
-      const border = nodeColorOverrides.border ?? defaultBorder;
-      const text = nodeColorOverrides.text ?? globalColors.text;
+      // Use group-specific colors for group nodes, regular colors for others
+      const defaultColors = isGroupNode ? groupColors : globalColors;
+      const background = nodeColorOverrides.background ?? defaultColors.background;
+      const border = nodeColorOverrides.border ?? defaultColors.border;
+      const text = nodeColorOverrides.text ?? defaultColors.text;
 
       const isSelected = selectedNodeIds.includes(node.id);
 
@@ -390,7 +390,12 @@ function App() {
 
   const onNodeClick = useCallback(
     (event, node) => {
-      // Alt+Click: Collapse/expand subtree (existing behavior)
+      // Alt+Click: Collapse/expand subtree
+      // NOTE: This is SUBTREE COLLAPSE, separate from GROUP COLLAPSE
+      // - Frontend-only (no backend API call)
+      // - Uses data.collapsed property
+      // - Affects edge-based hierarchy via getAllDescendants
+      // - No synthetic edges generated
       if (event.altKey) {
         const isCurrentlyCollapsed = node.data?.collapsed || false;
         const nextFlow = collapseSubtreeByHandles(

@@ -9,6 +9,11 @@ export const DEFAULT_VISUAL_SETTINGS = {
       border: '#2b2253',
       text: '#ffffff',
     },
+    groupNodes: {
+      background: '#3730a3', // Indigo for groups
+      border: '#6366f1',     // Lighter indigo border
+      text: '#ffffff',
+    },
     perNode: {},
   },
   dimensions: {

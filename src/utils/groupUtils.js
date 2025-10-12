@@ -1,28 +1,29 @@
 // ABOUTME: Unified group manager handling creation, collapse, visibility, and halos
+//
+// IMPORTANT: This file manages GROUP COLLAPSE only (via isCollapsed property).
+// There is a SEPARATE collapse system for subtrees (via data.collapsed in App.jsx).
+//
+// GROUP COLLAPSE (this file):
+// - Uses isCollapsed: true/false on group nodes
+// - Managed by backend API (toggleGroupExpansion)
+// - Affects nodes based on parentGroupId hierarchy
+// - Creates synthetic edges for collapsed groups
+// - Nodes hidden when their parent group is collapsed
+//
+// SUBTREE COLLAPSE (Alt+Click in App.jsx):
+// - Uses data.collapsed: true/false on any node
+// - Frontend-only (no backend API)
+// - Affects nodes based on edge-based hierarchy
+// - Uses collapseSubtreeByHandles() function
+// - No synthetic edges generated
+//
+// These two systems are independent but can coexist on the same nodes.
 
 import { createElement, useState } from 'react';
 import { useViewport } from '@xyflow/react';
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
 export const HALO_PADDING = 24;
-
-const defaultEdgeFactory = ({ id, source, target }) => ({
-  id,
-  source,
-  target,
-  type: 'smoothstep',
-});
-
-const cloneEdgeWithSyntheticFlag = (edge) => {
-  const data = edge.data ? { ...edge.data } : {};
-  return {
-    ...edge,
-    data: {
-      ...data,
-      isSyntheticGroupEdge: true,
-    },
-  };
-};
 
 const buildNodeMap = (nodes) =>
   nodes.reduce((acc, node) => {
