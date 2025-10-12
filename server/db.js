@@ -5,7 +5,6 @@ import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, mkdirSync, existsSync } from 'fs';
-import { DEFAULT_VISUAL_SETTINGS, mergeWithDefaultVisualSettings } from '../shared/visualSettings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,9 +31,12 @@ export function getDb() {
     db.pragma('journal_mode = WAL'); // Better concurrency
     db.pragma('foreign_keys = ON');
 
-    // Run migrations
-    const schema = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
-    db.exec(schema);
+    // Run migrations in order
+    const migration001 = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
+    db.exec(migration001);
+
+    const migration002 = readFileSync(join(__dirname, 'migrations', '002_remove_visual_settings.sql'), 'utf-8');
+    db.exec(migration002);
   }
   return db;
 }
@@ -108,42 +110,6 @@ export function getFlowId(userId = 'default', name = 'main') {
     .get(userId, name);
 
   return row ? row.id : null;
-}
-
-// ==================== Visual Settings Operations ====================
-
-export function getVisualSettings() {
-  const row = getDb()
-    .prepare('SELECT data FROM visual_settings WHERE id = 1')
-    .get();
-
-  if (!row) {
-    return DEFAULT_VISUAL_SETTINGS;
-  }
-
-  try {
-    const parsed = JSON.parse(row.data || '{}');
-    return mergeWithDefaultVisualSettings(parsed);
-  } catch (error) {
-    return DEFAULT_VISUAL_SETTINGS;
-  }
-}
-
-export function saveVisualSettings(settings) {
-  const payload = settings || DEFAULT_VISUAL_SETTINGS;
-  const data = JSON.stringify(payload);
-
-  getDb()
-    .prepare(`
-      INSERT INTO visual_settings (id, data, updated_at)
-      VALUES (1, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(id) DO UPDATE SET
-        data = excluded.data,
-        updated_at = CURRENT_TIMESTAMP
-    `)
-    .run(data);
-
-  return payload;
 }
 
 // ==================== Conversation Operations ====================

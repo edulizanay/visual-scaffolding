@@ -2,7 +2,7 @@
 // ABOUTME: Handles GET/POST operations for flow data persistence
 import express from 'express';
 import cors from 'cors';
-import { getFlow as dbGetFlow, saveFlow as dbSaveFlow, getVisualSettings } from './db.js';
+import { getFlow as dbGetFlow, saveFlow as dbSaveFlow } from './db.js';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
 import { buildLLMContext, parseToolCalls, callLLM, buildRetryMessage } from './llm/llmService.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
@@ -39,8 +39,7 @@ function validateFlow(data) {
 app.get('/api/flow', async (req, res) => {
   try {
     const flow = await readFlow();
-    const settings = await getVisualSettings();
-    res.json({ ...flow, settings });
+    res.json(flow);
   } catch (error) {
     console.error('Error reading flow:', error);
     res.status(500).json({ error: 'Failed to load flow data' });
@@ -77,14 +76,13 @@ app.post('/api/conversation/message', async (req, res) => {
     const hasCerebrasKey = Boolean(process.env.CEREBRAS_API_KEY);
     if (!hasGroqKey && !hasCerebrasKey) {
       const flowState = await readFlow();
-      const settings = await getVisualSettings();
 
       return res.json({
         success: false,
         thinking: 'LLM disabled: missing API keys',
         response: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable AI-assisted updates.',
         iterations: 0,
-        updatedFlow: { ...flowState, settings },
+        updatedFlow: flowState,
       });
     }
 
@@ -150,14 +148,13 @@ app.post('/api/conversation/message', async (req, res) => {
 
         // Get updated flow state
         const updatedFlow = await readFlow();
-        const updatedSettings = await getVisualSettings();
 
         return res.json({
           success: true,
           thinking: parsed.thinking,
           toolCalls: parsed.toolCalls,
           execution: executionResults,
-          updatedFlow: { ...updatedFlow, settings: updatedSettings },
+          updatedFlow,
           iterations: iteration
         });
       }
@@ -174,14 +171,13 @@ app.post('/api/conversation/message', async (req, res) => {
 
         // Get updated flow state
         const updatedFlow = await readFlow();
-        const updatedSettings = await getVisualSettings();
 
         return res.json({
           success: false,
           thinking: parsed.thinking,
           toolCalls: parsed.toolCalls,
           execution: executionResults,
-          updatedFlow: { ...updatedFlow, settings: updatedSettings },
+          updatedFlow,
           errors: failures,
           iterations: iteration,
           message: `Failed after ${MAX_ITERATIONS} attempts`
