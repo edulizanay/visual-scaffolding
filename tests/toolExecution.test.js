@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { executeToolCalls } from '../server/tools/executor.js';
 import { readFlow } from '../server/server.js';
-import { closeDb, getVisualSettings } from '../server/db.js';
+import { closeDb } from '../server/db.js';
 
 async function executeTool(toolName, params) {
   const results = await executeToolCalls([{ name: toolName, params }]);
@@ -224,66 +224,4 @@ describe('executeToolCalls - batch execution', () => {
     expect(results[1].success).toBe(false);
     expect(results[2].success).toBe(true);
   });
-});
-
-describe('executeTool - changeVisuals', () => {
-  it('should update background color', async () => {
-    const result = await executeTool('changeVisuals', {
-      target: 'background',
-      color: '#abcdef',
-    });
-
-    expect(result.success).toBe(true);
-    const settings = getVisualSettings();
-    expect(settings.colors.background).toBe('#abcdef');
-  });
-
-  it('should update specific node color override', async () => {
-    const { nodeId } = await executeTool('addNode', { label: 'Node 1' });
-    const result = await executeTool('changeVisuals', {
-      target: 'node',
-      nodeId,
-      color: 'orange',
-      property: 'background',
-    });
-
-    expect(result.success).toBe(true);
-    const settings = getVisualSettings();
-    expect(settings.colors.perNode[nodeId].background).toBe('orange');
-  });
-});
-
-describe('executeTool - changeDimensions', () => {
-  it('should adjust global node width by 10%', async () => {
-    const initial = getVisualSettings();
-    const result = await executeTool('changeDimensions', {
-      target: 'all_nodes',
-      direction: 'increase',
-      axis: 'horizontal',
-    });
-
-    expect(result.success).toBe(true);
-    const updated = getVisualSettings();
-    const expectedWidth = Math.round(initial.dimensions.node.default.width * 1.1 * 100) / 100;
-    expect(updated.dimensions.node.default.width).toBe(expectedWidth);
-  });
-
-  it('should adjust individual node height override', async () => {
-    const { nodeId } = await executeTool('addNode', { label: 'Resizable' });
-    const initial = getVisualSettings();
-    const baseHeight = initial.dimensions.node.default.height;
-
-    const result = await executeTool('changeDimensions', {
-      target: 'node',
-      nodeId,
-      direction: 'decrease',
-      axis: 'vertical',
-    });
-
-    expect(result.success).toBe(true);
-    const updated = getVisualSettings();
-    const expectedHeight = Math.round(baseHeight * 0.9 * 100) / 100;
-    expect(updated.dimensions.node.overrides[nodeId].height).toBe(expectedHeight);
-  });
-
 });

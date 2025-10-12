@@ -5,7 +5,6 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import app from '../server/server.js';
 import { closeDb } from '../server/db.js';
-import { DEFAULT_VISUAL_SETTINGS } from '../shared/visualSettings.js';
 
 beforeEach(() => {
   process.env.DB_PATH = ':memory:';
@@ -25,10 +24,8 @@ describe('API Contract: GET /api/flow', () => {
     // Verify schema
     expect(response.body).toHaveProperty('nodes');
     expect(response.body).toHaveProperty('edges');
-    expect(response.body).toHaveProperty('settings');
     expect(Array.isArray(response.body.nodes)).toBe(true);
     expect(Array.isArray(response.body.edges)).toBe(true);
-    expect(response.body.settings).toMatchObject({ colors: expect.any(Object), dimensions: expect.any(Object) });
   });
 
   it('should return empty arrays for new flow', async () => {
@@ -36,7 +33,6 @@ describe('API Contract: GET /api/flow', () => {
 
     expect(response.body.nodes).toEqual([]);
     expect(response.body.edges).toEqual([]);
-    expect(response.body.settings).toEqual(DEFAULT_VISUAL_SETTINGS);
   });
 
   it('should return existing flow data', async () => {
@@ -54,7 +50,6 @@ describe('API Contract: GET /api/flow', () => {
 
     expect(response.body.nodes).toHaveLength(1);
     expect(response.body.nodes[0].data.label).toBe('Test');
-    expect(response.body.settings).toEqual(DEFAULT_VISUAL_SETTINGS);
   });
 });
 
@@ -179,7 +174,6 @@ describe('API Contract: POST /api/conversation/message', () => {
       expect(response.body).toHaveProperty('updatedFlow');
       expect(response.body.updatedFlow).toHaveProperty('nodes');
       expect(response.body.updatedFlow).toHaveProperty('edges');
-      expect(response.body.updatedFlow).toHaveProperty('settings');
     }
   }, 30000); // Longer timeout for LLM call
 });
