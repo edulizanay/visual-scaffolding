@@ -4,7 +4,7 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 import { timer } from 'd3-timer';
 import { getOutgoers } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
-import { THEME } from '../constants/theme.js';
+import { THEME } from '../constants/theme.jsx';
 
 // Traverse descendants by edges (for Alt+Click collapse)
 export const getAllDescendants = (nodeId, nodes, edges) => {

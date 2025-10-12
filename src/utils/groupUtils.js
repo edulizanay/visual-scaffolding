@@ -21,7 +21,7 @@
 
 import { createElement, useState } from 'react';
 import { useViewport } from '@xyflow/react';
-import { THEME } from '../constants/theme.js';
+import { THEME } from '../constants/theme.jsx';
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
 

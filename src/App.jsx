@@ -28,7 +28,9 @@ import {
 } from './api';
 import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
-import { THEME } from './constants/theme.js';
+import { useHotkeys } from './hooks/useHotkeys';
+import HotkeysPanel from './HotkeysPanel';
+import { THEME } from './constants/theme.jsx';
 import {
   validateGroupMembership,
   getGroupDescendants,
@@ -500,28 +502,41 @@ function App() {
     }
   }, [selectedNodeIds, nodes, handleFlowUpdate, setSelectedNodeIds]);
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        e.preventDefault();
-        handleUndo();
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
-        e.preventDefault();
-        handleRedo();
-      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'G') {
-        // Cmd+Shift+G: Ungroup
-        e.preventDefault();
-        ungroupNodes();
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
-        // Cmd+G: Group
-        e.preventDefault();
-        handleCreateGroup();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleCreateGroup, ungroupNodes]);
+  // Register keyboard shortcuts
+  useHotkeys([
+    { keys: ['Meta', 'Z'], handler: handleUndo },
+    { keys: ['Control', 'Z'], handler: handleUndo },
+    { keys: ['Meta', 'Y'], handler: handleRedo },
+    { keys: ['Control', 'Y'], handler: handleRedo },
+    {
+      keys: ['Meta', 'G'],
+      handler: handleCreateGroup,
+      isActive: (state) => state?.selectedNodeIds?.length >= 2,
+    },
+    {
+      keys: ['Control', 'G'],
+      handler: handleCreateGroup,
+      isActive: (state) => state?.selectedNodeIds?.length >= 2,
+    },
+    {
+      keys: ['Meta', 'Shift', 'G'],
+      handler: ungroupNodes,
+      isActive: (state) => {
+        if (!state?.selectedNodeIds || state.selectedNodeIds.length !== 1) return false;
+        const selectedNode = state.nodes?.find(n => n.id === state.selectedNodeIds[0]);
+        return selectedNode?.type === 'group';
+      },
+    },
+    {
+      keys: ['Control', 'Shift', 'G'],
+      handler: ungroupNodes,
+      isActive: (state) => {
+        if (!state?.selectedNodeIds || state.selectedNodeIds.length !== 1) return false;
+        const selectedNode = state.nodes?.find(n => n.id === state.selectedNodeIds[0]);
+        return selectedNode?.type === 'group';
+      },
+    },
+  ], { selectedNodeIds, nodes });
 
   useEffect(() => {
     updateHistoryStatus();
@@ -565,6 +580,7 @@ function App() {
         <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} />
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
+      <HotkeysPanel />
 
       {/* Tooltip section (bottom-right corner) */}
       {selectedNodeIds.length >= 2 && (

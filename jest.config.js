@@ -6,6 +6,9 @@ export default {
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.js',
+  },
   // Use jsdom for frontend tests
   projects: [
     {
@@ -23,6 +26,9 @@ export default {
       testEnvironment: 'jsdom',
       testMatch: ['**/tests/unit/frontend/**/*.test.jsx', '**/tests/security/**/*.test.jsx'],
       setupFilesAfterEnv: ['<rootDir>/tests/setup-frontend.js'],
+      moduleNameMapper: {
+        '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.js',
+      },
     },
   ],
 };
