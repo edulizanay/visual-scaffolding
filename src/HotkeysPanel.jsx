@@ -16,25 +16,33 @@ export default function HotkeysPanel() {
         onClick={() => setIsOpen(!isOpen)}
         style={{
           position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '40px',
-          height: '40px',
+          bottom: '16px',
+          right: '16px',
+          width: '32px',
+          height: '32px',
           borderRadius: '50%',
-          backgroundColor: THEME.groupNode.colors.border,
-          color: 'white',
-          border: 'none',
-          fontSize: '20px',
+          backgroundColor: 'transparent',
+          color: 'rgba(255, 255, 255, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          fontSize: '16px',
           cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          boxShadow: 'none',
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'transform 0.2s',
+          transition: 'transform 0.2s, color 0.2s, background-color 0.2s',
         }}
-        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        onMouseOver={(e) => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+          e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.3)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
         aria-label="Toggle keyboard shortcuts panel"
       >
         ?
@@ -45,21 +53,22 @@ export default function HotkeysPanel() {
         style={{
           position: 'fixed',
           top: 0,
-          right: isOpen ? 0 : '-400px',
-          width: '400px',
+          right: 0,
+          width: '320px',
           height: '100vh',
           backgroundColor: THEME.node.colors.background,
           boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.3)',
-          transition: 'right 0.3s ease-in-out',
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s ease-in-out',
           zIndex: 999,
           overflowY: 'auto',
-          padding: '20px',
+          padding: '16px',
           color: 'white',
         }}
       >
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>Keyboard Shortcuts</h2>
-          <p style={{ margin: 0, fontSize: '14px', opacity: 0.7 }}>
+        <div style={{ marginBottom: '16px' }}>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '19px' }}>Keyboard Shortcuts</h2>
+          <p style={{ margin: 0, fontSize: '11px', opacity: 0.7 }}>
             Quick reference for all available shortcuts
           </p>
         </div>
@@ -68,15 +77,15 @@ export default function HotkeysPanel() {
           const hotkeysInCategory = HOTKEYS.filter(hk => hk.category === category);
 
           return (
-            <div key={category} style={{ marginBottom: '30px' }}>
+            <div key={category} style={{ marginBottom: '24px' }}>
               <h3
                 style={{
-                  margin: '0 0 15px 0',
-                  fontSize: '16px',
+                  margin: '0 0 12px 0',
+                  fontSize: '13px',
                   fontWeight: 'bold',
                   color: THEME.groupNode.colors.border,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
+                  letterSpacing: '0.4px',
                 }}
               >
                 {category}
@@ -86,27 +95,27 @@ export default function HotkeysPanel() {
                 <div
                   key={hotkey.id}
                   style={{
-                    marginBottom: '15px',
-                    paddingBottom: '15px',
+                    marginBottom: '12px',
+                    paddingBottom: '12px',
                     borderBottom: `1px solid ${THEME.node.colors.border}`,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '13px' }}>
                         {hotkey.label}
                       </div>
-                      <div style={{ fontSize: '13px', opacity: 0.7 }}>
+                      <div style={{ fontSize: '11px', opacity: 0.7 }}>
                         {hotkey.description}
                       </div>
                     </div>
                     <div
                       style={{
-                        marginLeft: '15px',
-                        padding: '5px 10px',
+                        marginLeft: '12px',
+                        padding: '4px 8px',
                         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '4px',
-                        fontSize: '13px',
+                        borderRadius: '3px',
+                        fontSize: '11px',
                         fontFamily: 'monospace',
                         whiteSpace: 'nowrap',
                       }}
