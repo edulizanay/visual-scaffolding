@@ -37,6 +37,10 @@ describe('POST /api/group', () => {
     const node2Result = await executeTool('addNode', { label: 'Node 2' });
     const node3Result = await executeTool('addNode', { label: 'Node 3' });
 
+    // Create edges to test synthetic edge generation
+    await executeTool('addEdge', { sourceNodeId: node1Result.nodeId, targetNodeId: node3Result.nodeId });
+    await executeTool('addEdge', { sourceNodeId: node3Result.nodeId, targetNodeId: node2Result.nodeId });
+
     // Create group
     const response = await request(app)
       .post('/api/group')
@@ -51,7 +55,7 @@ describe('POST /api/group', () => {
     expect(response.body.groupId).toBeDefined();
 
     const flow = response.body.flow;
-    
+
     // Check group node exists
     const groupNode = flow.nodes.find(n => n.id === response.body.groupId);
     expect(groupNode).toBeDefined();
@@ -72,9 +76,10 @@ describe('POST /api/group', () => {
     expect(node3.parentGroupId).toBeUndefined();
     expect(node3.hidden).toBeUndefined();
 
-    // Check synthetic edges exist
+    // Synthetic edges are created dynamically by frontend applyGroupVisibility
+    // Backend doesn't create them anymore - they'll be computed when frontend loads
     const syntheticEdges = flow.edges.filter(e => e.data?.isSyntheticGroupEdge);
-    expect(syntheticEdges).toHaveLength(2);
+    expect(syntheticEdges).toHaveLength(0); // Backend doesn't create synthetic edges
   });
 
   it('should create group with auto-generated label', async () => {
@@ -184,9 +189,7 @@ describe('DELETE /api/group/:id', () => {
     expect(member1.hidden).toBe(false);
     expect(member2.hidden).toBe(false);
 
-    // Check synthetic edges are removed
-    const syntheticEdges = flow.edges.filter(e => e.data?.isSyntheticGroupEdge);
-    expect(syntheticEdges).toHaveLength(0);
+    // Synthetic edges are computed by frontend, automatically cleaned up
   });
 
   it('should fail when group does not exist', async () => {
@@ -240,9 +243,7 @@ describe('PUT /api/group/:id/expand', () => {
     expect(member1.hidden).toBe(false);
     expect(member2.hidden).toBe(false);
 
-    // Check synthetic edges are visible
-    const syntheticEdges = flow.edges.filter(e => e.data?.isSyntheticGroupEdge);
-    expect(syntheticEdges.every(e => !e.hidden)).toBe(true);
+    // Synthetic edges are computed by frontend, not backend
   });
 
   it('should collapse group and hide members', async () => {
@@ -279,9 +280,7 @@ describe('PUT /api/group/:id/expand', () => {
     expect(member1.hidden).toBe(true);
     expect(member2.hidden).toBe(true);
 
-    // Check synthetic edges are hidden
-    const syntheticEdges = flow.edges.filter(e => e.data?.isSyntheticGroupEdge);
-    expect(syntheticEdges.every(e => e.hidden)).toBe(true);
+    // Synthetic edges are computed by frontend, not backend
   });
 
   it('should fail when group does not exist', async () => {

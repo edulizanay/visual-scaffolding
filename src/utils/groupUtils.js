@@ -160,12 +160,17 @@ export const applyGroupVisibility = (nodes, edges) => {
     };
   });
 
+  // Filter out old synthetic edges and compute new ones dynamically
+  const realEdges = edges.filter(e => !e.data?.isSyntheticGroupEdge);
+  const syntheticEdges = computeSyntheticEdges(nextNodes, realEdges);
+  const allEdges = [...realEdges, ...syntheticEdges];
+
   const nodeHiddenLookup = nextNodes.reduce((acc, node) => {
     acc.set(node.id, { hidden: node.hidden, groupHidden: node.groupHidden });
     return acc;
   }, new Map());
 
-  const nextEdges = edges.map((edge) => {
+  const nextEdges = allEdges.map((edge) => {
     const sourceInfo = nodeHiddenLookup.get(edge.source);
     const targetInfo = nodeHiddenLookup.get(edge.target);
     const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
@@ -182,32 +187,64 @@ export const applyGroupVisibility = (nodes, edges) => {
   return { nodes: nextNodes, edges: nextEdges };
 };
 
-const buildSyntheticEdges = ({ edges, memberSet, groupId, edgeFactory }) => {
-  const factory = edgeFactory || defaultEdgeFactory;
-  const synthetic = new Map();
+/**
+ * Computes synthetic edges for all collapsed groups.
+ * Synthetic edges are boundary edges that connect external nodes to/from a collapsed group.
+ * These replace the individual member edges when a group is collapsed.
+ */
+const computeSyntheticEdges = (nodes, edges) => {
+  const syntheticEdges = [];
 
-  edges.forEach((edge) => {
-    const inSource = memberSet.has(edge.source);
-    const inTarget = memberSet.has(edge.target);
+  // Find all collapsed groups
+  const collapsedGroups = nodes.filter(n => n.type === 'group' && n.isCollapsed === true);
 
-    if (inSource && !inTarget) {
-      const key = `${groupId}->${edge.target}`;
-      if (!synthetic.has(key)) {
-        const id = `${GROUP_EDGE_PREFIX}${key}`;
-        const newEdge = factory({ id, source: groupId, target: edge.target, originalEdge: edge });
-        synthetic.set(key, cloneEdgeWithSyntheticFlag(newEdge));
+  collapsedGroups.forEach(groupNode => {
+    const groupId = groupNode.id;
+    const memberIds = getGroupDescendants(groupId, nodes);
+    const memberSet = new Set(memberIds);
+
+    // Track unique synthetic edges (avoid duplicates)
+    const syntheticMap = new Map();
+
+    edges.forEach((edge) => {
+      // Skip edges that are already synthetic (from previous computation)
+      if (edge.data?.isSyntheticGroupEdge) return;
+
+      const sourceIsMember = memberSet.has(edge.source);
+      const targetIsMember = memberSet.has(edge.target);
+
+      // Outbound: member -> external becomes group -> external
+      if (sourceIsMember && !targetIsMember) {
+        const key = `${groupId}->${edge.target}`;
+        if (!syntheticMap.has(key)) {
+          syntheticMap.set(key, {
+            id: `${GROUP_EDGE_PREFIX}${key}`,
+            source: groupId,
+            target: edge.target,
+            type: 'smoothstep',
+            data: { isSyntheticGroupEdge: true },
+          });
+        }
       }
-    } else if (!inSource && inTarget) {
-      const key = `${edge.source}->${groupId}`;
-      if (!synthetic.has(key)) {
-        const id = `${GROUP_EDGE_PREFIX}${key}`;
-        const newEdge = factory({ id, source: edge.source, target: groupId, originalEdge: edge });
-        synthetic.set(key, cloneEdgeWithSyntheticFlag(newEdge));
+      // Inbound: external -> member becomes external -> group
+      else if (!sourceIsMember && targetIsMember) {
+        const key = `${edge.source}->${groupId}`;
+        if (!syntheticMap.has(key)) {
+          syntheticMap.set(key, {
+            id: `${GROUP_EDGE_PREFIX}${key}`,
+            source: edge.source,
+            target: groupId,
+            type: 'smoothstep',
+            data: { isSyntheticGroupEdge: true },
+          });
+        }
       }
-    }
+    });
+
+    syntheticEdges.push(...Array.from(syntheticMap.values()));
   });
 
-  return Array.from(synthetic.values());
+  return syntheticEdges;
 };
 
 const normalizeState = (nodes, edges) => applyGroupVisibility(nodes, edges);
@@ -218,7 +255,6 @@ export const createGroup = (flow, options) => {
     groupNode,
     memberIds,
     collapse = true,
-    edgeFactory,
   } = options;
 
   if (!groupNode || !groupNode.id) {
@@ -240,11 +276,10 @@ export const createGroup = (flow, options) => {
     groupHidden: false,
   };
 
-  const syntheticEdges = buildSyntheticEdges({ edges, memberSet, groupId, edgeFactory });
   const nextNodes = [...updatedNodes, normalizedGroupNode];
-  const nextEdges = [...edges.map((edge) => ({ ...edge })), ...syntheticEdges];
 
-  return normalizeState(nextNodes, nextEdges);
+  // Synthetic edges are now computed dynamically in applyGroupVisibility
+  return normalizeState(nextNodes, edges);
 };
 
 export const toggleGroupExpansion = (flow, groupId, collapseState = null) => {
@@ -277,11 +312,9 @@ export const ungroup = (flow, groupId) => {
         : node
     );
 
-  const updatedEdges = edges
-    .filter((edge) => edge.source !== groupId && edge.target !== groupId)
-    .map((edge) => ({ ...edge }));
-
-  return normalizeState(updatedNodes, updatedEdges);
+  // Synthetic edges are automatically cleaned up by applyGroupVisibility
+  // since the group no longer exists, no synthetic edges will be generated for it
+  return normalizeState(updatedNodes, edges);
 };
 
 export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendantsFn = null) => {

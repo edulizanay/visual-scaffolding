@@ -545,17 +545,9 @@ async function executeCreateGroup(params, flow) {
   // Add group node
   updatedNodes.push(groupNode);
 
-  // Create synthetic edges for group members
-  const syntheticEdges = memberIds.map(memberId => ({
-    id: `group-edge-${groupId}-${memberId}`,
-    source: groupId,
-    target: memberId,
-    data: { isSyntheticGroupEdge: true }
-  }));
-
-  const updatedEdges = [...flow.edges, ...syntheticEdges];
-
-  return { success: true, groupId, updatedFlow: { nodes: updatedNodes, edges: updatedEdges } };
+  // Synthetic edges are now computed dynamically by the frontend
+  // No need to create them here - they'll be generated in applyGroupVisibility
+  return { success: true, groupId, updatedFlow: { nodes: updatedNodes, edges: flow.edges } };
 }
 
 async function executeUngroup(params, flow) {
@@ -586,13 +578,8 @@ async function executeUngroup(params, flow) {
       return node;
     });
 
-  // Remove synthetic group edges
-  const updatedEdges = flow.edges.filter(edge => 
-    !edge.data?.isSyntheticGroupEdge || 
-    (edge.source !== groupId && edge.target !== groupId)
-  );
-
-  return { success: true, updatedFlow: { nodes: updatedNodes, edges: updatedEdges } };
+  // Synthetic edges are automatically cleaned up by frontend applyGroupVisibility
+  return { success: true, updatedFlow: { nodes: updatedNodes, edges: flow.edges } };
 }
 
 async function executeToggleGroupExpansion(params, flow) {
@@ -624,14 +611,6 @@ async function executeToggleGroupExpansion(params, flow) {
     return node;
   });
 
-  // Update synthetic edges visibility
-  const updatedEdges = flow.edges.map(edge => {
-    if (edge.data?.isSyntheticGroupEdge &&
-        (edge.source === groupId || memberNodes.some(member => member.id === edge.target))) {
-      return { ...edge, hidden: collapse };
-    }
-    return edge;
-  });
-
-  return { success: true, updatedFlow: { nodes: updatedNodes, edges: updatedEdges } };
+  // Synthetic edges and their visibility are handled by frontend applyGroupVisibility
+  return { success: true, updatedFlow: { nodes: updatedNodes, edges: flow.edges } };
 }
