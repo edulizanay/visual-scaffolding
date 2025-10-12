@@ -43,42 +43,12 @@ CREATE INDEX idx_flows_user_name ON flows(user_id, name);
 ```json
 {
   "nodes": [
-    {
-      "id": "login",
-      "type": "default",
-      "position": {"x": 0, "y": 0},
-      "data": {
-        "label": "Login",
-        "description": "User authentication page"
-      }
-    },
-    {
-      "id": "auth_group",
-      "type": "group",
-      "position": {"x": 100, "y": 100},
-      "isCollapsed": true,
-      "data": {
-        "label": "Authentication Group",
-        "description": "Group of auth-related nodes"
-      }
-    },
-    {
-      "id": "signup",
-      "type": "default",
-      "position": {"x": 150, "y": 150},
-      "parentGroupId": "auth_group",
-      "data": {
-        "label": "Signup"
-      }
-    }
+    {"id": "login", "type": "default", "position": {"x": 0, "y": 0}, "data": {"label": "Login"}},
+    {"id": "auth_group", "type": "group", "isCollapsed": true, "data": {"label": "Auth"}},
+    {"id": "signup", "type": "default", "parentGroupId": "auth_group", "data": {"label": "Signup"}}
   ],
   "edges": [
-    {
-      "id": "1234567890_abc123",
-      "source": "login",
-      "target": "home",
-      "data": {"label": "success"}
-    }
+    {"id": "e1", "source": "login", "target": "home", "data": {"label": "success"}}
   ]
 }
 ```
@@ -118,20 +88,6 @@ CREATE TABLE conversation_history (
 - `content` - Message text (user request or LLM response)
 - `tool_calls` - JSON array of tool calls (for assistant messages only)
 - `timestamp` - Message timestamp
-
-**Tool Calls Structure:**
-```json
-[
-  {
-    "id": "toolu_01A09q90qw90lq917835lq9",
-    "name": "addNode",
-    "params": {
-      "label": "Login",
-      "description": "User authentication page"
-    }
-  }
-]
-```
 
 **API Functions:**
 - `addConversationMessage(role, content, toolCalls)` - Add message
@@ -199,57 +155,17 @@ INSERT OR IGNORE INTO undo_state (id, current_index) VALUES (1, -1);
 - On redo, incremented to next ID
 - On truncate (new change after undo), future snapshots deleted
 
-**Undo/Redo Logic:**
-```javascript
-// Can undo if current_index > 1
-canUndo = current_index > 1
-
-// Can redo if current position is not at the latest snapshot
-canRedo = totalSnapshots > 0 && current_index < maxId
-```
+**Undo/Redo Logic:** Can undo if `current_index > 1`. Can redo if not at latest snapshot.
 
 ## Data Flow
 
-### Saving Flow Data
-1. User modifies canvas or AI executes tools
-2. Frontend debounces for 500ms
-3. `POST /api/flow` called (nodes & edges only)
-4. `saveFlow()` upserts to `flows` table
-5. `pushSnapshot()` creates undo snapshot
-6. Snapshot deduplicated/truncated as needed
+**Save**: User changes → Debounce 500ms → `saveFlow()` upserts → `pushSnapshot()` creates undo snapshot
 
-**Group-Specific Saving:**
-- Group nodes stored with `type: "group"` and `isCollapsed` property
-- Member nodes stored with `parentGroupId` pointing to group
-- Synthetic edges are NOT persisted (computed dynamically on load)
-- Group visibility states (hidden, groupHidden) are NOT persisted (computed on every render)
+**Load**: `getFlow()` reads flows → Frontend applies theme → `applyGroupVisibility()` computes synthetic edges
 
-### Loading Flow Data
-1. Frontend calls `GET /api/flow` on mount
-2. `getFlow()` reads from `flows` table
-3. Returns `{nodes: [], edges: []}`
-4. Frontend initializes React Flow with hardcoded theme from `src/constants/theme.js`
-5. Frontend calls `applyGroupVisibility()` to compute synthetic edges for collapsed groups
+**LLM**: User message → Save to conversation_history → Build context (last 6 interactions + flow + tools) → Execute tools → Update flows → Save response
 
-### LLM Message Processing
-1. User sends message via `POST /api/conversation/message`
-2. `addUserMessage()` saves to `conversation_history`
-3. `buildLLMContext()` loads:
-   - Last 6 interactions from `conversation_history`
-   - Current flow from `flows`
-   - System prompt and tool definitions
-4. LLM responds with tool calls
-5. Tools executed, flow updated in `flows`
-6. `addAssistantMessage()` saves response to `conversation_history`
-7. If tools fail, retry message added and cycle repeats (max 3 times)
-
-### Undo/Redo Flow
-1. User presses ⌘Z or calls `POST /api/flow/undo`
-2. `undo()` reads `undo_state.current_index`
-3. Decrements index and retrieves snapshot from `undo_history`
-4. `writeFlow()` restores snapshot to `flows` (with `skipSnapshot=true`)
-5. Frontend receives restored flow and updates canvas
-6. Redo works similarly but increments index
+**Undo/Redo**: Read `undo_state.current_index` → Fetch snapshot from `undo_history` → Restore to flows
 
 ## Migration History
 

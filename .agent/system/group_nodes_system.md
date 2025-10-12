@@ -220,99 +220,30 @@ Enforced in `detectCircularReference()`:
 
 ### Visual Feedback
 
-- **Expanded groups**: Purple halo border around members, hover effect
+- **Expanded groups**: Purple halo border around members
 - **Collapsed groups**: Single node with group label
-- **Group tooltips**: Show when ≥2 nodes selected (grouping) or 1 group selected (ungrouping)
 
 ## AI Integration
 
-### Natural Language Examples
-
-```
-User: "group the login and signup nodes"
-→ AI calls createGroup(nodeIds: ["login", "signup"])
-
-User: "collapse the auth group"
-→ AI calls toggleGroupExpansion(groupId: "auth_group", collapse: true)
-
-User: "ungroup authentication"
-→ AI calls ungroup(groupId: "auth_group")
-```
-
-### Context Awareness
-
-The LLM receives:
-- All nodes with their `type` and `parentGroupId`
-- Current group collapse states (`isCollapsed`)
-- Can reference groups by label or ID
+The LLM can manage groups through three tools: `createGroup`, `toggleGroupExpansion`, and `ungroup`. It receives all nodes with their `type`, `parentGroupId`, and collapse states.
 
 ## Performance Considerations
 
-### Visibility Computation
-
-`applyGroupVisibility()` is called frequently:
-- On flow load
-- After every group operation
-- During autosave
-- On undo/redo
-
-**Optimizations**:
-- Memoized ancestor traversal
-- Single pass for visibility computation
-- Efficient Set operations for member lookups
-
-### Synthetic Edge Generation
-
-- Runs on every visibility computation
-- Filters old synthetic edges first
-- Uses Map for deduplication
-- O(n) complexity where n = number of edges
+`applyGroupVisibility()` uses memoized ancestor traversal and single-pass computation. Synthetic edges are generated dynamically with O(n) complexity and Map-based deduplication.
 
 ## Testing
 
-Comprehensive test coverage in:
-- `tests/groupHelpers.test.js` - Core utility functions
-- `tests/api-group-operations.test.js` - REST API endpoints
-- `tests/toolExecution.test.js` - LLM tool execution
-- Integration tests for end-to-end group workflows
+Test coverage: `tests/groupHelpers.test.js`, `tests/api-group-operations.test.js`, `tests/toolExecution.test.js`
 
 ## Known Limitations
 
 - Groups cannot be nested within groups (flat hierarchy only)
-- Maximum nesting depth not enforced (theoretically unlimited)
 - Group colors/styling not customizable per-group
-- No group-level descriptions in UI (only in data model)
 - Synthetic edges cannot have custom labels
-- No group templates or presets
 
-## Future Enhancements
+## Key Files
 
-Potential improvements documented in task backlog:
-- Nested group support (groups within groups)
-- Per-group color customization
-- Group templates (e.g., "Authentication Flow", "Payment Flow")
-- Group-level statistics (member count, edge count)
-- Drag-and-drop to add/remove members
-- Group search and filtering
-- Export/import groups as reusable components
-
-## Related Documentation
-
-- [Project Architecture](./project_architecture.md) - Overall system architecture
-- [Database Schema](./database_schema.md) - Data persistence
-- [LLM Integration](./llm_integration.md) - AI tool definitions
-- [Unified Flow Commands SOP](../SOP/unified-flow-commands.md) - Implementation pattern
-
-## Code References
-
-Key files and line numbers:
-- [src/utils/groupUtils.js:1-476](../../src/utils/groupUtils.js) - Complete group utilities
-- [src/App.jsx:334-362](../../src/App.jsx) - Multi-select and grouping handlers
-- [server/tools/executor.js:525-613](../../server/tools/executor.js) - Backend executors
-- [server/llm/tools.js](../../server/llm/tools.js) - Tool definitions
-
----
-
-**Last Updated**: October 2025
-**Status**: Production - Stable
-**Maintainer**: See project README
+- `src/utils/groupUtils.js` - Core utilities and halo overlay
+- `src/App.jsx` - UI integration and keyboard shortcuts
+- `server/tools/executor.js` - Backend executors
+- `server/llm/tools.js` - LLM tool definitions

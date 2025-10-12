@@ -226,39 +226,7 @@ Frontend debounces saves by 500ms to avoid excessive writes during canvas manipu
 ### 6. LLM Context Building
 Each request includes: system prompt, last 6 conversation turns, current flow state, available tools, and user message. See [llm_integration.md](./llm_integration.md).
 
-## Development Workflow
-
-### Running the Application
-
-```bash
-# Install dependencies
-npm install
-
-# Development (frontend + backend)
-npm run dev:all
-
-# Frontend only
-npm run dev
-
-# Backend only
-npm run server:dev
-
-# Run tests
-npm test
-
-# Run specific test
-NODE_OPTIONS=--experimental-vm-modules npx jest tests/db.test.js
-```
-
-### Environment Variables
-
-Create `.env` file with:
-```
-GROQ_API_KEY=your_groq_key
-CEREBRAS_API_KEY=your_cerebras_key
-```
-
-### Test Strategy
+## Test Strategy
 
 - **Unit tests**: Database operations, services, tool execution
 - **Integration tests**: Message retry logic, API contracts
