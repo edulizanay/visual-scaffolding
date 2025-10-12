@@ -1,18 +1,11 @@
 import {
   getFlow as dbGetFlow,
   saveFlow as dbSaveFlow,
-  getVisualSettings as dbGetVisualSettings,
-  saveVisualSettings as dbSaveVisualSettings,
 } from '../db.js';
-import { DEFAULT_VISUAL_SETTINGS } from '../../shared/visualSettings.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from '../historyService.js';
 
 async function readFlow() {
   return dbGetFlow();
-}
-
-async function readSettings() {
-  return dbGetVisualSettings();
 }
 
 async function writeFlow(flowData, skipSnapshot = false) {
@@ -22,44 +15,7 @@ async function writeFlow(flowData, skipSnapshot = false) {
   }
 }
 
-async function writeSettings(settings) {
-  dbSaveVisualSettings(settings);
-}
-
-function cloneSettings(settings) {
-  return JSON.parse(JSON.stringify(settings || DEFAULT_VISUAL_SETTINGS));
-}
-
-function isValidCssColor(color) {
-  if (typeof color !== 'string') return false;
-  const trimmed = color.trim();
-  if (!trimmed) return false;
-
-  const hexPattern = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
-  const rgbPattern = /^rgba?\((\s*\d+\s*,){2}\s*\d+\s*(,\s*(0|0?\.\d+|1(\.0+)?)\s*)?\)$/;
-  const hslPattern = /^hsla?\((\s*\d+\s*,){2}\s*(0|0?\.\d+|1(\.0+)?)\s*(,\s*(0|0?\.\d+|1(\.0+)?)\s*)?\)$/;
-  const namedPattern = /^[a-zA-Z]+$/;
-  const gradientPattern = /^(linear|radial)-gradient\(.+\)$/i;
-
-  return (
-    hexPattern.test(trimmed) ||
-    rgbPattern.test(trimmed) ||
-    hslPattern.test(trimmed) ||
-    namedPattern.test(trimmed) ||
-    gradientPattern.test(trimmed)
-  );
-}
-
-function adjustByPercentage(value, direction) {
-  const factor = direction === 'increase' ? 1.1 : 0.9;
-  return Math.round(value * factor * 100) / 100;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-export async function executeTool(toolName, params, flow, settings) {
+export async function executeTool(toolName, params, flow) {
   try {
     switch (toolName) {
       case 'addNode':
@@ -78,10 +34,6 @@ export async function executeTool(toolName, params, flow, settings) {
         return await executeUndo();
       case 'redo':
         return await executeRedo();
-      case 'changeVisuals':
-        return await executeChangeVisuals(params, flow, settings);
-      case 'changeDimensions':
-        return await executeChangeDimensions(params, flow, settings);
       case 'createGroup':
         return await executeCreateGroup(params, flow);
       case 'ungroup':
@@ -98,32 +50,21 @@ export async function executeTool(toolName, params, flow, settings) {
 
 export async function executeToolCalls(toolCalls) {
   let flow = await readFlow();
-  let settings = await readSettings();
   const results = [];
   let flowChanged = false;
-  let settingsChanged = false;
 
   for (const { name, params } of toolCalls) {
-    const result = await executeTool(name, params, flow, settings);
+    const result = await executeTool(name, params, flow);
     results.push(result);
 
     if (result.success && result.updatedFlow) {
       flow = result.updatedFlow;
       flowChanged = true;
     }
-
-    if (result.success && result.updatedSettings) {
-      settings = result.updatedSettings;
-      settingsChanged = true;
-    }
   }
 
   if (flowChanged) {
     await writeFlow(flow);
-  }
-
-  if (settingsChanged) {
-    await writeSettings(settings);
   }
 
   return results;
@@ -337,150 +278,6 @@ async function executeRedo() {
   // Write the restored state back to database (skip snapshot to avoid creating new state)
   await writeFlow(nextState, true);
   return { success: true, updatedFlow: nextState };
-}
-
-async function executeChangeVisuals(params, flow, settings) {
-  const { target, color, property = 'background', nodeId } = params || {};
-
-  if (!target) {
-    return { success: false, error: 'target is required' };
-  }
-
-  if (!color) {
-    return { success: false, error: 'color is required' };
-  }
-
-  if (!isValidCssColor(color)) {
-    return { success: false, error: 'Invalid color value provided' };
-  }
-
-  const allowedProperties = ['background', 'border', 'text'];
-  const normalizedProperty = property || 'background';
-
-  if (!allowedProperties.includes(normalizedProperty)) {
-    return { success: false, error: `property must be one of: ${allowedProperties.join(', ')}` };
-  }
-
-  const nextSettings = cloneSettings(settings);
-  nextSettings.colors = nextSettings.colors || { ...DEFAULT_VISUAL_SETTINGS.colors };
-  nextSettings.colors.perNode = nextSettings.colors.perNode || {};
-
-  switch (target) {
-    case 'background': {
-      nextSettings.colors.background = color.trim();
-      break;
-    }
-    case 'all_nodes': {
-      nextSettings.colors.allNodes = {
-        ...DEFAULT_VISUAL_SETTINGS.colors.allNodes,
-        ...(nextSettings.colors.allNodes || {}),
-        [normalizedProperty]: color.trim(),
-      };
-      break;
-    }
-    case 'node': {
-      if (!nodeId) {
-        return { success: false, error: 'nodeId is required when target is "node"' };
-      }
-
-      const nodeExists = flow.nodes.some((node) => node.id === nodeId);
-      if (!nodeExists) {
-        return { success: false, error: `Node ${nodeId} not found` };
-      }
-
-      const existing = nextSettings.colors.perNode[nodeId] || {};
-      nextSettings.colors.perNode[nodeId] = {
-        ...existing,
-        [normalizedProperty]: color.trim(),
-      };
-      break;
-    }
-    default:
-      return { success: false, error: 'Invalid target for changeVisuals' };
-  }
-
-  return { success: true, updatedSettings: nextSettings };
-}
-
-async function executeChangeDimensions(params, flow, settings) {
-  const { target, direction, axis = 'both', nodeId } = params || {};
-
-  if (!target) {
-    return { success: false, error: 'target is required' };
-  }
-
-  if (!direction || !['increase', 'decrease'].includes(direction)) {
-    return { success: false, error: 'direction must be "increase" or "decrease"' };
-  }
-
-  const allowedAxis = ['horizontal', 'vertical', 'both'];
-  if (!allowedAxis.includes(axis)) {
-    return { success: false, error: `axis must be one of: ${allowedAxis.join(', ')}` };
-  }
-
-  const nextSettings = cloneSettings(settings);
-  nextSettings.dimensions = nextSettings.dimensions || { ...DEFAULT_VISUAL_SETTINGS.dimensions };
-  nextSettings.dimensions.node = nextSettings.dimensions.node || { ...DEFAULT_VISUAL_SETTINGS.dimensions.node };
-  nextSettings.dimensions.node.overrides = nextSettings.dimensions.node.overrides || {};
-  nextSettings.dimensions.dagre = nextSettings.dimensions.dagre || { ...DEFAULT_VISUAL_SETTINGS.dimensions.dagre };
-
-  const affectsHorizontal = axis === 'horizontal' || axis === 'both';
-  const affectsVertical = axis === 'vertical' || axis === 'both';
-
-  switch (target) {
-    case 'all_nodes': {
-      const defaultNode = nextSettings.dimensions.node.default || { ...DEFAULT_VISUAL_SETTINGS.dimensions.node.default };
-      if (affectsHorizontal) {
-        defaultNode.width = clamp(adjustByPercentage(defaultNode.width, direction), 60, 600);
-      }
-      if (affectsVertical) {
-        defaultNode.height = clamp(adjustByPercentage(defaultNode.height, direction), 24, 320);
-      }
-      nextSettings.dimensions.node.default = defaultNode;
-      break;
-    }
-    case 'node': {
-      if (!nodeId) {
-        return { success: false, error: 'nodeId is required when target is "node"' };
-      }
-
-      const nodeExists = flow.nodes.some((node) => node.id === nodeId);
-      if (!nodeExists) {
-        return { success: false, error: `Node ${nodeId} not found` };
-      }
-
-      const baseNode = nextSettings.dimensions.node.default || DEFAULT_VISUAL_SETTINGS.dimensions.node.default;
-      const currentOverride = nextSettings.dimensions.node.overrides[nodeId] || {};
-      const currentWidth = currentOverride.width ?? baseNode.width;
-      const currentHeight = currentOverride.height ?? baseNode.height;
-      const updatedOverride = { ...currentOverride };
-
-      if (affectsHorizontal) {
-        updatedOverride.width = clamp(adjustByPercentage(currentWidth, direction), 60, 600);
-      }
-      if (affectsVertical) {
-        updatedOverride.height = clamp(adjustByPercentage(currentHeight, direction), 24, 320);
-      }
-
-      nextSettings.dimensions.node.overrides[nodeId] = updatedOverride;
-      break;
-    }
-    case 'layout_spacing': {
-      const dagreSpacing = nextSettings.dimensions.dagre || { ...DEFAULT_VISUAL_SETTINGS.dimensions.dagre };
-      if (affectsHorizontal) {
-        dagreSpacing.horizontal = clamp(adjustByPercentage(dagreSpacing.horizontal, direction), 10, 400);
-      }
-      if (affectsVertical) {
-        dagreSpacing.vertical = clamp(adjustByPercentage(dagreSpacing.vertical, direction), 10, 400);
-      }
-      nextSettings.dimensions.dagre = dagreSpacing;
-      break;
-    }
-    default:
-      return { success: false, error: 'Invalid target for changeDimensions' };
-  }
-
-  return { success: true, updatedSettings: nextSettings };
 }
 
 // Group operation executors
