@@ -27,16 +27,16 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 
   dagreGraph.setGraph({
     rankdir: direction,
-    ranksep: THEME.dimensions.dagre.horizontal,
-    nodesep: THEME.dimensions.dagre.vertical,
+    ranksep: THEME.dagre.spacing.horizontal,
+    nodesep: THEME.dagre.spacing.vertical,
   });
 
   const visibleNodes = nodes.filter(node => !node.hidden);
 
   visibleNodes.forEach((node) => {
     dagreGraph.setNode(node.id, {
-      width: THEME.dimensions.node.width,
-      height: THEME.dimensions.node.height
+      width: THEME.node.dimensions.width,
+      height: THEME.node.dimensions.height
     });
   });
 
@@ -76,8 +76,8 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
       targetPosition: isHorizontal ? 'left' : 'top',
       sourcePosition: isHorizontal ? 'right' : 'bottom',
       position: {
-        x: nodeWithPosition.x - THEME.dimensions.node.width / 2,
-        y: nodeWithPosition.y - THEME.dimensions.node.height / 2,
+        x: nodeWithPosition.x - THEME.node.dimensions.width / 2,
+        y: nodeWithPosition.y - THEME.node.dimensions.height / 2,
       },
     };
   });
@@ -88,7 +88,7 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef(null);
-  const fitViewPadding = THEME.dimensions.fitViewPadding;
+  const fitViewPadding = THEME.canvas.fitViewPadding;
 
   const applyLayoutWithAnimation = useCallback((currentNodes, currentEdges) => {
     // Stop any existing animation

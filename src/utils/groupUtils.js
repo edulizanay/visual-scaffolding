@@ -21,9 +21,9 @@
 
 import { createElement, useState } from 'react';
 import { useViewport } from '@xyflow/react';
+import { THEME } from '../constants/theme.js';
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
-export const HALO_PADDING = 24;
 
 const buildNodeMap = (nodes) =>
   nodes.reduce((acc, node) => {
@@ -454,11 +454,11 @@ export const GroupHaloOverlay = ({ halos, onCollapse }) => {
         y: screenY,
         width: screenWidth,
         height: screenHeight,
-        rx: 18,
-        ry: 18,
+        rx: THEME.groupNode.halo.borderRadius,
+        ry: THEME.groupNode.halo.borderRadius,
         fill: 'none',
-        stroke: isHovered ? 'rgba(129, 140, 248, 0.7)' : 'rgba(99, 102, 241, 0.45)',
-        strokeWidth: isHovered ? 2 : 1.5,
+        stroke: isHovered ? THEME.groupNode.halo.colors.hovered : THEME.groupNode.halo.colors.normal,
+        strokeWidth: isHovered ? THEME.groupNode.halo.strokeWidth.hovered : THEME.groupNode.halo.strokeWidth.normal,
         pointerEvents: 'stroke',
         onMouseEnter: () => setHoveredId(halo.groupId),
         onMouseLeave: () => setHoveredId((current) => (current === halo.groupId ? null : current)),

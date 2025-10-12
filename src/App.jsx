@@ -36,7 +36,6 @@ import {
   addChildNode,
   getExpandedGroupHalos,
   GroupHaloOverlay,
-  HALO_PADDING,
   applyGroupVisibility,
 } from './utils/groupUtils.js';
 
@@ -198,9 +197,9 @@ function App() {
 
   const getNodeDimensions = useCallback((node) => {
     return {
-      width: THEME.dimensions.node.width,
-      height: THEME.dimensions.node.height,
-      borderRadius: THEME.dimensions.node.borderRadius,
+      width: THEME.node.dimensions.width,
+      height: THEME.node.dimensions.height,
+      borderRadius: THEME.node.dimensions.borderRadius,
     };
   }, []);
 
@@ -229,7 +228,7 @@ function App() {
       const { width, height, borderRadius } = getNodeDimensions(node);
 
       // Use group-specific colors for group nodes, regular colors for others
-      const nodeColors = isGroupNode ? THEME.colors.groupNode : THEME.colors.node;
+      const nodeColors = isGroupNode ? THEME.groupNode.colors : THEME.node.colors;
       const background = nodeColors.background;
       const border = nodeColors.border;
       const text = nodeColors.text;
@@ -273,16 +272,16 @@ function App() {
           ...baseStyle,
           ...(node.data.collapsed
             ? {
-                borderWidth: '2px',
-                borderColor: 'rgba(255, 255, 255, 0.4)',
+                borderWidth: THEME.node.states.collapsedSubtree.borderWidth,
+                borderColor: THEME.node.states.collapsedSubtree.colors.border,
               }
             : {}),
           // Selection visual: 40% more prominent stroke
           ...(isSelected
             ? {
-                borderWidth: '2.4px',
-                borderColor: 'rgba(96, 165, 250, 0.8)',
-                boxShadow: '0 0 0 2px rgba(96, 165, 250, 0.3)',
+                borderWidth: THEME.node.states.selection.borderWidth,
+                borderColor: THEME.node.states.selection.colors.border,
+                boxShadow: `0 0 0 ${THEME.node.states.selection.shadowSpread} ${THEME.node.states.selection.colors.shadow}`,
               }
             : {}),
         },
@@ -346,7 +345,7 @@ function App() {
   }, [handleFlowUpdate]);
 
   const groupHalos = useMemo(
-    () => getExpandedGroupHalos(nodes, getNodeDimensions, HALO_PADDING),
+    () => getExpandedGroupHalos(nodes, getNodeDimensions, THEME.groupNode.halo.padding),
     [nodes, getNodeDimensions],
   );
 
@@ -558,7 +557,7 @@ function App() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode="dark"
-        style={{ background: THEME.colors.background }}
+        style={{ background: THEME.canvas.background }}
         fitView
         fitViewOptions={{ padding: fitViewPadding }}
         proOptions={{ hideAttribution: true }}
@@ -577,10 +576,10 @@ function App() {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          background: 'rgba(30, 30, 30, 0.95)',
-          border: '1px solid rgba(96, 165, 250, 0.3)',
-          borderRadius: '8px',
-          padding: '12px 16px',
+          background: THEME.tooltip.colors.background,
+          border: `${THEME.tooltip.borderWidth} solid ${THEME.tooltip.colors.border}`,
+          borderRadius: THEME.tooltip.borderRadius,
+          padding: THEME.tooltip.padding,
           animation: 'slideIn 0.3s ease-out',
         }}>
           <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
