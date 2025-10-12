@@ -1,6 +1,7 @@
 // ABOUTME: Unified group manager handling creation, collapse, visibility, and halos
 
 import { createElement, useState } from 'react';
+import { useViewport } from '@xyflow/react';
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
 export const HALO_PADDING = 24;
@@ -417,14 +418,13 @@ export const constants = {
   GROUP_EDGE_PREFIX,
 };
 
-export const GroupHaloOverlay = ({ halos, viewport, onCollapse }) => {
+export const GroupHaloOverlay = ({ halos, onCollapse }) => {
   const [hoveredId, setHoveredId] = useState(null);
+  const { x = 0, y = 0, zoom = 1 } = useViewport() || {};
 
   if (!halos || halos.length === 0) {
     return null;
   }
-
-  const { x = 0, y = 0, zoom = 1 } = viewport || {};
 
   const sortedHalos = [...halos].sort((a, b) => {
     const areaA = a.bounds.width * a.bounds.height;

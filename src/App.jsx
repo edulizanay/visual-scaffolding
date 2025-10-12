@@ -41,7 +41,6 @@ function App() {
   const edgesRef = useRef([]);
   const [visualSettings, setVisualSettings] = useState(DEFAULT_VISUAL_SETTINGS);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
-  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
 
   const {
     applyLayoutWithAnimation,
@@ -57,10 +56,6 @@ function App() {
 
   const onInit = useCallback((instance) => {
     reactFlowInstance.current = instance;
-    const initialViewport = instance?.toObject?.();
-    if (initialViewport) {
-      setViewport(initialViewport);
-    }
   }, []);
 
   useEffect(() => {
@@ -276,10 +271,6 @@ function App() {
   const onPaneClick = useCallback(() => {
     setSelectedNodeIds([]);
   }, [setSelectedNodeIds]);
-
-  const handleViewportChange = useCallback((_, nextViewport) => {
-    setViewport(nextViewport);
-  }, []);
 
   const applyGroupExpansion = useCallback((groupId, expandState = null) => {
     const nextFlow = toggleGroupExpansion(
@@ -567,7 +558,6 @@ function App() {
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        onMove={handleViewportChange}
         onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -577,8 +567,8 @@ function App() {
         fitViewOptions={{ padding: fitViewPadding }}
         proOptions={{ hideAttribution: true }}
       >
+        <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} />
       </ReactFlow>
-      <GroupHaloOverlay halos={groupHalos} viewport={viewport} onCollapse={collapseExpandedGroup} />
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
 
       {/* Tooltip section (bottom-right corner) */}
