@@ -50,6 +50,7 @@ export default function HotkeysPanel() {
 
       {/* Slide-in Panel */}
       <div
+        className="hotkeys-panel"
         style={{
           position: 'fixed',
           top: 0,
@@ -66,11 +67,28 @@ export default function HotkeysPanel() {
           color: 'white',
         }}
       >
+        <style>{`
+          .hotkeys-panel::-webkit-scrollbar {
+            width: 8px;
+          }
+
+          .hotkeys-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+          }
+
+          .hotkeys-panel::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+            transition: background 0.2s;
+          }
+
+          .hotkeys-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+          }
+        `}</style>
         <div style={{ marginBottom: '16px' }}>
           <h2 style={{ margin: '0 0 8px 0', fontSize: '19px' }}>Keyboard Shortcuts</h2>
-          <p style={{ margin: 0, fontSize: '11px', opacity: 0.7 }}>
-            Quick reference for all available shortcuts
-          </p>
         </div>
 
         {categories.map(category => {

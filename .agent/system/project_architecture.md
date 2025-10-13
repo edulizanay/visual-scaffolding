@@ -33,9 +33,13 @@ visual-scaffolding/
 │   ├── ChatInterface.jsx         # AI chat UI component
 │   ├── Node.jsx                  # Custom node component
 │   ├── Edge.jsx                  # Custom edge component
+│   ├── HotkeysPanel.jsx          # Keyboard shortcuts panel UI
 │   ├── api.js                    # Frontend API client
+│   ├── constants/
+│   │   └── theme.jsx             # Hardcoded theme constants (replaces visual_settings)
 │   ├── hooks/
-│   │   └── useFlowLayout.js      # Auto-layout with dagre
+│   │   ├── useFlowLayout.js      # Auto-layout with dagre
+│   │   └── useHotkeys.jsx        # Centralized hotkeys registry and hook
 │   ├── utils/
 │   │   └── groupUtils.js         # Group node management and visibility
 │   └── main.jsx                  # React entry point
@@ -56,11 +60,7 @@ visual-scaffolding/
 │   └── data/
 │       └── flow.db               # SQLite database file
 │
-├── src/
-│   ├── constants/
-│   │   └── theme.js               # Hardcoded theme constants
-│
-├── tests/                        # Comprehensive test suite (230 tests, ~8200 lines)
+├── tests/                        # Comprehensive test suite (317 tests)
 │   ├── db.test.js               # Database layer tests
 │   ├── conversationService.test.js
 │   ├── historyService.test.js
@@ -69,7 +69,9 @@ visual-scaffolding/
 │   ├── groupHelpers.test.js     # Group utility functions
 │   ├── llm/                     # LLM service tests
 │   ├── integration/             # Integration tests (message retry, conversation)
-│   ├── unit/frontend/           # Frontend unit tests
+│   ├── unit/
+│   │   ├── frontend/            # Frontend unit tests
+│   │   └── backend/             # Backend unit tests (hotkeys registry)
 │   └── security/                # Security tests (XSS prevention)
 │
 ├── .agent/                      # Project documentation
@@ -115,6 +117,7 @@ visual-scaffolding/
 - Auto-layout using dagre algorithm
 - Smooth animations for layout transitions
 - Real-time autosave (500ms debounce)
+- **Keyboard shortcuts panel** - slide-in panel showing all hotkeys (? button)
 
 ### 2. AI-Powered Flow Generation
 - Natural language interface for flow creation
@@ -199,14 +202,32 @@ Automatic retry mechanism for failed tool executions (max 3 iterations). Failed 
 
 ## Key Design Patterns
 
-### 1. Unified Flow Commands
+### 1. Centralized Hotkeys Registry
+All keyboard shortcuts and mouse interactions are defined in a single registry:
+- **Registry**: [src/hooks/useHotkeys.jsx](../../src/hooks/useHotkeys.jsx:1-273)
+- **Structure**: Each hotkey has `id`, `category`, `keys`, `label`, `description`, `type` (keyboard/mouse)
+- **State guards**: Optional `isActive(state)` function for conditional hotkeys
+- **Hook**: `useHotkeys(hotkeys, state)` registers event listeners with cleanup
+- **Display helpers**: `formatKeys()`, `getCategories()`, `getHotkeyById()`
+- **UI integration**: HotkeysPanel component consumes registry for documentation
+- **See**: [hotkeys-visual-and-logic-centralization Task](../Tasks/hotkeys-visual-and-logic-centralization.md)
+
+### 2. Hardcoded Theme System
+Visual styling is centralized in a single theme constant:
+- **Theme file**: [src/constants/theme.jsx](../../src/constants/theme.jsx:1-72)
+- **Replaced**: Previous `visual_settings` table (removed in migration 002)
+- **Structure**: Nested object with canvas, node, groupNode, tooltip, and dagre settings
+- **Single source of truth**: All components import from theme constant
+- **No runtime customization**: Visual styling is hardcoded for consistency
+
+### 3. Unified Flow Commands
 All flow mutations (node CRUD, grouping, visual changes) follow a unified pattern:
 - Backend command defined in `server/tools/executor.js`
 - Exposed to both LLM tools and REST API endpoints
 - Frontend calls via helpers in `src/api.js`
 - See [unified-flow-commands SOP](../SOP/unified-flow-commands.md)
 
-### 2. Group Node Architecture
+### 4. Group Node Architecture
 Two independent collapse systems coexist:
 - **Group collapse**: `isCollapsed` property on group nodes, backend-managed, generates synthetic edges
 - **Subtree collapse**: `data.collapsed` on any node, frontend-only, hides descendants via edges
@@ -214,16 +235,16 @@ Two independent collapse systems coexist:
 - Synthetic edges dynamically generated for collapsed groups on every state change
 - See [groupUtils.js](../../src/utils/groupUtils.js:1-22) for detailed documentation
 
-### 3. Tool Execution Chain
+### 5. Tool Execution Chain
 Tools executed sequentially with state passed between them. All changes batched in single DB write.
 
-### 4. Undo/Redo State Management
+### 6. Undo/Redo State Management
 Snapshots stored in `undo_history` table with deduplication. Current position tracked in `undo_state` table. 50 snapshot limit with automatic truncation.
 
-### 5. Autosave with Debouncing
+### 7. Autosave with Debouncing
 Frontend debounces saves by 500ms to avoid excessive writes during canvas manipulation.
 
-### 6. LLM Context Building
+### 8. LLM Context Building
 Each request includes: system prompt, last 6 conversation turns, current flow state, available tools, and user message. See [llm_integration.md](./llm_integration.md).
 
 ## Test Strategy

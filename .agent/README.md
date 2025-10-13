@@ -18,8 +18,8 @@ Current state of the codebase - architecture, schema, and core systems:
 
 | Document | What's Inside |
 |----------|---------------|
-| **[project_architecture.md](./system/project_architecture.md)** | Tech stack, project structure, core features (including groups), integration points, design patterns, unified flow commands, development workflow |
-| **[database_schema.md](./system/database_schema.md)** | Complete schema (5 tables), data structures with group node examples, API functions, data flows, migrations, performance notes |
+| **[project_architecture.md](./system/project_architecture.md)** | Tech stack, project structure, core features (groups, hotkeys panel), integration points, design patterns (centralized hotkeys, hardcoded theme, unified flow commands), development workflow |
+| **[database_schema.md](./system/database_schema.md)** | Complete schema (4 tables), data structures with group node examples, API functions, data flows, migrations, performance notes |
 | **[llm_integration.md](./system/llm_integration.md)** | LLM providers (Groq/Cerebras), system prompts, 13 tool definitions (including group operations), response parsing, error recovery |
 | **[group_nodes_system.md](./system/group_nodes_system.md)** | Complete group nodes feature documentation: dual collapse systems, synthetic edges, visibility computation, validation rules, UI interactions |
 
@@ -38,6 +38,7 @@ Step-by-step guides for common development tasks:
 | SOP | Description |
 |-----|-------------|
 | **[unified-flow-commands.md](./SOP/unified-flow-commands.md)** | How to add flow mutations (nodes, groups, edges) - unified backend pattern |
+| **[hotkeys-management.md](./SOP/hotkeys-management.md)** | How to add or modify keyboard shortcuts in the centralized registry |
 | *(To be added)* | How to add a database migration |
 | *(To be added)* | How to add a new LLM tool |
 | *(To be added)* | How to write tests |
@@ -52,10 +53,13 @@ How AI/LLM works, tool definitions | [llm_integration.md](./system/llm_integrati
 Group nodes feature deep-dive | [group_nodes_system.md](./system/group_nodes_system.md)
 Dual collapse systems explained | [group_nodes_system.md](./system/group_nodes_system.md) → Dual Collapse Systems
 Synthetic edges algorithm | [group_nodes_system.md](./system/group_nodes_system.md) → Synthetic Edge Generation
+Keyboard shortcuts registry | [project_architecture.md](./system/project_architecture.md) → Centralized Hotkeys Registry
+Hardcoded theme system | [project_architecture.md](./system/project_architecture.md) → Hardcoded Theme System
 Development commands, setup | [project_architecture.md](./system/project_architecture.md) → Development Workflow
 API endpoints | [project_architecture.md](./system/project_architecture.md) → Integration Points
 Feature requirements | `Tasks/` folder
 How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-commands.md)
+How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
 How to do X (migrations, tests, etc.) | `SOP/` folder
 
 ## 📝 Documentation Conventions
@@ -103,8 +107,11 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 
 **Last Updated**: October 12, 2025
 **Major Updates**:
-- Completed visual customization removal (migration 002, hardcoded theme in src/constants/theme.js)
-- All tests passing (230 tests, 9 test suites)
-- Test coverage includes comprehensive frontend and integration tests
+- Implemented centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
+- Added HotkeysPanel component with slide-in UI (? button)
+- Completed visual customization removal (migration 002, hardcoded theme in src/constants/theme.jsx)
+- Test suite: 317 tests across 13 test suites (15 failing in frontend tests - act() warnings)
+- Test coverage includes comprehensive frontend, backend, and integration tests
 - Database now has 4 tables (removed visual_settings)
+- Created SOP for hotkeys management
 - Updated all system documentation to reflect current state
