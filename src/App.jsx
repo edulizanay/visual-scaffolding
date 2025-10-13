@@ -29,7 +29,7 @@ import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { useHotkeys } from './hooks/useHotkeys';
 import HotkeysPanel from './HotkeysPanel';
-import { THEME } from './constants/theme.jsx';
+import { THEME } from './constants/theme.js';
 import {
   validateGroupMembership,
   getGroupDescendants,

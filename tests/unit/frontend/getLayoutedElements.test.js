@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { getLayoutedElements } from '../../../src/hooks/useFlowLayout.js';
-import { THEME } from '../../../src/constants/theme.jsx';
+import { THEME } from '../../../src/constants/theme.js';
 
 const makeNode = (id, overrides = {}) => ({
   id,
