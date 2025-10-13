@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import App from '../../../src/App.jsx';
 import { ReactFlow } from '@xyflow/react';
 import * as api from '../../../src/api.js';
+import ChatInterface from '../../../src/ChatInterface';
 
 vi.mock('@xyflow/react', () => {
   const React = require('react');
@@ -110,8 +111,7 @@ vi.mock('../../../src/api.js', () => ({
 }));
 
 const getChatHandlers = () => {
-  const module = vi.importMock('../../../src/ChatInterface');
-  return module.default.handlers || {};
+  return ChatInterface.handlers || {};
 };
 
 const defaultFlow = {
@@ -135,7 +135,6 @@ describe('App group behaviour', () => {
   });
 
   beforeEach(() => {
-    vi.useFakeTimers();
     vi.clearAllMocks();
     ReactFlow.mockProps = null;
 
@@ -146,10 +145,12 @@ describe('App group behaviour', () => {
   });
 
   afterEach(async () => {
-    await act(async () => {
-      vi.runOnlyPendingTimers();
-    });
-    vi.useRealTimers();
+    if (vi.isFakeTimers()) {
+      await act(async () => {
+        vi.runOnlyPendingTimers();
+      });
+      vi.useRealTimers();
+    }
   });
 
   const renderApp = async () => {
@@ -241,6 +242,9 @@ describe('App group behaviour', () => {
 
     await renderApp();
 
+    // Enable fake timers after app is rendered
+    vi.useFakeTimers();
+
     // Flush initial debounce timers
     await act(async () => {
       vi.runOnlyPendingTimers();
@@ -276,6 +280,27 @@ describe('App group behaviour', () => {
     api.getHistoryStatus.mockResolvedValueOnce({ canUndo: true });
 
     await renderApp();
+
+    // Enable fake timers after app is rendered
+    vi.useFakeTimers();
+
+    // Flush initial debounce timers
+    await act(async () => {
+      vi.runOnlyPendingTimers();
+    });
+    api.saveFlow.mockClear();
+
+    const handlers = getChatHandlers();
+
+    // Trigger a flow update to cause auto-save
+    await act(async () => {
+      handlers.onFlowUpdate({
+        nodes: [
+          { id: 'group-1', type: 'group', isCollapsed: false, position: { x: 0, y: 0 }, data: { label: 'Group 1' } },
+        ],
+        edges: [],
+      });
+    });
 
     await act(async () => {
       vi.advanceTimersByTime(600);

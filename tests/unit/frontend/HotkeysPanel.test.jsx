@@ -127,11 +127,6 @@ describe('HotkeysPanel Component', () => {
     });
   });
 
-  describe('Panel State', () => {
-    // Note: Removed stale tests that checked 'right' positioning
-    // Component now uses transform: translateX() for animations
-  });
-
   describe('Accessibility', () => {
     it('should have aria-label on toggle button', () => {
       render(<HotkeysPanel />);

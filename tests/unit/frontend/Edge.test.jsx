@@ -4,7 +4,7 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ReactFlowProvider } from '@xyflow/react';
+import { ReactFlowProvider, getSmoothStepPath } from '@xyflow/react';
 import CustomEdge from '../../../src/Edge.jsx';
 
 // Mock React Flow components
@@ -44,7 +44,6 @@ describe('CustomEdge Component', () => {
 
   describe('Edge Rendering', () => {
     it('should render BaseEdge with correct path', () => {
-      const { getSmoothStepPath } = vi.mocked(await vi.importMock('@xyflow/react'));
       const data = { label: 'Test Edge' };
 
       const { container } = render(
@@ -133,7 +132,8 @@ describe('CustomEdge Component', () => {
       );
 
       const labelDiv = container.querySelector('div[style*="cursor: text"]');
-      expect(labelDiv?.style.background).toBe('rgb(26, 25, 43)');
+      // happy-dom returns hex, jsdom returns rgb
+      expect(labelDiv?.style.background).toMatch(/^(#1a192b|rgb\(26,\s*25,\s*43\))$/);
       expect(labelDiv?.style.opacity).toBe('1');
     });
 
@@ -569,9 +569,10 @@ describe('CustomEdge Component', () => {
       fireEvent.doubleClick(labelDiv);
 
       const input = container.querySelector('input');
-      expect(input?.style.background).toBe('rgb(26, 25, 43)');
-      expect(input?.style.border).toBe('1px solid rgb(85, 85, 85)');
-      expect(input?.style.color).toBe('white');
+      // happy-dom returns hex (including shorthand), jsdom returns rgb
+      expect(input?.style.background).toMatch(/^(#1a192b|rgb\(26,\s*25,\s*43\))$/);
+      expect(input?.style.border).toMatch(/^1px solid (#555(555)?|rgb\(85,\s*85,\s*85\))$/);
+      expect(input?.style.color).toMatch(/^(white|rgb\(255,\s*255,\s*255\))$/);
       expect(input?.style.padding).toBe('2px 8px');
       expect(input?.style.borderRadius).toBe('3px');
       expect(input?.style.fontSize).toBe('12px');

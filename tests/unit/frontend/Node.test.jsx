@@ -152,8 +152,8 @@ describe('CustomNode Component', () => {
       const descriptionDiv = descriptionDivs.find(div => div.textContent === 'Test description');
       expect(descriptionDiv).toBeTruthy();
       const color = window.getComputedStyle(descriptionDiv).color || descriptionDiv.style.color;
-      // Computed style returns rgb format
-      expect(color).toBe('rgb(255, 255, 255)');
+      // happy-dom returns named colors, jsdom returns rgb format
+      expect(color).toMatch(/^(white|rgb\(255,\s*255,\s*255\))$/);
     });
 
     it('should apply custom text color from data', () => {
@@ -201,8 +201,8 @@ describe('CustomNode Component', () => {
       const descriptionInput = inputs.find(input => input.value === 'Test description');
       expect(descriptionInput).toBeTruthy();
       const color = window.getComputedStyle(descriptionInput).color || descriptionInput.style.color;
-      // Computed style returns rgb format
-      expect(color).toBe('rgb(0, 0, 255)');
+      // happy-dom returns named colors, jsdom returns rgb format
+      expect(color).toMatch(/^(blue|rgb\(0,\s*0,\s*255\))$/);
     });
   });
 

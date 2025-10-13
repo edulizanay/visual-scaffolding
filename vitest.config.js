@@ -46,6 +46,7 @@ export default defineConfig({
 
       // Frontend UI tests - DOM environment
       {
+        plugins: [react()],
         test: {
           name: 'frontend-ui',
           environment: 'happy-dom',
