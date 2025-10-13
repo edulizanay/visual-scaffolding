@@ -1,25 +1,36 @@
 # Test Suite Documentation
 
 ## Overview
-- **Total Tests**: 317 tests across 19 test files
+- **Total Tests**: 380+ tests across 20 test files
 - **Test Runner**: Jest with ES modules (`NODE_OPTIONS=--experimental-vm-modules`)
 - **Frontend Testing**: React Testing Library with jsdom environment
+- **Backend Integration**: Supertest for full-stack workflow testing
 - **Database**: In-memory SQLite (`:memory:`) for isolation
 - **Run All Tests**: `npm test`
 - **Run Specific**: `NODE_OPTIONS=--experimental-vm-modules npx jest <path>`
 
-## Frontend Testing Tools
+## Testing Tools
+
+### Frontend Testing
 - **React Testing Library** - Component rendering and user interaction testing
 - **@testing-library/jest-dom** - DOM matchers (e.g., `toBeInTheDocument()`, `toHaveClass()`)
 - **@testing-library/user-event** - Realistic user event simulation
 - **jsdom** - Browser environment simulation for React components
 - **Setup file**: [tests/setup-frontend.js](../../tests/setup-frontend.js) - Configures mocks for React Flow (matchMedia, IntersectionObserver, ResizeObserver)
 
+### Backend/Integration Testing
+- **Supertest** - HTTP assertions for testing API endpoints and full-stack workflows
+  - Simulate frontend API calls without needing a browser
+  - Test complete data flows: create → update → undo → verify
+  - Use with real server instance to test frontend-backend integration
+  - Example: `await request(app).post('/api/node').send({ label: 'Test' })`
+
 ## Test Conventions
 1. **All tests use in-memory database** - Set via `process.env.DB_PATH = ':memory:'` in `beforeEach`
 2. **All test files have ABOUTME comments** - Two lines at top explaining purpose
 3. **Database cleanup** - `closeDb()` called in `afterEach`
 4. **ES Modules** - All tests require `NODE_OPTIONS=--experimental-vm-modules`
+5. **Jest mock files must use `.cjs` extension** - Jest's `moduleNameMapper` uses `require()` which cannot load ES modules. All mock files in `tests/mocks/` must use `.cjs` extension (e.g., `styleMock.cjs`)
 
 ## Test Organization
 
@@ -29,6 +40,15 @@
 - **[api-edge-creation.test.js](tests/api-edge-creation.test.js)** - POST /api/edge endpoint with validation
 - **[api-label-updates.test.js](tests/api-label-updates.test.js)** - Node/edge label updates via API
 - **[api-group-operations.test.js](tests/api-group-operations.test.js)** - Group creation, ungrouping, expansion
+
+### Full-Stack Workflow Tests (`tests/integration/`)
+- **[workflow-state-sync.test.js](tests/integration/workflow-state-sync.test.js)** - Complete user workflows simulating frontend-backend data flow
+  - Tests: backend operation → frontend save → undo → verify state
+  - Uses supertest to simulate frontend API calls without browser
+  - Validates state synchronization between operations
+- **[double-save-prevention.test.js](tests/integration/double-save-prevention.test.js)** - Verifies operations save exactly once
+- **[save-paths.test.js](tests/integration/save-paths.test.js)** - All save paths create snapshots
+- **[save-race-conditions.test.js](tests/integration/save-race-conditions.test.js)** - Concurrent operations and snapshot integrity
 
 ### Conversation & LLM Tests
 - **[conversationService.test.js](tests/conversationService.test.js)** - Conversation CRUD and history management

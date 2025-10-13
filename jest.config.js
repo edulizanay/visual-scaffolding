@@ -6,8 +6,9 @@ export default {
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
+  // Mock CSS imports - uses .cjs because moduleNameMapper uses require() which cannot load ES modules
   moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.js',
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.cjs',
   },
   // Use jsdom for frontend tests
   projects: [
@@ -26,8 +27,9 @@ export default {
       testEnvironment: 'jsdom',
       testMatch: ['**/tests/unit/frontend/**/*.test.jsx', '**/tests/security/**/*.test.jsx'],
       setupFilesAfterEnv: ['<rootDir>/tests/setup-frontend.js'],
+      // Mock CSS imports - uses .cjs because moduleNameMapper uses require() which cannot load ES modules
       moduleNameMapper: {
-        '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.js',
+        '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.cjs',
       },
     },
   ],
