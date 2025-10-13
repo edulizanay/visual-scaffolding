@@ -521,11 +521,40 @@ describe('createGroup / toggleGroupExpansion / ungroup', () => {
     expect(ungrouped.nodes.find((node) => node.id === 'group-1')).toBeUndefined();
     const nodeA = ungrouped.nodes.find((node) => node.id === 'a');
     expect(nodeA.parentGroupId).toBeUndefined();
+    expect(nodeA.hidden).toBe(false);
+    expect(nodeA.groupHidden).toBe(false);
 
     const hasSyntheticEdges = ungrouped.edges.some(
       (edge) => edge.data?.isSyntheticGroupEdge
     );
     expect(hasSyntheticEdges).toBe(false);
+  });
+
+  test('ungroup reassigns nested members to ancestor group', () => {
+    const flow = {
+      nodes: [
+        { id: 'group-outer', type: 'group', isCollapsed: false, position: { x: 0, y: 0 }, data: { label: 'Outer' } },
+        { id: 'group-inner', type: 'group', parentGroupId: 'group-outer', isCollapsed: false, hidden: true, position: { x: 20, y: 20 }, data: { label: 'Inner' } },
+        { id: 'node-3', parentGroupId: 'group-inner', hidden: true, groupHidden: true, position: { x: 40, y: 40 } },
+        { id: 'node-4', parentGroupId: 'group-inner', hidden: true, groupHidden: true, position: { x: 60, y: 60 } },
+      ],
+      edges: [],
+    };
+
+    const result = ungroup(flow, 'group-inner');
+
+    const removedGroup = result.nodes.find((node) => node.id === 'group-inner');
+    expect(removedGroup).toBeUndefined();
+
+    const node3 = result.nodes.find((node) => node.id === 'node-3');
+    const node4 = result.nodes.find((node) => node.id === 'node-4');
+
+    expect(node3.parentGroupId).toBe('group-outer');
+    expect(node4.parentGroupId).toBe('group-outer');
+    expect(node3.hidden).toBe(false);
+    expect(node4.hidden).toBe(false);
+    expect(node3.groupHidden).toBe(false);
+    expect(node4.groupHidden).toBe(false);
   });
 
   test('collapsing nested groups removes halos for hidden children', () => {

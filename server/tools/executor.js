@@ -381,12 +381,30 @@ async function executeUngroup(params, flow) {
     return { success: false, error: 'Group has no members' };
   }
 
+  const parentGroupId = groupNode.parentGroupId;
+
   // Remove group node
   const updatedNodes = flow.nodes
     .filter(node => node.id !== groupId)
     .map(node => {
       if (node.parentGroupId === groupId) {
-        return { ...node, parentGroupId: undefined, hidden: false };
+        const next = {
+          ...node,
+          hidden: false,
+          groupHidden: false,
+        };
+
+        if (parentGroupId) {
+          next.parentGroupId = parentGroupId;
+        } else if ('parentGroupId' in next) {
+          delete next.parentGroupId;
+        }
+
+        if ('subtreeHidden' in next) {
+          delete next.subtreeHidden;
+        }
+
+        return next;
       }
       return node;
     });

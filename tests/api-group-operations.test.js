@@ -290,6 +290,47 @@ describe('DELETE /api/group/:id', () => {
     expect(response.body.error).toContain('not found');
   });
 
+  it('should keep members within ancestor when ungrouping nested group', async () => {
+    const node1 = await executeTool('addNode', { label: 'Node 1' });
+    const node2 = await executeTool('addNode', { label: 'Node 2' });
+    const node3 = await executeTool('addNode', { label: 'Node 3' });
+    const node4 = await executeTool('addNode', { label: 'Node 4' });
+
+    const innerGroupResult = await executeTool('createGroup', {
+      memberIds: [node3.nodeId, node4.nodeId]
+    });
+    expect(innerGroupResult.success).toBe(true);
+
+    const outerGroupResponse = await request(app)
+      .post('/api/group')
+      .send({
+        memberIds: [node1.nodeId, node2.nodeId, innerGroupResult.groupId],
+        label: 'Outer Group'
+      })
+      .expect(200);
+
+    expect(outerGroupResponse.body.success).toBe(true);
+    const outerGroupId = outerGroupResponse.body.groupId;
+
+    const ungroupResponse = await request(app)
+      .delete(`/api/group/${innerGroupResult.groupId}`)
+      .expect(200);
+
+    expect(ungroupResponse.body.success).toBe(true);
+    const flow = ungroupResponse.body.flow;
+
+    const removedGroup = flow.nodes.find(n => n.id === innerGroupResult.groupId);
+    expect(removedGroup).toBeUndefined();
+
+    const member3 = flow.nodes.find(n => n.id === node3.nodeId);
+    const member4 = flow.nodes.find(n => n.id === node4.nodeId);
+
+    expect(member3).toBeDefined();
+    expect(member4).toBeDefined();
+    expect(member3.parentGroupId).toBe(outerGroupId);
+    expect(member4.parentGroupId).toBe(outerGroupId);
+  });
+
   it('should fail when trying to ungroup non-group node', async () => {
     const nodeResult = await executeTool('addNode', { label: 'Regular Node' });
 

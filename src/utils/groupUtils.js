@@ -318,13 +318,33 @@ export const ungroup = (flow, groupId) => {
   const groupNode = nodes.find((node) => node.id === groupId && node.type === 'group');
   if (!groupNode) return flow;
 
+  const parentGroupId = groupNode.parentGroupId;
+
   const updatedNodes = nodes
     .filter((node) => node.id !== groupId)
-    .map((node) =>
-      node.parentGroupId === groupId
-        ? { ...node, parentGroupId: undefined }
-        : node
-    );
+    .map((node) => {
+      if (node.parentGroupId !== groupId) {
+        return node;
+      }
+
+      const next = {
+        ...node,
+        hidden: false,
+        groupHidden: false,
+      };
+
+      if (parentGroupId) {
+        next.parentGroupId = parentGroupId;
+      } else if ('parentGroupId' in next) {
+        delete next.parentGroupId;
+      }
+
+      if ('subtreeHidden' in next) {
+        delete next.subtreeHidden;
+      }
+
+      return next;
+    });
 
   // Synthetic edges are automatically cleaned up by applyGroupVisibility
   // since the group no longer exists, no synthetic edges will be generated for it
