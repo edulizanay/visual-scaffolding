@@ -138,16 +138,21 @@ describe('POST /api/group', () => {
     expect(response.body.error).toContain('not found');
   });
 
-  it('should fail when trying to group nodes already in groups', async () => {
-    // Create first group
+  it('should fail when trying to group nodes from different parent groups', async () => {
+    // Create two separate groups
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
     const node2Result = await executeTool('addNode', { label: 'Node 2' });
-    const group1Result = await executeTool('createGroup', {
+    await executeTool('createGroup', {
       memberIds: [node1Result.nodeId, node2Result.nodeId]
     });
 
-    // Try to create second group with overlapping member
     const node3Result = await executeTool('addNode', { label: 'Node 3' });
+    const node4Result = await executeTool('addNode', { label: 'Node 4' });
+    await executeTool('createGroup', {
+      memberIds: [node3Result.nodeId, node4Result.nodeId]
+    });
+
+    // Try to group nodes from different parent groups
     const response = await request(app)
       .post('/api/group')
       .send({
@@ -156,7 +161,91 @@ describe('POST /api/group', () => {
       .expect(400);
 
     expect(response.body.success).toBe(false);
-    expect(response.body.error).toContain('already in groups');
+    expect(response.body.error).toContain('different parent groups');
+  });
+
+  it('should allow grouping nodes from the same parent group (sub-grouping)', async () => {
+    // Create initial group with 3 nodes
+    const node1Result = await executeTool('addNode', { label: 'Node 1' });
+    const node2Result = await executeTool('addNode', { label: 'Node 2' });
+    const node3Result = await executeTool('addNode', { label: 'Node 3' });
+    const parentGroupResult = await executeTool('createGroup', {
+      memberIds: [node1Result.nodeId, node2Result.nodeId, node3Result.nodeId],
+      label: 'Parent Group'
+    });
+
+    // Group two nodes from the same parent group into a sub-group
+    const response = await request(app)
+      .post('/api/group')
+      .send({
+        memberIds: [node1Result.nodeId, node2Result.nodeId],
+        label: 'Sub Group'
+      })
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    const flow = response.body.flow;
+
+    // Check sub-group was created
+    const subGroupNode = flow.nodes.find(n => n.id === response.body.groupId);
+    expect(subGroupNode).toBeDefined();
+    expect(subGroupNode.type).toBe('group');
+    expect(subGroupNode.data.label).toBe('Sub Group');
+
+    // Check sub-group has the parent group as its parent
+    expect(subGroupNode.parentGroupId).toBe(parentGroupResult.groupId);
+
+    // Ensure the remaining node stays inside the parent group
+    const remainingNode = flow.nodes.find(n => n.id === node3Result.nodeId);
+    expect(remainingNode.parentGroupId).toBe(parentGroupResult.groupId);
+
+    // Parent group should now contain the new sub-group and the remaining node
+    const parentGroupChildren = flow.nodes
+      .filter(n => n.parentGroupId === parentGroupResult.groupId)
+      .map(n => n.id);
+    expect(parentGroupChildren).toContain(response.body.groupId);
+    expect(parentGroupChildren).toContain(node3Result.nodeId);
+  });
+
+  it('should allow grouping group nodes to create nested groups', async () => {
+    // Create two separate groups
+    const node1Result = await executeTool('addNode', { label: 'Node 1' });
+    const node2Result = await executeTool('addNode', { label: 'Node 2' });
+    const group1Result = await executeTool('createGroup', {
+      memberIds: [node1Result.nodeId, node2Result.nodeId],
+      label: 'Group 1'
+    });
+
+    const node3Result = await executeTool('addNode', { label: 'Node 3' });
+    const node4Result = await executeTool('addNode', { label: 'Node 4' });
+    const group2Result = await executeTool('createGroup', {
+      memberIds: [node3Result.nodeId, node4Result.nodeId],
+      label: 'Group 2'
+    });
+
+    // Group the two group nodes together
+    const response = await request(app)
+      .post('/api/group')
+      .send({
+        memberIds: [group1Result.groupId, group2Result.groupId],
+        label: 'Super Group'
+      })
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    const flow = response.body.flow;
+
+    // Check super group was created
+    const superGroupNode = flow.nodes.find(n => n.id === response.body.groupId);
+    expect(superGroupNode).toBeDefined();
+    expect(superGroupNode.type).toBe('group');
+    expect(superGroupNode.data.label).toBe('Super Group');
+
+    // Check both child groups now have the super group as their parent
+    const childGroup1 = flow.nodes.find(n => n.id === group1Result.groupId);
+    const childGroup2 = flow.nodes.find(n => n.id === group2Result.groupId);
+    expect(childGroup1.parentGroupId).toBe(response.body.groupId);
+    expect(childGroup2.parentGroupId).toBe(response.body.groupId);
   });
 });
 

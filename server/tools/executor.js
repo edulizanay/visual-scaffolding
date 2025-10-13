@@ -300,22 +300,35 @@ async function executeCreateGroup(params, flow) {
     return { success: false, error: 'Duplicate member IDs provided' };
   }
 
-  // Check for existing group memberships
-  const alreadyGrouped = memberIds.filter(id => {
+  // Check that all nodes belong to the same parent group (or no parent group)
+  // This allows: ungrouped nodes, nodes from same group, or group nodes themselves
+  // This prevents: mixing nodes from different parent groups
+  const parentGroups = new Set();
+  memberIds.forEach(id => {
     const node = flow.nodes.find(n => n.id === id);
-    return node && node.parentGroupId;
+    if (node && node.parentGroupId) {
+      parentGroups.add(node.parentGroupId);
+    }
   });
-  if (alreadyGrouped.length > 0) {
-    return { success: false, error: `Nodes already in groups: ${alreadyGrouped.join(', ')}` };
+
+  if (parentGroups.size > 1) {
+    return {
+      success: false,
+      error: `Cannot group nodes from different parent groups: ${[...parentGroups].join(', ')}`
+    };
   }
 
-  // Calculate position if not provided
+  const parentGroupId =
+    parentGroups.size === 1 ? parentGroups.values().next().value : undefined;
+
+  // Calculate position if not provided - to the left of the members
   let groupPosition = position;
   if (!groupPosition) {
     const memberNodes = memberIds.map(id => flow.nodes.find(n => n.id === id));
-    const avgX = memberNodes.reduce((sum, n) => sum + n.position.x, 0) / memberNodes.length;
+    const minX = Math.min(...memberNodes.map(n => n.position.x));
     const avgY = memberNodes.reduce((sum, n) => sum + n.position.y, 0) / memberNodes.length;
-    groupPosition = { x: avgX, y: avgY - 100 };
+    groupPosition = { x: minX, y: avgY };
+
   }
 
   // Generate group ID and label
@@ -330,6 +343,9 @@ async function executeCreateGroup(params, flow) {
     position: groupPosition,
     data: { label: groupLabel }
   };
+  if (parentGroupId) {
+    groupNode.parentGroupId = parentGroupId;
+  }
 
   // Update member nodes to belong to group
   const updatedNodes = flow.nodes.map(node => {
