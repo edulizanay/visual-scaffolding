@@ -1,7 +1,7 @@
 // ABOUTME: Tests for useHotkeys hook
 // ABOUTME: Validates keyboard event handling, isActive guards, and cleanup
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useHotkeys } from '../../../src/hooks/useHotkeys.jsx';
 
@@ -12,14 +12,14 @@ describe('useHotkeys Hook', () => {
   let removeEventListenerSpy;
 
   beforeEach(() => {
-    mockHandler1 = jest.fn();
-    mockHandler2 = jest.fn();
-    addEventListenerSpy = jest.spyOn(document, 'addEventListener');
-    removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+    mockHandler1 = vi.fn();
+    mockHandler2 = vi.fn();
+    addEventListenerSpy = vi.spyOn(document, 'addEventListener');
+    removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Event Listener Management', () => {
@@ -228,7 +228,7 @@ describe('useHotkeys Hook', () => {
 
   describe('isActive Guards', () => {
     it('should call handler when isActive returns true', () => {
-      const isActive = jest.fn(() => true);
+      const isActive = vi.fn(() => true);
 
       renderHook(() => useHotkeys([
         { keys: ['Meta', 'G'], handler: mockHandler1, isActive }
@@ -248,7 +248,7 @@ describe('useHotkeys Hook', () => {
     });
 
     it('should NOT call handler when isActive returns false', () => {
-      const isActive = jest.fn(() => false);
+      const isActive = vi.fn(() => false);
 
       renderHook(() => useHotkeys([
         { keys: ['Meta', 'G'], handler: mockHandler1, isActive }
@@ -268,7 +268,7 @@ describe('useHotkeys Hook', () => {
     });
 
     it('should update isActive behavior when state changes', () => {
-      const isActive = jest.fn((state) => state.selectedNodeIds?.length >= 2);
+      const isActive = vi.fn((state) => state.selectedNodeIds?.length >= 2);
 
       const { rerender } = renderHook(
         ({ state }) => useHotkeys([
@@ -314,7 +314,7 @@ describe('useHotkeys Hook', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 
@@ -332,7 +332,7 @@ describe('useHotkeys Hook', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 
@@ -340,7 +340,7 @@ describe('useHotkeys Hook', () => {
     });
 
     it('should NOT call preventDefault when isActive guard fails', () => {
-      const isActive = jest.fn(() => false);
+      const isActive = vi.fn(() => false);
 
       renderHook(() => useHotkeys([
         { keys: ['Meta', 'G'], handler: mockHandler1, isActive }
@@ -352,7 +352,7 @@ describe('useHotkeys Hook', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 

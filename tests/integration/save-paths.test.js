@@ -1,7 +1,7 @@
 // ABOUTME: Tests verifying that each save path creates snapshots correctly
 // ABOUTME: Ensures backend operations, LLM tools, and frontend saves all work
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
 import { closeDb, getDb, getFlow as dbGetFlow } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';

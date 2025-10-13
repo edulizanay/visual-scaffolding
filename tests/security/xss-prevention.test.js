@@ -3,7 +3,7 @@
 
 // NOTE: These tests verify data is stored safely. Frontend MUST escape on render.
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { executeToolCalls } from '../../server/tools/executor.js';
 import { readFlow } from '../../server/server.js';
 import { closeDb } from '../../server/db.js';

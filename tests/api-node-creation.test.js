@@ -1,7 +1,7 @@
 // ABOUTME: Integration tests for POST /api/node endpoint
 // ABOUTME: Tests manual node creation via API with group membership inheritance
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { closeDb } from '../server/db.js';

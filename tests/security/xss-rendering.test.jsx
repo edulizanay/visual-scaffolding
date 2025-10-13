@@ -1,15 +1,15 @@
 // ABOUTME: Security tests verifying Node and Edge components properly escape malicious HTML/JavaScript
 // ABOUTME: Tests XSS prevention by ensuring script tags, event handlers, and HTML entities are escaped on render
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import CustomNode from '../../src/Node.jsx';
 import CustomEdge from '../../src/Edge.jsx';
 
 // Mock React Flow's Handle component
-jest.mock('@xyflow/react', () => {
-  const actual = jest.requireActual('@xyflow/react');
+vi.mock('@xyflow/react', () => {
+  const actual = vi.importActual('@xyflow/react');
   return {
     ...actual,
     Handle: ({ type, position }) => <div data-testid={`handle-${type}-${position}`} />,
@@ -26,8 +26,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const maliciousLabel = '<script>alert("xss")</script>';
       const nodeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -53,8 +53,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: 'Safe Label',
         description: maliciousDescription,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -77,8 +77,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const maliciousLabel = 'Click me" onclick="alert(1)"';
       const nodeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -102,8 +102,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: 'Test',
         description: maliciousDescription,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -125,8 +125,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const maliciousLabel = '<img src=x onerror=alert(1)>';
       const nodeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -148,8 +148,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: maliciousDescription,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -170,8 +170,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const maliciousLabel = '<iframe src="javascript:alert(1)"></iframe>';
       const nodeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -194,8 +194,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const labelWithEntities = '&lt;script&gt;alert(&quot;test&quot;)&lt;/script&gt;';
       const nodeData = {
         label: labelWithEntities,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -213,8 +213,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: 'Test',
         description: description,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -235,8 +235,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const maliciousLabel = '<script>alert(1)</script><img src=x onerror=alert(2)>';
       const nodeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -258,8 +258,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: 'Safe',
         description: maliciousSvg,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -278,8 +278,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const maliciousLink = '<a href="javascript:alert(1)">Click</a>';
       const nodeData = {
         label: maliciousLink,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -299,8 +299,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: '',
         description: '',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -317,8 +317,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: 'Test',
         // description intentionally undefined
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -335,8 +335,8 @@ describe('XSS Rendering Prevention - Node Component', () => {
       const nodeData = {
         label: null,
         description: null,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -367,7 +367,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '<script>alert("xss")</script>';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -390,7 +390,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '" onclick="alert(1)" data-test="';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -410,7 +410,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '" onmouseover="alert(1)"';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -432,7 +432,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '<img src=x onerror=alert(1)>';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -453,7 +453,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '<iframe src="javascript:alert(1)"></iframe>';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -473,7 +473,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const labelWithEntities = '&lt;script&gt; &amp; &quot;test&quot;';
       const edgeData = {
         label: labelWithEntities,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -492,7 +492,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '<script>alert(1)</script><img src=x onerror=alert(2)>';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -510,7 +510,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
       const maliciousLabel = '<img src="data:text/html,<script>alert(1)</script>">';
       const edgeData = {
         label: maliciousLabel,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -529,7 +529,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
     it('should handle empty label', () => {
       const edgeData = {
         label: '',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -545,7 +545,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
     it('should handle undefined label', () => {
       const edgeData = {
         // label intentionally undefined
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -561,7 +561,7 @@ describe('XSS Rendering Prevention - Edge Component', () => {
     it('should handle null label', () => {
       const edgeData = {
         label: null,
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(

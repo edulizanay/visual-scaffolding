@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { GroupHaloOverlay } from '../../../src/utils/groupUtils.js';
 import { THEME } from '../../../src/constants/theme.js';
 
-jest.mock('@xyflow/react', () => {
+vi.mock('@xyflow/react', () => {
   const React = require('react');
   return {
     __esModule: true,
@@ -20,7 +20,7 @@ describe('GroupHaloOverlay', () => {
   };
 
   test('calls onCollapse when halo is double-clicked', () => {
-    const onCollapse = jest.fn();
+    const onCollapse = vi.fn();
 
     const { container } = render(<GroupHaloOverlay halos={[halo]} onCollapse={onCollapse} />);
     const rect = container.querySelector('rect');
@@ -34,7 +34,7 @@ describe('GroupHaloOverlay', () => {
   });
 
   test('does not call onCollapse when modifier keys are pressed', () => {
-    const onCollapse = jest.fn();
+    const onCollapse = vi.fn();
 
     const { container } = render(<GroupHaloOverlay halos={[halo]} onCollapse={onCollapse} />);
     const rect = container.querySelector('rect');
@@ -48,7 +48,7 @@ describe('GroupHaloOverlay', () => {
   });
 
   test('applies hover styling when halo is hovered', () => {
-    const { container } = render(<GroupHaloOverlay halos={[halo]} onCollapse={jest.fn()} />);
+    const { container } = render(<GroupHaloOverlay halos={[halo]} onCollapse={vi.fn()} />);
     const rect = container.querySelector('rect');
     expect(rect).toHaveAttribute('stroke', `${THEME.groupNode.halo.colors.normal}`);
 

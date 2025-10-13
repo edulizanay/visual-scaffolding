@@ -1,12 +1,12 @@
 // ABOUTME: Tests for HotkeysPanel component
 // ABOUTME: Validates rendering, toggle behavior, and hotkey display
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import HotkeysPanel from '../../../src/HotkeysPanel';
 
 // Mock the THEME constant
-jest.mock('../../../src/constants/theme.js', () => ({
+vi.mock('../../../src/constants/theme.js', () => ({
   THEME: {
     node: {
       colors: {

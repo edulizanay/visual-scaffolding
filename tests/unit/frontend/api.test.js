@@ -1,7 +1,7 @@
 // ABOUTME: Tests for frontend API client functions and error handling
 // ABOUTME: Validates fetch calls, response parsing, and error scenarios
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   loadFlow,
   saveFlow,
@@ -23,14 +23,14 @@ import {
 } from '../../../src/api.js';
 
 // Mock global fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 beforeEach(() => {
   // Reset fetch mock before each test
   global.fetch.mockReset();
 
   // Suppress console.error by default to keep test output clean
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {

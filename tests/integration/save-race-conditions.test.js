@@ -1,7 +1,7 @@
 // ABOUTME: Tests for race conditions between multiple save paths
 // ABOUTME: Verifies concurrent operations don't corrupt state or undo/redo
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
 import { closeDb, getDb, getFlow as dbGetFlow } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';

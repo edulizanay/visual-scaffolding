@@ -1,7 +1,7 @@
 // ABOUTME: Tests for group utility functions controlling grouping behavior
 // ABOUTME: Validates descendants, validation, visibility, and group state transitions
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import {
   getGroupDescendants,
   detectCircularReference,

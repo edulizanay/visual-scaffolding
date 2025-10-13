@@ -1,7 +1,7 @@
 // ABOUTME: Integration tests for complete user workflows (backend + frontend simulation)
 // ABOUTME: Tests state synchronization between backend operations and frontend saves
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
 import { closeDb, getDb } from '../../server/db.js';
 import { clearHistory, initializeHistory } from '../../server/historyService.js';

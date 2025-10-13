@@ -1,15 +1,15 @@
 // ABOUTME: Baseline tests for keyboard shortcuts in App.jsx before refactoring
 // ABOUTME: Tests keyboard handler logic in isolation without rendering full App component
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as api from '../../../src/api.js';
 
 // Mock the API module
-jest.mock('../../../src/api.js', () => ({
-  undoFlow: jest.fn(),
-  redoFlow: jest.fn(),
-  createGroup: jest.fn(),
-  ungroup: jest.fn(),
+vi.mock('../../../src/api.js', () => ({
+  undoFlow: vi.fn(),
+  redoFlow: vi.fn(),
+  createGroup: vi.fn(),
+  ungroup: vi.fn(),
 }));
 
 describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
@@ -22,7 +22,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
   let mockNodes;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default API responses
     api.undoFlow.mockResolvedValue({ success: true, flow: { nodes: [], edges: [] } });
@@ -35,15 +35,15 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
     mockNodes = [];
 
     // Create mock handler functions that match App.jsx behavior
-    mockHandleUndo = jest.fn(async () => {
+    mockHandleUndo = vi.fn(async () => {
       await api.undoFlow();
     });
 
-    mockHandleRedo = jest.fn(async () => {
+    mockHandleRedo = vi.fn(async () => {
       await api.redoFlow();
     });
 
-    mockHandleCreateGroup = jest.fn(async () => {
+    mockHandleCreateGroup = vi.fn(async () => {
       if (mockSelectedNodeIds.length < 2) {
         alert('Please select at least 2 nodes to create a group');
         return;
@@ -51,7 +51,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
       await api.createGroup({ memberIds: mockSelectedNodeIds, label: 'Group' });
     });
 
-    mockUngroupNodes = jest.fn(async () => {
+    mockUngroupNodes = vi.fn(async () => {
       if (mockSelectedNodeIds.length !== 1) {
         alert('Please select exactly 1 group node to ungroup');
         return;
@@ -82,7 +82,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
     };
 
     // Mock window.alert
-    global.alert = jest.fn();
+    global.alert = vi.fn();
 
     // Attach handler
     document.addEventListener('keydown', keydownHandler);
@@ -91,7 +91,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
   afterEach(() => {
     // Clean up handler
     document.removeEventListener('keydown', keydownHandler);
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Undo/Redo Shortcuts', () => {
@@ -154,7 +154,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 
@@ -168,7 +168,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 
@@ -305,7 +305,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 
@@ -320,7 +320,7 @@ describe('App.jsx Keyboard Shortcuts (Baseline)', () => {
         bubbles: true,
         cancelable: true,
       });
-      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
       document.dispatchEvent(event);
 

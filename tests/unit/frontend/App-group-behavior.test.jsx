@@ -5,7 +5,7 @@ import App from '../../../src/App.jsx';
 import { ReactFlow } from '@xyflow/react';
 import * as api from '../../../src/api.js';
 
-jest.mock('@xyflow/react', () => {
+vi.mock('@xyflow/react', () => {
   const React = require('react');
   const ReactFlowComponent = (props) => {
     ReactFlowComponent.mockProps = props;
@@ -18,14 +18,14 @@ jest.mock('@xyflow/react', () => {
   const useNodesState = (initial) => {
     const React = require('react');
     const [nodes, setNodes] = React.useState(initial);
-    const onNodesChange = jest.fn();
+    const onNodesChange = vi.fn();
     return [nodes, setNodes, onNodesChange];
   };
 
   const useEdgesState = (initial) => {
     const React = require('react');
     const [edges, setEdges] = React.useState(initial);
-    const onEdgesChange = jest.fn();
+    const onEdgesChange = vi.fn();
     return [edges, setEdges, onEdgesChange];
   };
 
@@ -40,7 +40,7 @@ jest.mock('@xyflow/react', () => {
   };
 });
 
-jest.mock('../../../src/ChatInterface', () => {
+vi.mock('../../../src/ChatInterface', () => {
   const React = require('react');
   const MockChatInterface = ({ onFlowUpdate, onProcessingChange }) => {
     MockChatInterface.handlers = { onFlowUpdate, onProcessingChange };
@@ -57,7 +57,7 @@ jest.mock('../../../src/ChatInterface', () => {
   };
 });
 
-jest.mock('../../../src/HotkeysPanel', () => {
+vi.mock('../../../src/HotkeysPanel', () => {
   const React = require('react');
   return {
     __esModule: true,
@@ -65,7 +65,7 @@ jest.mock('../../../src/HotkeysPanel', () => {
   };
 });
 
-jest.mock('../../../src/Node', () => {
+vi.mock('../../../src/Node', () => {
   const React = require('react');
   return {
     __esModule: true,
@@ -73,7 +73,7 @@ jest.mock('../../../src/Node', () => {
   };
 });
 
-jest.mock('../../../src/Edge', () => {
+vi.mock('../../../src/Edge', () => {
   const React = require('react');
   return {
     __esModule: true,
@@ -81,36 +81,36 @@ jest.mock('../../../src/Edge', () => {
   };
 });
 
-jest.mock('../../../src/hooks/useFlowLayout', () => ({
-  useFlowLayout: jest.fn(() => ({
-    applyLayoutWithAnimation: jest.fn(),
+vi.mock('../../../src/hooks/useFlowLayout', () => ({
+  useFlowLayout: vi.fn(() => ({
+    applyLayoutWithAnimation: vi.fn(),
     isAnimating: false,
     fitViewPadding: 0,
-    getAllDescendants: jest.fn(() => []),
+    getAllDescendants: vi.fn(() => []),
   })),
 }));
 
-jest.mock('../../../src/hooks/useHotkeys', () => ({
-  useHotkeys: jest.fn(),
+vi.mock('../../../src/hooks/useHotkeys', () => ({
+  useHotkeys: vi.fn(),
 }));
 
-jest.mock('../../../src/api.js', () => ({
-  loadFlow: jest.fn(),
-  saveFlow: jest.fn(),
-  undoFlow: jest.fn(),
-  redoFlow: jest.fn(),
-  getHistoryStatus: jest.fn(),
-  createNode: jest.fn(),
-  updateNode: jest.fn(),
-  createEdge: jest.fn(),
-  updateEdge: jest.fn(),
-  createGroup: jest.fn(),
-  ungroup: jest.fn(),
-  toggleGroupExpansion: jest.fn(),
+vi.mock('../../../src/api.js', () => ({
+  loadFlow: vi.fn(),
+  saveFlow: vi.fn(),
+  undoFlow: vi.fn(),
+  redoFlow: vi.fn(),
+  getHistoryStatus: vi.fn(),
+  createNode: vi.fn(),
+  updateNode: vi.fn(),
+  createEdge: vi.fn(),
+  updateEdge: vi.fn(),
+  createGroup: vi.fn(),
+  ungroup: vi.fn(),
+  toggleGroupExpansion: vi.fn(),
 }));
 
 const getChatHandlers = () => {
-  const module = jest.requireMock('../../../src/ChatInterface');
+  const module = vi.importMock('../../../src/ChatInterface');
   return module.default.handlers || {};
 };
 
@@ -127,7 +127,7 @@ const originalAlert = global.alert;
 
 describe('App group behaviour', () => {
   beforeAll(() => {
-    global.alert = jest.fn();
+    global.alert = vi.fn();
   });
 
   afterAll(() => {
@@ -135,8 +135,8 @@ describe('App group behaviour', () => {
   });
 
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
     ReactFlow.mockProps = null;
 
     api.loadFlow.mockResolvedValue(defaultFlow);
@@ -147,9 +147,9 @@ describe('App group behaviour', () => {
 
   afterEach(async () => {
     await act(async () => {
-      jest.runOnlyPendingTimers();
+      vi.runOnlyPendingTimers();
     });
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   const renderApp = async () => {
@@ -243,7 +243,7 @@ describe('App group behaviour', () => {
 
     // Flush initial debounce timers
     await act(async () => {
-      jest.runOnlyPendingTimers();
+      vi.runOnlyPendingTimers();
     });
     api.saveFlow.mockClear();
 
@@ -265,7 +265,7 @@ describe('App group behaviour', () => {
     });
 
     await act(async () => {
-      jest.advanceTimersByTime(600);
+      vi.advanceTimersByTime(600);
     });
 
     expect(api.saveFlow).not.toHaveBeenCalled();
@@ -278,7 +278,7 @@ describe('App group behaviour', () => {
     await renderApp();
 
     await act(async () => {
-      jest.advanceTimersByTime(600);
+      vi.advanceTimersByTime(600);
     });
 
     expect(api.saveFlow).toHaveBeenCalled();

@@ -1,7 +1,7 @@
 // ABOUTME: Tests for the centralized hotkeys registry
 // ABOUTME: Validates structure, uniqueness, and helper functions
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   HOTKEYS,
   getHotkeys,

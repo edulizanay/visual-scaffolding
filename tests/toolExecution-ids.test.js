@@ -1,7 +1,7 @@
 // ABOUTME: Tests for ID collision detection and sanitization in addNode
 // ABOUTME: Validates custom ID conflicts, sanitized label collisions, and special character handling
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { executeToolCalls } from '../server/tools/executor.js';
 import { readFlow } from '../server/server.js';
 import { closeDb } from '../server/db.js';

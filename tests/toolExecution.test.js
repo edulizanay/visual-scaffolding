@@ -1,7 +1,7 @@
 // ABOUTME: Tests for tool execution functions that run tool calls against flow.json
 // ABOUTME: Covers all 8 tool operations with comprehensive edge cases
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { executeToolCalls } from '../server/tools/executor.js';
 import { readFlow } from '../server/server.js';
 import { closeDb } from '../server/db.js';

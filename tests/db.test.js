@@ -1,7 +1,7 @@
 // ABOUTME: Tests for database layer (db.js) operations
 // ABOUTME: Ensures SQLite CRUD operations work correctly
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   getDb,
   closeDb,

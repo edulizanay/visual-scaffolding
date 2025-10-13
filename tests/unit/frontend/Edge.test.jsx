@@ -1,14 +1,14 @@
 // ABOUTME: Comprehensive unit tests for CustomEdge component
 // ABOUTME: Tests label rendering, inline editing, label positioning, and React Flow integration
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import CustomEdge from '../../../src/Edge.jsx';
 
 // Mock React Flow components
-jest.mock('@xyflow/react', () => {
-  const actual = jest.requireActual('@xyflow/react');
+vi.mock('@xyflow/react', () => {
+  const actual = vi.importActual('@xyflow/react');
   return {
     ...actual,
     BaseEdge: ({ id, path }) => (
@@ -17,7 +17,7 @@ jest.mock('@xyflow/react', () => {
     EdgeLabelRenderer: ({ children }) => (
       <div data-testid="edge-label-renderer">{children}</div>
     ),
-    getSmoothStepPath: jest.fn(({ sourceX, sourceY, targetX, targetY }) => {
+    getSmoothStepPath: vi.fn(({ sourceX, sourceY, targetX, targetY }) => {
       const path = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
       const labelX = (sourceX + targetX) / 2;
       const labelY = (sourceY + targetY) / 2;
@@ -38,12 +38,12 @@ describe('CustomEdge Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Edge Rendering', () => {
     it('should render BaseEdge with correct path', () => {
-      const { getSmoothStepPath } = jest.requireMock('@xyflow/react');
+      const { getSmoothStepPath } = vi.mocked(await vi.importMock('@xyflow/react'));
       const data = { label: 'Test Edge' };
 
       const { container } = render(
@@ -295,7 +295,7 @@ describe('CustomEdge Component', () => {
 
   describe('Label Change Callback', () => {
     it('should call onLabelChange on blur with new value', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: 'Old Label', onLabelChange };
 
       const { container } = render(
@@ -319,7 +319,7 @@ describe('CustomEdge Component', () => {
     });
 
     it('should exit edit mode on blur', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: 'Test', onLabelChange };
 
       const { container } = render(
@@ -367,7 +367,7 @@ describe('CustomEdge Component', () => {
     });
 
     it('should call onLabelChange with edge id and updated value', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: 'Initial', onLabelChange };
       const customProps = { ...baseProps, id: 'custom-edge-id' };
 
@@ -390,7 +390,7 @@ describe('CustomEdge Component', () => {
 
   describe('Keyboard Interactions', () => {
     it('should blur input when Enter key is pressed', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: 'Test', onLabelChange };
 
       const { container } = render(
@@ -465,7 +465,7 @@ describe('CustomEdge Component', () => {
     });
 
     it('should handle empty string label', () => {
-      const data = { label: '', onLabelChange: jest.fn() };
+      const data = { label: '', onLabelChange: vi.fn() };
 
       const { container } = render(
         <ReactFlowProvider>
@@ -478,7 +478,7 @@ describe('CustomEdge Component', () => {
     });
 
     it('should handle double click on empty label', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: '', onLabelChange };
 
       const { container } = render(
@@ -496,7 +496,7 @@ describe('CustomEdge Component', () => {
     });
 
     it('should preserve state when editing empty label to non-empty', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: '', onLabelChange };
 
       const { container } = render(
@@ -580,7 +580,7 @@ describe('CustomEdge Component', () => {
 
   describe('Multiple Sequential Edits', () => {
     it('should handle multiple edit sessions correctly', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const data = { label: 'First', onLabelChange };
 
       const { container } = render(

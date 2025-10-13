@@ -1,13 +1,13 @@
 // ABOUTME: Integration tests for POST /api/conversation/message endpoint with retry loop
 // ABOUTME: Tests full retry logic with mocked LLM responses including success, failure, and iteration limits
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 
 // Mock the callLLM function before importing anything that uses it
 let mockCallLLM;
-jest.unstable_mockModule('../../server/llm/llmService.js', () => ({
-  buildLLMContext: jest.fn(async (userMessage) => ({
+vi.mock('../../server/llm/llmService.js', () => ({
+  buildLLMContext: vi.fn(async (userMessage) => ({
     systemPrompt: 'Mock system prompt',
     userMessage,
     flowState: { nodes: [], edges: [] },
@@ -15,7 +15,7 @@ jest.unstable_mockModule('../../server/llm/llmService.js', () => ({
     conversationHistory: [],
     availableTools: []
   })),
-  parseToolCalls: jest.fn((llmResponse) => {
+  parseToolCalls: vi.fn((llmResponse) => {
     // Real implementation for testing
     const thinkingMatch = llmResponse.match(/<thinking>([\s\S]*?)<\/thinking>/);
     const thinking = thinkingMatch ? thinkingMatch[1].trim() : '';
@@ -42,8 +42,8 @@ jest.unstable_mockModule('../../server/llm/llmService.js', () => ({
 
     return { thinking, content, toolCalls, parseError };
   }),
-  callLLM: jest.fn((...args) => mockCallLLM(...args)),
-  buildRetryMessage: jest.fn((executionResults, toolCalls, currentFlow) => {
+  callLLM: vi.fn((...args) => mockCallLLM(...args)),
+  buildRetryMessage: vi.fn((executionResults, toolCalls, currentFlow) => {
     // Real implementation for testing
     const lines = ["Previous tool execution results:\n"];
     executionResults.forEach((result, i) => {
@@ -98,13 +98,13 @@ beforeEach(() => {
   saveFlow({ nodes: [], edges: [] });
 
   // Reset mock between tests
-  mockCallLLM = jest.fn();
+  mockCallLLM = vi.fn();
 });
 
 afterEach(() => {
   closeDb();
   delete process.env.GROQ_API_KEY;
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('POST /api/conversation/message - Retry Loop Integration', () => {

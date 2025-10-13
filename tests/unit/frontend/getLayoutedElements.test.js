@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { getLayoutedElements } from '../../../src/hooks/useFlowLayout.js';
 import { THEME } from '../../../src/constants/theme.js';
 

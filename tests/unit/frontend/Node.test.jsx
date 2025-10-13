@@ -1,14 +1,14 @@
 // ABOUTME: Comprehensive unit tests for the CustomNode component
 // ABOUTME: Tests rendering, inline editing, handles, styles, and user interactions
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import CustomNode from '../../../src/Node.jsx';
 
 // Mock React Flow's Handle component
-jest.mock('@xyflow/react', () => {
-  const actual = jest.requireActual('@xyflow/react');
+vi.mock('@xyflow/react', () => {
+  const actual = vi.importActual('@xyflow/react');
   return {
     ...actual,
     Handle: ({ type, position }) => <div data-testid={`handle-${type}-${position}`} />,
@@ -22,8 +22,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -39,8 +39,8 @@ describe('CustomNode Component', () => {
     it('should render placeholder text when description is undefined', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -56,8 +56,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: '',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -72,8 +72,8 @@ describe('CustomNode Component', () => {
     it('should apply placeholder opacity when description is missing', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -94,8 +94,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Real description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -117,8 +117,8 @@ describe('CustomNode Component', () => {
     it('should render source and target handles', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { getByTestId } = render(
@@ -137,8 +137,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -160,8 +160,8 @@ describe('CustomNode Component', () => {
         label: 'Test Node',
         description: 'Test description',
         textColor: 'rgb(255, 0, 0)',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -182,8 +182,8 @@ describe('CustomNode Component', () => {
         label: 'Test Node',
         description: 'Test description',
         textColor: 'blue',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -209,8 +209,8 @@ describe('CustomNode Component', () => {
     it('should enter edit mode when label is double-clicked', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -230,8 +230,8 @@ describe('CustomNode Component', () => {
     it('should update label value as user types', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -250,11 +250,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should call onLabelChange when label is blurred with changes', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         onLabelChange,
-        onDescriptionChange: jest.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -274,11 +274,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should not call onLabelChange when label is blurred without changes', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         onLabelChange,
-        onDescriptionChange: jest.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -297,11 +297,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should exit edit mode and call onLabelChange when Enter key is pressed', () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         onLabelChange,
-        onDescriptionChange: jest.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -317,7 +317,7 @@ describe('CustomNode Component', () => {
       fireEvent.change(input, { target: { value: 'New Label' } });
 
       // Mock the blur method
-      input.blur = jest.fn();
+      input.blur = vi.fn();
       fireEvent.keyDown(input, { key: 'Enter' });
 
       expect(input.blur).toHaveBeenCalled();
@@ -326,8 +326,8 @@ describe('CustomNode Component', () => {
     it('should not exit edit mode when non-Enter key is pressed', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -340,7 +340,7 @@ describe('CustomNode Component', () => {
       fireEvent.doubleClick(labelDiv);
 
       const input = container.querySelector('input.nodrag');
-      const blurSpy = jest.fn();
+      const blurSpy = vi.fn();
       input.blur = blurSpy;
 
       fireEvent.keyDown(input, { key: 'a' });
@@ -349,11 +349,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should exit edit mode after blur and show original label', async () => {
-      const onLabelChange = jest.fn();
+      const onLabelChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         onLabelChange,
-        onDescriptionChange: jest.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -391,8 +391,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -415,8 +415,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -437,11 +437,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should call onDescriptionChange when description is blurred', () => {
-      const onDescriptionChange = jest.fn();
+      const onDescriptionChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
         onDescriptionChange,
       };
 
@@ -464,11 +464,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should call onDescriptionChange even when description is unchanged', () => {
-      const onDescriptionChange = jest.fn();
+      const onDescriptionChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
         onDescriptionChange,
       };
 
@@ -490,11 +490,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should exit edit mode and call onDescriptionChange when Enter key is pressed', () => {
-      const onDescriptionChange = jest.fn();
+      const onDescriptionChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
         onDescriptionChange,
       };
 
@@ -513,17 +513,17 @@ describe('CustomNode Component', () => {
       fireEvent.change(descriptionInput, { target: { value: 'New description' } });
 
       // Mock the blur method
-      descriptionInput.blur = jest.fn();
+      descriptionInput.blur = vi.fn();
       fireEvent.keyDown(descriptionInput, { key: 'Enter' });
 
       expect(descriptionInput.blur).toHaveBeenCalled();
     });
 
     it('should allow editing placeholder description', () => {
-      const onDescriptionChange = jest.fn();
+      const onDescriptionChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
         onDescriptionChange,
       };
 
@@ -550,11 +550,11 @@ describe('CustomNode Component', () => {
     });
 
     it('should exit edit mode after blur and show original description', async () => {
-      const onDescriptionChange = jest.fn();
+      const onDescriptionChange = vi.fn();
       const nodeData = {
         label: 'Test Node',
         description: 'Original description',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
         onDescriptionChange,
       };
 
@@ -599,8 +599,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { rerender, container } = render(
@@ -626,7 +626,7 @@ describe('CustomNode Component', () => {
     it('should handle missing onLabelChange callback gracefully', () => {
       const nodeData = {
         label: 'Test Node',
-        onDescriptionChange: jest.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -649,7 +649,7 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
+        onLabelChange: vi.fn(),
       };
 
       const { container } = render(
@@ -672,8 +672,8 @@ describe('CustomNode Component', () => {
     it('should handle null label', () => {
       const nodeData = {
         label: null,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -688,8 +688,8 @@ describe('CustomNode Component', () => {
     it('should handle empty string label', () => {
       const nodeData = {
         label: '',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -705,8 +705,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: null,
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -723,8 +723,8 @@ describe('CustomNode Component', () => {
     it('should apply nodrag class to label input', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -744,8 +744,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -767,8 +767,8 @@ describe('CustomNode Component', () => {
     it('should apply correct styles to label input', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -793,8 +793,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -820,8 +820,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -843,8 +843,8 @@ describe('CustomNode Component', () => {
     it('should render label input with autoFocus property when entering edit mode', () => {
       const nodeData = {
         label: 'Test Node',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
@@ -867,8 +867,8 @@ describe('CustomNode Component', () => {
       const nodeData = {
         label: 'Test Node',
         description: 'Test description',
-        onLabelChange: jest.fn(),
-        onDescriptionChange: jest.fn(),
+        onLabelChange: vi.fn(),
+        onDescriptionChange: vi.fn(),
       };
 
       const { container } = render(
