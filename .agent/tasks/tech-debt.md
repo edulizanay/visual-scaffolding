@@ -34,14 +34,15 @@ Create a unified ID generation strategy:
 
 ---
 
-## Undo/Redo Position-Only Update Feature
+## ⚠️ REVIEW TOMORROW: Undo/Redo Position-Only Update Feature
 
-### Issue
-Two tests expect a "smart position-only update" feature that was never implemented.
+### Status: Tests Skipped - Need Decision
 
-**Affected Tests:**
-1. `tests/db.test.js` - "should update positions without creating new snapshot"
-2. `tests/undo-redo-autosave.test.js` - "auto-save with position change after undo should not truncate redo chain"
+**Affected Tests (Currently Skipped):**
+1. `tests/db.test.js:307` - "should update positions without creating new snapshot"
+2. `tests/undo-redo-autosave.test.js:57` - "auto-save with position change after undo should not truncate redo chain"
+
+Both tests are marked with `.skip` and reference this document.
 
 **Expected Behavior (Not Implemented):**
 - When pushing a snapshot that differs only in node positions (not data/labels)
@@ -67,8 +68,17 @@ Two tests expect a "smart position-only update" feature that was never implement
 3. **Mark as `.skip` with TODO** - Document as future feature request
 4. **Update test expectations** - Test current behavior (creates 2 snapshots)
 
+**Action Required Tomorrow:**
+Choose one of the following:
+1. **Delete tests** - Remove `.skip` and delete test code entirely
+2. **Keep skipped** - Leave as documentation of potential feature
+3. **Implement feature** - Significant engineering effort required
+4. **Update expectations** - Rewrite tests to validate current behavior
+
 **Recommendation:**
-Option 1 or 3. This is a nice-to-have UX feature but adds significant complexity to the undo system. If users complain about "undo pollution from dragging nodes", revisit as a feature request.
+Option 1 or 2. This is a nice-to-have UX feature but adds significant complexity. If users complain about "undo pollution from dragging nodes", revisit as feature request.
+
+**Current Status:** Tests are skipped with TODO comments pointing to this document.
 
 ---
 
