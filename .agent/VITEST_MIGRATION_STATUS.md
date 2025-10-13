@@ -29,50 +29,42 @@
 - [x] No jest.unstable_mockModule found
 - [x] Committed: `342b927`
 
-### Phase 5: Test Runs & Fixes (IN PROGRESS)
+### Phase 5: Test Runs & Fixes ✅
 - [x] First run: 513 tests discovered, 392 passing, 121 failing
-- [x] Fixed globals issue: Added `globals: true` to each project
-- [x] Committed: `d0c0cdd`
-- [x] Second run: 513 tests, 392 passing, 121 failing (9 test suites failing)
-- [ ] **CURRENT TASK:** Fix remaining 9 failing test suites
+- [x] Fixed globals issue: Added `globals: true` to each project (Committed: `d0c0cdd`)
+- [x] Fixed React JSX issues: Added React plugin to frontend-ui project (Committed: `864dc44`)
+- [x] Fixed Edge.test.jsx: Removed incorrect `vi.importMock()` usage
+- [x] Fixed color assertions: Updated tests to handle happy-dom vs jsdom differences
+- [x] Fixed fake timer conflicts: Moved `vi.useFakeTimers()` into individual tests
+- [x] Fixed App-group-behavior tests: Fixed getChatHandlers and timer issues
+- [x] All 192 frontend UI tests passing (9 test files) (Committed: `c9fccfe`)
+- [x] **Current Status:** 540 tests passing, 4 failing (3 backend test files)
 
 ---
 
 ## 🔧 CURRENT ISSUES
 
-### Issue: React is not defined in JSX tests
+### Issue: 4 Backend Test Failures
 
-**Affected Files (9 test suites):**
-- tests/unit/frontend/Edge.test.jsx
-- tests/unit/frontend/Node.test.jsx
-- tests/security/xss-rendering.test.jsx
-- tests/unit/frontend/HotkeysPanel.test.jsx
-- tests/unit/frontend/App-group-behavior.test.jsx
-- tests/unit/frontend/GroupHaloOverlay.test.jsx
-- Plus some backend tests
+**Affected Files:**
+- tests/api-group-operations.test.js (2 tests failing)
+- tests/db.test.js (1 test failing)
+- tests/undo-redo-autosave.test.js (1 test failing)
 
-**Root Cause:**
-Test files use JSX syntax (`<ReactFlowProvider>`) but don't import React.
-In Jest, React was available globally in jsdom/happy-dom.
-In Vitest with happy-dom, React must be explicitly imported or mocks need updating.
+**Status:** Need to investigate if these are:
+1. Pre-existing failures from Jest baseline (Jest had 5 failing suites)
+2. Migration-related issues
 
-**The mocks use patterns like:**
-```javascript
-vi.mock('@xyflow/react', async () => {
-  const actual = await vi.importActual('@xyflow/react');
-  return {
-    ...actual,
-    Handle: ({ type, position }) => <div data-testid={...} />,  // JSX here needs React
-  };
-});
-```
+**Failing Tests:**
+1. `POST /api/group > should fail when trying to group nodes from different parent groups` - Expected 400, got 200
+2. `POST /api/group > should allow grouping group nodes to create nested groups` - (need details)
+3. `Undo/Redo Operations > should update positions without creating new snapshot` - (need details)
+4. `Undo/Redo with Auto-save > auto-save with position change after undo should not truncate redo chain` - (need details)
 
-**Solution Options:**
-1. Add `import React from 'react'` to affected test files
-2. Update mocks to not use JSX (use React.createElement or vi.fn())
-3. Configure happy-dom to provide React globally
-
-**Recommended:** Option 2 - Update mocks to avoid JSX since they're just test mocks anyway.
+**Next Steps:**
+1. Check if these were failing in Jest baseline
+2. If new, investigate migration-related causes
+3. If pre-existing, document and proceed with migration completion
 
 ---
 
@@ -83,14 +75,15 @@ vi.mock('@xyflow/react', async () => {
 - Tests: 266 passed, 266 total
 - Files: 34 test files
 
-### Current Status (Vitest):
-- Test Files: 25 passed, 9 failed (34 total)
-- Tests: 392 passed, 121 failed (513 total)
-- Note: 513 tests > 266 tests - Vitest is discovering more tests!
+### After Migration (Vitest):
+- Test Files: 31 passed, 3 failed (34 total) ✅
+- Tests: 540 passed, 4 failed (544 total) ✅
+- Duration: 3.74s (vs ~10s in Jest)
+- Note: **544 tests discovered vs 266 in Jest** - Vitest finding more tests!
 
-### Outstanding:
-- 9 test suites to fix (mostly React import issues)
-- Backend tests may have other issues to investigate
+### Remaining Issues:
+- 3 backend test files with 4 failing tests total
+- Need to verify if pre-existing or migration-related
 
 ---
 
@@ -143,15 +136,20 @@ All production code remains unchanged - only test files modified.
 
 ---
 
-## ✨ ACHIEVEMENTS SO FAR
+## ✨ ACHIEVEMENTS
 
 1. ✅ Removed NODE_OPTIONS=--experimental-vm-modules flag
-2. ✅ All 34 test files converted to Vitest
+2. ✅ All 34 test files converted to Vitest API
 3. ✅ ESM imports working natively
-4. ✅ 392 tests passing (was 266 in Jest baseline)
-5. ✅ Multi-environment config working (node vs happy-dom)
-6. ✅ Zero production code changes
+4. ✅ **540 tests passing** (was 266 in Jest, +103% increase!)
+5. ✅ **544 total tests discovered** (Vitest finding tests Jest missed)
+6. ✅ Multi-environment config working (node vs happy-dom)
+7. ✅ Zero production code changes
+8. ✅ All 192 frontend UI tests passing (9 test files)
+9. ✅ Test execution ~2.7x faster (3.74s vs ~10s in Jest)
+10. ✅ React plugin configured for JSX transform
+11. ✅ Fixed fake timer conflicts with Testing Library
 
 ---
 
-**Status:** Making good progress. Need to fix React import issues in 9 test suites, then cleanup.
+**Status:** Migration ~99% complete! 540/544 tests passing. Only 4 backend tests failing (need to verify if pre-existing or migration-related).
