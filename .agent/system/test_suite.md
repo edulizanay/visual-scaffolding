@@ -40,6 +40,7 @@
 - **[api-edge-creation.test.js](tests/api-edge-creation.test.js)** - POST /api/edge endpoint with validation
 - **[api-label-updates.test.js](tests/api-label-updates.test.js)** - Node/edge label updates via API
 - **[api-group-operations.test.js](tests/api-group-operations.test.js)** - Group creation, ungrouping, expansion
+  - Nested group ungroup tests (members kept within ancestor group)
 
 ### Full-Stack Workflow Tests (`tests/integration/`)
 - **[workflow-state-sync.test.js](tests/integration/workflow-state-sync.test.js)** - Complete user workflows simulating frontend-backend data flow
@@ -62,7 +63,9 @@
 - **[toolExecution-ids.test.js](tests/toolExecution-ids.test.js)** - ID collision detection and sanitization
 
 ### Group & History Tests
-- **[groupHelpers.test.js](tests/groupHelpers/groupHelpers.test.js)** - Group utilities (descendants, validation, visibility, state transitions)
+- **[groupHelpers.test.js](tests/groupHelpers.test.js)** - Group utilities (descendants, validation, visibility, state transitions)
+  - Depth-based incremental padding tests (nested groups with decay factor)
+  - Ungroup hierarchy preservation tests (reassignment to parent group)
 - **[historyService.test.js](tests/historyService.test.js)** - History management
 - **[undo-redo-autosave.test.js](tests/undo-redo-autosave.test.js)** - Undo/redo with auto-save (redo chain preservation)
 
