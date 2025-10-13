@@ -14,6 +14,7 @@ export default defineConfig({
         test: {
           name: 'backend',
           environment: 'node',
+          globals: true,
           include: [
             'tests/unit/backend/**/*.test.js',
             'tests/integration/**/*.test.js',
@@ -36,6 +37,7 @@ export default defineConfig({
         test: {
           name: 'frontend-api',
           environment: 'node',
+          globals: true,
           include: [
             'tests/unit/frontend/**/*.test.js',
           ],
@@ -47,6 +49,7 @@ export default defineConfig({
         test: {
           name: 'frontend-ui',
           environment: 'happy-dom',
+          globals: true,
           include: [
             'tests/unit/frontend/**/*.test.jsx',
             'tests/security/**/*.test.jsx',
@@ -60,6 +63,7 @@ export default defineConfig({
         test: {
           name: 'security',
           environment: 'node',
+          globals: true,
           include: [
             'tests/security/**/*.test.js',
           ],
