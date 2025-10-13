@@ -20,9 +20,12 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 - **CORS** - Cross-origin support
 
 ### Testing
-- **Jest** - Test framework
-- **Supertest** - API testing
-- **NODE_OPTIONS=--experimental-vm-modules** - ES modules support in tests
+- **Jest** - Test framework (with ES modules via `NODE_OPTIONS=--experimental-vm-modules`)
+- **React Testing Library** - Frontend component testing (with jsdom environment)
+- **@testing-library/jest-dom** - Custom Jest matchers for DOM assertions
+- **@testing-library/user-event** - User interaction simulation
+- **Supertest** - Backend API integration testing
+- **In-memory SQLite** - Isolated database testing (`:memory:`)
 
 ## Project Structure
 
