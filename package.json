@@ -10,8 +10,10 @@
     "server": "node server/server.js",
     "server:dev": "nodemon --ignore 'server/data/**' server/server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server:dev\"",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "migrate": "node server/migrate-to-sqlite.js"
   },
   "dependencies": {
