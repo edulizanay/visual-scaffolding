@@ -614,7 +614,7 @@ function App() {
           animation: 'slideIn 0.3s ease-out',
         }}>
           <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{tooltipConfig.keys}</Kbd>
-          <span style={{ color: '#9ca3af', fontSize: '13px' }}>{tooltipConfig.label}</span>
+          <span style={{ color: THEME.text.tertiary, fontSize: '13px' }}>{tooltipConfig.label}</span>
         </div>
       )}
 
@@ -630,7 +630,7 @@ function App() {
           animation: 'slideIn 0.3s ease-out',
         }}>
           <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{toast === 'undo' ? '⌘ Z' : '⌘ Y'}</Kbd>
-          <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
+          <span style={{ color: THEME.text.secondary, fontSize: '14px' }}>
             {toast === 'undo' ? 'to undo' : 'to redo'}
           </span>
         </div>

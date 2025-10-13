@@ -2,6 +2,7 @@
 // ABOUTME: Provides text input and sends messages to backend
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { sendMessage, clearConversation, getConversationDebug } from './api';
+import { THEME } from './constants/theme.js';
 
 export const Kbd = ({ children, style = {} }) => (
   <kbd
@@ -263,7 +264,7 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
               transition: 'opacity 150ms ease',
             }}>
               <Kbd>⌘</Kbd>
-              <span style={{ color: '#9ca3af', fontSize: '12px' }}>+</span>
+              <span style={{ color: THEME.text.tertiary, fontSize: '12px' }}>+</span>
               <Kbd>⏎</Kbd>
             </div>
           </div>
