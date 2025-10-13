@@ -93,13 +93,14 @@ Located in `server/llm/tools.js`. Defined in OpenAI function calling format with
 
 7. **createGroup** - Create group from multiple nodes
    - Accepts array of `nodeIds` to group
-   - Optional `groupId`, `label`, `description`
+   - Optional `groupId`, `label`, `description`, `position`
    - Groups start collapsed by default
-   - Validates no circular references or duplicate grouping
+   - Supports nested groups: can group nodes from same parent or group multiple group nodes
+   - Validates nodes don't mix different parent groups
 
 8. **ungroup** - Remove group and restore members
    - Removes group node
-   - Restores member nodes to root level (removes `parentGroupId`)
+   - Restores member nodes (removes `parentGroupId` and `hidden` flag)
 
 9. **toggleGroupExpansion** - Toggle group collapse state
    - Accepts `groupId` and optional `collapse` boolean

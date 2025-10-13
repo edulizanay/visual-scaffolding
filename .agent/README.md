@@ -105,13 +105,14 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 
 ---
 
-**Last Updated**: October 12, 2025
+**Last Updated**: October 13, 2025
 **Major Updates**:
-- Implemented centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
-- Added HotkeysPanel component with slide-in UI (? button)
+- Implemented nested group creation and sub-grouping feature
+- Updated group validation to allow same-parent regrouping and group nesting
+- Comprehensive test coverage for nested groups (tests/api-group-operations.test.js)
+- Centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
+- HotkeysPanel component with slide-in UI (? button)
 - Completed visual customization removal (migration 002, hardcoded theme in src/constants/theme.jsx)
-- Test suite: 317 tests across 13 test suites (15 failing in frontend tests - act() warnings)
-- Test coverage includes comprehensive frontend, backend, and integration tests
-- Database now has 4 tables (removed visual_settings)
-- Created SOP for hotkeys management
-- Updated all system documentation to reflect current state
+- Test suite: 317+ tests across 13 test suites
+- Database: 4 tables (removed visual_settings)
+- Updated documentation: group system, LLM integration

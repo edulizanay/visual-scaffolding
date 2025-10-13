@@ -26,7 +26,8 @@ Group nodes are stored as regular nodes with special properties:
   data: {
     label: "Authentication",
     description: "Auth-related nodes"
-  }
+  },
+  parentGroupId: "parent_group"  // Optional: nested groups can have parent groups
 }
 ```
 
@@ -43,6 +44,14 @@ Member nodes reference their parent group via `parentGroupId`:
   data: { label: "Login" }
 }
 ```
+
+### Nested Groups
+
+Groups can contain other groups, creating hierarchies:
+- **Sub-grouping**: Selecting multiple nodes within a group and grouping them creates a sub-group
+- **Group nesting**: Grouping multiple group nodes creates a parent group containing child groups
+- Sub-groups inherit the `parentGroupId` of their members
+- When a parent group is collapsed, all descendant groups and nodes are hidden
 
 ### Visibility States
 
@@ -138,9 +147,9 @@ They can operate on the same nodes simultaneously without conflicts.
 ### Backend Components
 
 **`server/tools/executor.js`** - Group tool executors:
-- `executeCreateGroup(params, flow)` - Creates group via `createGroup()` from groupUtils
-- `executeUngroup(params, flow)` - Removes group via `ungroup()` from groupUtils
-- `executeToggleGroupExpansion(params, flow)` - Toggles via `toggleGroupExpansion()` from groupUtils
+- `executeCreateGroup(params, flow)` - Creates group node, validates parent group compatibility, assigns members
+- `executeUngroup(params, flow)` - Removes group node and restores members to ungrouped state
+- `executeToggleGroupExpansion(params, flow)` - Toggles `isCollapsed` state and member `hidden` properties
 
 **`server/llm/tools.js`** - LLM tool definitions:
 - `createGroup` - Tool definition for AI group creation
@@ -192,17 +201,21 @@ Located in `src/utils/groupUtils.js` (`computeSyntheticEdges()`):
 
 ### Group Creation
 
-Enforced in `validateGroupMembership()`:
+Enforced in `executeCreateGroup()` in [server/tools/executor.js](../../server/tools/executor.js:284):
 - Minimum 2 nodes required
 - No duplicate node IDs
 - All nodes must exist in flow
-- Cannot group a node with its descendant (prevents circular references)
+- Cannot mix nodes from different parent groups (prevents invalid hierarchies)
 
-### Circular Reference Prevention
+### Parent Group Validation
 
-Enforced in `detectCircularReference()`:
-- Before adding node to group, check if target group is a descendant of the node
-- Prevents creating impossible hierarchies
+All nodes being grouped must either have no parent group OR the same parent group:
+- **Allowed**: Grouping ungrouped nodes together
+- **Allowed**: Sub-grouping nodes within the same parent group
+- **Allowed**: Grouping group nodes that share the same parent (or have no parent)
+- **Blocked**: Mixing "node from Group A" with "node from Group B"
+
+This enables nested group hierarchies while preventing invalid cross-group structures.
 
 ## User Interactions
 
@@ -237,9 +250,9 @@ Test coverage: `tests/groupHelpers.test.js`, `tests/api-group-operations.test.js
 
 ## Known Limitations
 
-- Groups cannot be nested within groups (flat hierarchy only)
 - Group colors/styling not customizable per-group
 - Synthetic edges cannot have custom labels
+- Group positioning is calculated automatically (to the left of members)
 
 ## Key Files
 
