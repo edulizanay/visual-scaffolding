@@ -13,6 +13,7 @@ import {
   getExpandedGroupHalos,
   collapseSubtreeByHandles,
 } from '../src/utils/groupUtils.js';
+import { THEME } from '../src/constants/theme.jsx';
 
 describe('getGroupDescendants', () => {
   test('finds direct children by parentGroupId', () => {
@@ -61,6 +62,69 @@ describe('getExpandedGroupHalos', () => {
     width: node.width ?? 200,
     height: node.height ?? 120,
   });
+  const HALO_PADDING_CONFIG = THEME.groupNode.halo.padding;
+  const HORIZONTAL_BASE_PADDING = HALO_PADDING_CONFIG?.x?.base ?? 0;
+  const VERTICAL_PADDING_CONFIG = {
+    base: HALO_PADDING_CONFIG?.y?.base ?? 0,
+    increment: HALO_PADDING_CONFIG?.y?.increment ?? 0,
+    decay: HALO_PADDING_CONFIG?.y?.decay ?? 1,
+    minStep: HALO_PADDING_CONFIG?.y?.minStep ?? 0,
+  };
+
+  const computeExpectedVerticalPadding = (nestedLayers) => {
+    let padding = VERTICAL_PADDING_CONFIG.base;
+    let increment = VERTICAL_PADDING_CONFIG.increment;
+    for (let i = 0; i < nestedLayers; i += 1) {
+      const minimum = VERTICAL_PADDING_CONFIG.minStep > 0 ? VERTICAL_PADDING_CONFIG.minStep : 0;
+      const step = Math.max(minimum, Math.round(increment));
+      padding += step;
+      increment *= VERTICAL_PADDING_CONFIG.decay;
+    }
+    return padding;
+  };
+
+  const computeNestedGroupDepth = (groupId, nodes) => {
+    const childGroups = nodes
+      .filter((node) => node.parentGroupId === groupId && node.type === 'group');
+    if (!childGroups.length) {
+      return 0;
+    }
+    const childDepths = childGroups.map((child) => computeNestedGroupDepth(child.id, nodes));
+    return 1 + Math.max(...childDepths);
+  };
+
+  const computeDescendantBounds = (groupId, nodes) => {
+    const descendantIds = getGroupDescendants(groupId, nodes);
+    const descendants = descendantIds
+      .map((id) => nodes.find((node) => node.id === id))
+      .filter((node) => node && !node.hidden && !node.groupHidden);
+
+    if (!descendants.length) {
+      return null;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    descendants.forEach((node) => {
+      const { width = 0, height = 0 } = dimensions ? dimensions(node) : {};
+      const x = node?.position?.x ?? 0;
+      const y = node?.position?.y ?? 0;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      return null;
+    }
+
+    return { minX, minY, maxX, maxY };
+  };
 
   test('returns empty array when no groups are expanded', () => {
     const nodes = [
@@ -68,7 +132,10 @@ describe('getExpandedGroupHalos', () => {
       { id: 'a', parentGroupId: 'group-1', position: { x: 0, y: 0 }, width: 100, height: 60 },
     ];
 
-    const halos = getExpandedGroupHalos(nodes, dimensions, 16);
+    const halos = getExpandedGroupHalos(nodes, dimensions, {
+      x: { base: 16 },
+      y: { base: 16 },
+    });
     expect(halos).toEqual([]);
   });
 
@@ -79,7 +146,10 @@ describe('getExpandedGroupHalos', () => {
       { id: 'b', parentGroupId: 'group-1', position: { x: 300, y: 220 }, width: 140, height: 100 },
     ];
 
-    const halos = getExpandedGroupHalos(nodes, dimensions, 20);
+    const halos = getExpandedGroupHalos(nodes, dimensions, {
+      x: { base: 20 },
+      y: { base: 20 },
+    });
     expect(halos).toHaveLength(1);
     expect(halos[0].groupId).toBe('group-1');
     expect(halos[0].label).toBe('Checkout');
@@ -99,13 +169,155 @@ describe('getExpandedGroupHalos', () => {
       { id: 'node-1', parentGroupId: 'group-inner', position: { x: 450, y: 260 }, width: 80, height: 50 },
     ];
 
-    const halos = getExpandedGroupHalos(nodes, dimensions, 10);
+    const halos = getExpandedGroupHalos(nodes, dimensions, {
+      x: { base: 10 },
+      y: { base: 10 },
+    });
     expect(halos).toHaveLength(1);
     const bounds = halos[0].bounds;
     expect(bounds.x).toBe(390);
     expect(bounds.y).toBe(190);
     expect(bounds.width).toBe(170);
     expect(bounds.height).toBe(140);
+  });
+
+  test('applies incremental padding for nested groups', () => {
+    const nodes = [
+      { id: 'group-outer', type: 'group', isCollapsed: false, position: { x: 50, y: 50 }, width: 270, height: 200 },
+      { id: 'group-inner', type: 'group', parentGroupId: 'group-outer', isCollapsed: false, position: { x: 50, y: 50 }, width: 150, height: 150 },
+      { id: 'node-a', parentGroupId: 'group-inner', position: { x: 50, y: 50 }, width: 100, height: 80 },
+      { id: 'node-b', parentGroupId: 'group-inner', position: { x: 120, y: 140 }, width: 80, height: 60 },
+      { id: 'node-c', parentGroupId: 'group-outer', position: { x: 260, y: 210 }, width: 60, height: 40 },
+    ];
+
+    const halos = getExpandedGroupHalos(nodes, dimensions, HALO_PADDING_CONFIG);
+
+    expect(halos).toHaveLength(2);
+
+    const innerHalo = halos.find((halo) => halo.groupId === 'group-inner');
+    const outerHalo = halos.find((halo) => halo.groupId === 'group-outer');
+
+    expect(innerHalo).toBeDefined();
+    expect(outerHalo).toBeDefined();
+
+    const innerBounds = computeDescendantBounds('group-inner', nodes);
+    const outerBounds = computeDescendantBounds('group-outer', nodes);
+
+    expect(innerBounds).not.toBeNull();
+    expect(outerBounds).not.toBeNull();
+
+    const innerPaddingX = innerBounds.minX - innerHalo.bounds.x;
+    const innerPaddingY = innerBounds.minY - innerHalo.bounds.y;
+    const outerPaddingX = outerBounds.minX - outerHalo.bounds.x;
+    const outerPaddingY = outerBounds.minY - outerHalo.bounds.y;
+
+    expect(innerPaddingX).toBe(HORIZONTAL_BASE_PADDING);
+    expect(innerPaddingY).toBe(VERTICAL_PADDING_CONFIG.base);
+
+    const expectedOuterVerticalPadding = computeExpectedVerticalPadding(
+      computeNestedGroupDepth('group-outer', nodes),
+    );
+
+    expect(outerPaddingX).toBe(HORIZONTAL_BASE_PADDING);
+    expect(outerPaddingY).toBe(expectedOuterVerticalPadding);
+    expect(outerPaddingY - innerPaddingY).toBe(
+      Math.max(VERTICAL_PADDING_CONFIG.minStep, Math.round(VERTICAL_PADDING_CONFIG.increment)),
+    );
+
+    expect(innerHalo.bounds).toEqual({
+      x: innerBounds.minX - innerPaddingX,
+      y: innerBounds.minY - innerPaddingY,
+      width: (innerBounds.maxX - innerBounds.minX) + innerPaddingX * 2,
+      height: (innerBounds.maxY - innerBounds.minY) + innerPaddingY * 2,
+    });
+
+    expect(outerHalo.bounds).toEqual({
+      x: outerBounds.minX - outerPaddingX,
+      y: outerBounds.minY - outerPaddingY,
+      width: (outerBounds.maxX - outerBounds.minX) + outerPaddingX * 2,
+      height: (outerBounds.maxY - outerBounds.minY) + outerPaddingY * 2,
+    });
+  });
+
+  test('uses decay factor for progressively larger ancestor halos', () => {
+    const nodes = [
+      { id: 'group-outer', type: 'group', isCollapsed: false, position: { x: 100, y: 80 }, width: 310, height: 240 },
+      { id: 'group-mid', type: 'group', parentGroupId: 'group-outer', isCollapsed: false, position: { x: 100, y: 80 }, width: 190, height: 130 },
+      { id: 'group-inner', type: 'group', parentGroupId: 'group-mid', isCollapsed: false, position: { x: 100, y: 80 }, width: 90, height: 100 },
+      { id: 'leaf-1', parentGroupId: 'group-inner', position: { x: 100, y: 80 }, width: 60, height: 30 },
+      { id: 'leaf-2', parentGroupId: 'group-inner', position: { x: 140, y: 130 }, width: 50, height: 50 },
+      { id: 'mid-node', parentGroupId: 'group-mid', position: { x: 220, y: 170 }, width: 70, height: 40 },
+      { id: 'outer-node', parentGroupId: 'group-outer', position: { x: 330, y: 260 }, width: 80, height: 60 },
+    ];
+
+    const halos = getExpandedGroupHalos(nodes, dimensions, HALO_PADDING_CONFIG);
+
+    expect(halos).toHaveLength(3);
+
+    const innerHalo = halos.find((halo) => halo.groupId === 'group-inner');
+    const midHalo = halos.find((halo) => halo.groupId === 'group-mid');
+    const outerHalo = halos.find((halo) => halo.groupId === 'group-outer');
+
+    expect(innerHalo).toBeDefined();
+    expect(midHalo).toBeDefined();
+    expect(outerHalo).toBeDefined();
+
+    const innerBounds = computeDescendantBounds('group-inner', nodes);
+    const midBounds = computeDescendantBounds('group-mid', nodes);
+    const outerBounds = computeDescendantBounds('group-outer', nodes);
+
+    expect(innerBounds).not.toBeNull();
+   expect(midBounds).not.toBeNull();
+    expect(outerBounds).not.toBeNull();
+
+    const innerPaddingX = innerBounds.minX - innerHalo.bounds.x;
+    const innerPaddingY = innerBounds.minY - innerHalo.bounds.y;
+    const midPaddingX = midBounds.minX - midHalo.bounds.x;
+    const midPaddingY = midBounds.minY - midHalo.bounds.y;
+    const outerPaddingX = outerBounds.minX - outerHalo.bounds.x;
+    const outerPaddingY = outerBounds.minY - outerHalo.bounds.y;
+
+    expect(innerPaddingX).toBe(HORIZONTAL_BASE_PADDING);
+    expect(midPaddingX).toBe(HORIZONTAL_BASE_PADDING);
+    expect(outerPaddingX).toBe(HORIZONTAL_BASE_PADDING);
+
+    expect(innerPaddingY).toBe(VERTICAL_PADDING_CONFIG.base);
+
+    const expectedMidVerticalPadding = computeExpectedVerticalPadding(
+      computeNestedGroupDepth('group-mid', nodes),
+    );
+    const expectedOuterVerticalPadding = computeExpectedVerticalPadding(
+      computeNestedGroupDepth('group-outer', nodes),
+    );
+
+    expect(midPaddingY).toBe(expectedMidVerticalPadding);
+    expect(outerPaddingY).toBe(expectedOuterVerticalPadding);
+
+    const firstIncrement = Math.max(
+      VERTICAL_PADDING_CONFIG.minStep,
+      Math.round(VERTICAL_PADDING_CONFIG.increment),
+    );
+    const secondIncrement = Math.max(
+      VERTICAL_PADDING_CONFIG.minStep,
+      Math.round(VERTICAL_PADDING_CONFIG.increment * VERTICAL_PADDING_CONFIG.decay),
+    );
+
+    expect(midPaddingY - innerPaddingY).toBe(firstIncrement);
+    expect(outerPaddingY - midPaddingY).toBe(secondIncrement);
+
+    expect(midHalo.bounds).toEqual({
+      x: midBounds.minX - midPaddingX,
+      y: midBounds.minY - midPaddingY,
+      width: (midBounds.maxX - midBounds.minX) + midPaddingX * 2,
+      height: (midBounds.maxY - midBounds.minY) + midPaddingY * 2,
+    });
+
+    expect(outerHalo.bounds).toEqual({
+      x: outerBounds.minX - outerPaddingX,
+      y: outerBounds.minY - outerPaddingY,
+      width: (outerBounds.maxX - outerBounds.minX) + outerPaddingX * 2,
+      height: (outerBounds.maxY - outerBounds.minY) + outerPaddingY * 2,
+    });
   });
 });
 

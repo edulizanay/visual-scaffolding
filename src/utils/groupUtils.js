@@ -380,10 +380,162 @@ export const addChildNode = (flow, parentId, factory) => {
   return normalizeState(nextNodes, nextEdges);
 };
 
-export const getExpandedGroupHalos = (nodes, getNodeDimensions, padding = 16) => {
+const normalizeHaloPaddingConfig = (paddingConfig) => {
+  const themePadding = THEME?.groupNode?.halo?.padding ?? {};
+
+  const normalizeAxis = (axisConfig, fallback) => {
+    if (typeof axisConfig === 'number') {
+      return {
+        base: axisConfig,
+        increment: fallback.increment,
+        decay: fallback.decay,
+        minStep: fallback.minStep,
+      };
+    }
+    if (!axisConfig || typeof axisConfig !== 'object') {
+      return fallback;
+    }
+
+    return {
+      base: typeof axisConfig.base === 'number' ? axisConfig.base : fallback.base,
+      increment: typeof axisConfig.increment === 'number' ? axisConfig.increment : fallback.increment,
+      decay: typeof axisConfig.decay === 'number' ? axisConfig.decay : fallback.decay,
+      minStep: typeof axisConfig.minStep === 'number' ? axisConfig.minStep : fallback.minStep,
+    };
+  };
+
+  const defaultAxis = { base: 16, increment: 0, decay: 1, minStep: 0 };
+
+  let normalizedTheme = {
+    x: defaultAxis,
+    y: defaultAxis,
+  };
+
+  if (typeof themePadding === 'number') {
+    normalizedTheme = {
+      x: normalizeAxis(themePadding, defaultAxis),
+      y: normalizeAxis(themePadding, defaultAxis),
+    };
+  } else if (themePadding && typeof themePadding === 'object') {
+    normalizedTheme = {
+      x: normalizeAxis(themePadding.x ?? themePadding.base ?? themePadding, defaultAxis),
+      y: normalizeAxis(themePadding.y ?? themePadding.base ?? themePadding, defaultAxis),
+    };
+  }
+
+  if (typeof paddingConfig === 'number') {
+    return {
+      x: normalizeAxis(paddingConfig, normalizedTheme.x),
+      y: normalizeAxis(paddingConfig, normalizedTheme.y),
+    };
+  }
+
+  if (paddingConfig && typeof paddingConfig === 'object') {
+    return {
+      x: normalizeAxis(paddingConfig.x ?? paddingConfig.base ?? paddingConfig, normalizedTheme.x),
+      y: normalizeAxis(paddingConfig.y ?? paddingConfig.base ?? paddingConfig, normalizedTheme.y),
+    };
+  }
+
+  return normalizedTheme;
+};
+
+const buildEligibleGroupChildMap = (nodes, eligibleGroupIds) => {
+  const childGroupMap = new Map();
+
+  eligibleGroupIds.forEach((groupId) => {
+    childGroupMap.set(groupId, []);
+  });
+
+  nodes.forEach((node) => {
+    if (node?.type !== 'group') return;
+    if (!eligibleGroupIds.has(node.id)) return;
+
+    const parentId = node.parentGroupId;
+    if (!parentId) return;
+    if (!eligibleGroupIds.has(parentId)) return;
+
+    const children = childGroupMap.get(parentId);
+    if (children) {
+      children.push(node.id);
+    }
+  });
+
+  return childGroupMap;
+};
+
+const computeEligibleGroupDepthMap = (childGroupMap) => {
+  const memo = new Map();
+
+  const visit = (groupId, stack) => {
+    if (memo.has(groupId)) return memo.get(groupId);
+    if (stack.has(groupId)) {
+      memo.set(groupId, 0);
+      return 0;
+    }
+
+    stack.add(groupId);
+    const children = childGroupMap.get(groupId) ?? [];
+    let maxDepth = 0;
+
+    children.forEach((childId) => {
+      const depth = visit(childId, stack);
+      if (depth > maxDepth) {
+        maxDepth = depth;
+      }
+    });
+
+    stack.delete(groupId);
+
+    const result = children.length ? maxDepth + 1 : 0;
+    memo.set(groupId, result);
+    return result;
+  };
+
+  childGroupMap.forEach((_, groupId) => {
+    if (!memo.has(groupId)) {
+      visit(groupId, new Set());
+    }
+  });
+
+  return memo;
+};
+
+const computeHaloPaddingForDepth = (depth, config) => {
+  const base = typeof config.base === 'number' ? config.base : 0;
+  const minStep = typeof config.minStep === 'number' && config.minStep > 0 ? config.minStep : 0;
+  const decay = typeof config.decay === 'number' ? config.decay : 1;
+  const initialIncrement = typeof config.increment === 'number' ? config.increment : 0;
+
+  if (!Number.isFinite(depth) || depth <= 0) {
+    return base;
+  }
+
+  let padding = base;
+  let currentStep = initialIncrement;
+
+  for (let i = 0; i < depth; i += 1) {
+    let appliedStep = 0;
+
+    if (Number.isFinite(currentStep)) {
+      const rounded = Math.round(currentStep);
+      appliedStep = rounded <= 0 ? minStep : Math.max(minStep, rounded);
+    } else {
+      appliedStep = minStep;
+    }
+
+    padding += appliedStep;
+    currentStep = Number.isFinite(currentStep) ? currentStep * decay : 0;
+  }
+
+  return padding;
+};
+
+export const getExpandedGroupHalos = (nodes, getNodeDimensions, paddingConfig = THEME.groupNode.halo.padding) => {
   if (!Array.isArray(nodes) || !nodes.length) return [];
 
-  const halos = [];
+  const config = normalizeHaloPaddingConfig(paddingConfig);
+  const candidates = [];
 
   nodes.forEach((groupNode) => {
     if (groupNode?.type !== 'group') return;
@@ -421,19 +573,34 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, padding = 16) =>
       return;
     }
 
-    halos.push({
-      groupId: groupNode.id,
-      label: groupNode?.data?.label ?? 'Group',
-      bounds: {
-        x: minX - padding,
-        y: minY - padding,
-        width: (maxX - minX) + padding * 2,
-        height: (maxY - minY) + padding * 2,
-      },
+    candidates.push({
+      node: groupNode,
+      bounds: { minX, minY, maxX, maxY },
     });
   });
 
-  return halos;
+  if (!candidates.length) return [];
+
+  const eligibleGroupIds = new Set(candidates.map(({ node }) => node.id));
+  const childGroupMap = buildEligibleGroupChildMap(nodes, eligibleGroupIds);
+  const depthMap = computeEligibleGroupDepthMap(childGroupMap);
+
+  return candidates.map(({ node, bounds }) => {
+    const nestedDepth = depthMap.get(node.id) ?? 0;
+    const horizontalPadding = computeHaloPaddingForDepth(0, config.x);
+    const verticalPadding = computeHaloPaddingForDepth(nestedDepth, config.y);
+
+    return {
+      groupId: node.id,
+      label: node?.data?.label ?? 'Group',
+      bounds: {
+        x: bounds.minX - horizontalPadding,
+        y: bounds.minY - verticalPadding,
+        width: (bounds.maxX - bounds.minX) + horizontalPadding * 2,
+        height: (bounds.maxY - bounds.minY) + verticalPadding * 2,
+      },
+    };
+  });
 };
 
 export const constants = {

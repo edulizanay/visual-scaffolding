@@ -50,7 +50,17 @@ export const THEME = {
         hovered: 2,
       },
       borderRadius: 18,
-      padding: 24,
+      padding: {
+        x: {
+          base: 18,
+        },
+        y: {
+          base: 18,
+          increment: 12,
+          decay: 0.7,
+          minStep: 1,
+        },
+      },
     },
   },
   tooltip: {
