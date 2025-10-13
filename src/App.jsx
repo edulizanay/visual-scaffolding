@@ -349,6 +349,15 @@ function App() {
     [nodes, getNodeDimensions],
   );
 
+  const selectedGroupNode = useMemo(() => {
+    if (selectedNodeIds.length !== 1) {
+      return null;
+    }
+    const [selectedId] = selectedNodeIds;
+    const node = nodes.find((n) => n.id === selectedId);
+    return node?.type === 'group' ? node : null;
+  }, [selectedNodeIds, nodes]);
+
   const collapseExpandedGroup = useCallback(
     (groupId) => applyGroupExpansion(groupId, false),
     [applyGroupExpansion],
@@ -555,6 +564,14 @@ function App() {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', color: 'white' }}>Loading...</div>;
   }
 
+  const canGroup = selectedNodeIds.length >= 2;
+  const canUngroup = Boolean(selectedGroupNode);
+  const tooltipConfig = canGroup
+    ? { keys: '⌘ G', label: 'to group' }
+    : canUngroup
+      ? { keys: '⌘ ⇧ G', label: 'to ungroup' }
+      : null;
+
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <ReactFlow
@@ -581,7 +598,7 @@ function App() {
       <HotkeysPanel />
 
       {/* Tooltip section (bottom-right corner) */}
-      {selectedNodeIds.length >= 2 && (
+      {tooltipConfig && (
         <div style={{
           position: 'fixed',
           bottom: 20,
@@ -596,12 +613,8 @@ function App() {
           padding: THEME.tooltip.padding,
           animation: 'slideIn 0.3s ease-out',
         }}>
-          <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
-            {selectedNodeIds.length} nodes selected
-          </span>
-          <div style={{ width: '1px', height: '16px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
-          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>⌘ G</Kbd>
-          <span style={{ color: '#9ca3af', fontSize: '13px' }}>to group</span>
+          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{tooltipConfig.keys}</Kbd>
+          <span style={{ color: '#9ca3af', fontSize: '13px' }}>{tooltipConfig.label}</span>
         </div>
       )}
 
