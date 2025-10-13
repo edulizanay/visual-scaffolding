@@ -182,13 +182,6 @@ export function pushUndoSnapshot(flowData) {
     return;
   }
 
-  // Check if identical except positions
-  if (lastSnapshot && compareSnapshotsIgnoringPositions(cleanState, lastSnapshot)) {
-    // Update last snapshot's positions
-    db.prepare('UPDATE undo_history SET snapshot = ? WHERE id = ?').run(cleanState, currentIndex);
-    return;
-  }
-
   // If we're not at the end, truncate future states
   if (currentIndex > 0) {
     const maxRow = db.prepare('SELECT MAX(id) as maxId FROM undo_history').get();
@@ -213,27 +206,6 @@ export function pushUndoSnapshot(flowData) {
         SELECT id FROM undo_history ORDER BY id DESC LIMIT 50
       )
     `).run();
-  }
-}
-
-/**
- * Compare snapshots ignoring position changes
- */
-function compareSnapshotsIgnoringPositions(state1Str, state2Str) {
-  try {
-    const s1 = JSON.parse(state1Str);
-    const s2 = JSON.parse(state2Str);
-
-    if (!s1 || !s2) return false;
-
-    const strip = (state) => ({
-      nodes: state.nodes.map(({ id, data }) => ({ id, data })),
-      edges: state.edges.map(({ id, source, target, data }) => ({ id, source, target, data }))
-    });
-
-    return JSON.stringify(strip(s1)) === JSON.stringify(strip(s2));
-  } catch (error) {
-    return false;
   }
 }
 
