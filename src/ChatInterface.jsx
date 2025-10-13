@@ -34,6 +34,7 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
   const [processingPlaceholder, setProcessingPlaceholder] = useState('processing.');
   const isFirstMessage = useRef(true);
   const textareaRef = useRef(null);
+  const submissionLockRef = useRef(false);
 
   useEffect(() => {
     onProcessingChange?.(isProcessing);
@@ -68,7 +69,8 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
-    if (isProcessing) return;
+    if (submissionLockRef.current || isProcessing) return;
+    submissionLockRef.current = true;
 
     // Save message before clearing
     const messageToSend = message;
@@ -85,6 +87,7 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
       if (messageToSend.trim() === '/resume') {
         console.log('📜 Resuming previous conversation...');
         setIsProcessing(false);
+        submissionLockRef.current = false;
         return;
       }
 
@@ -114,11 +117,16 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
       console.error('❌ Failed to send message:', error);
     } finally {
       setIsProcessing(false);
+      submissionLockRef.current = false;
     }
   }, [message, isProcessing, onFlowUpdate, loadConversationHistory]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      if (e.repeat) {
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       handleSubmit(e);
     } else if (e.key === 'ArrowUp') {

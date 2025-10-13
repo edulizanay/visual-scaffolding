@@ -5,7 +5,6 @@ import {
   ReactFlow,
   useNodesState,
   useEdgesState,
-  addEdge,
   Position,
 } from '@xyflow/react';
 
@@ -35,7 +34,6 @@ import {
   validateGroupMembership,
   getGroupDescendants,
   collapseSubtreeByHandles,
-  addChildNode,
   getExpandedGroupHalos,
   GroupHaloOverlay,
   applyGroupVisibility,
