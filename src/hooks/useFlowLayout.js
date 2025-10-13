@@ -21,6 +21,196 @@ export const getAllDescendants = (nodeId, nodes, edges) => {
   return descendants;
 };
 
+const buildGroupDepthMap = (nodes, edges) => {
+  const depthById = new Map();
+
+  if (!Array.isArray(nodes) || nodes.length === 0) {
+    return depthById;
+  }
+
+  const nodeById = new Map();
+  nodes.forEach((node) => {
+    if (node && typeof node.id === 'string') {
+      nodeById.set(node.id, node);
+    }
+  });
+
+  const visibleGroupMembers = new Map();
+
+  nodes.forEach((node) => {
+    if (!node || node.hidden || node.groupHidden) return;
+    if (!node.parentGroupId) return;
+
+    const members = visibleGroupMembers.get(node.parentGroupId) ?? new Set();
+    members.add(node.id);
+    visibleGroupMembers.set(node.parentGroupId, members);
+  });
+
+  if (visibleGroupMembers.size === 0) {
+    return depthById;
+  }
+
+  const outgoingByGroup = new Map();
+  const incomingByGroup = new Map();
+
+  edges.forEach((edge) => {
+    if (!edge) return;
+    const sourceNode = nodeById.get(edge.source);
+    const targetNode = nodeById.get(edge.target);
+    if (!sourceNode || !targetNode) return;
+    if (sourceNode.hidden || sourceNode.groupHidden) return;
+    if (targetNode.hidden || targetNode.groupHidden) return;
+
+    const groupId = sourceNode.parentGroupId;
+    if (!groupId || groupId !== targetNode.parentGroupId) return;
+
+    const groupMembers = visibleGroupMembers.get(groupId);
+    if (!groupMembers) return;
+
+    let outgoing = outgoingByGroup.get(groupId);
+    if (!outgoing) {
+      outgoing = new Map();
+      outgoingByGroup.set(groupId, outgoing);
+    }
+
+    let children = outgoing.get(edge.source);
+    if (!children) {
+      children = new Set();
+      outgoing.set(edge.source, children);
+    }
+    children.add(edge.target);
+
+    let incoming = incomingByGroup.get(groupId);
+    if (!incoming) {
+      incoming = new Map();
+      incomingByGroup.set(groupId, incoming);
+    }
+
+    let parents = incoming.get(edge.target);
+    if (!parents) {
+      parents = new Set();
+      incoming.set(edge.target, parents);
+    }
+    parents.add(edge.source);
+  });
+
+  visibleGroupMembers.forEach((memberSet, groupId) => {
+    const members = Array.from(memberSet);
+    if (members.length === 0) return;
+
+    const incoming = incomingByGroup.get(groupId) ?? new Map();
+    const outgoing = outgoingByGroup.get(groupId) ?? new Map();
+
+    const roots = members.filter(memberId => {
+      const parents = incoming.get(memberId);
+      return !parents || parents.size === 0;
+    });
+
+    const queue = roots.length > 0
+      ? roots.map(memberId => ({ id: memberId, depth: 0 }))
+      : members.map(memberId => ({ id: memberId, depth: 0 }));
+
+    const visited = new Set();
+    const memberLookup = new Set(members);
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (!current || visited.has(current.id)) continue;
+
+      visited.add(current.id);
+      const existingDepth = depthById.get(current.id);
+      if (existingDepth === undefined || current.depth < existingDepth) {
+        depthById.set(current.id, current.depth);
+      }
+
+      const children = outgoing.get(current.id);
+      if (!children || children.size === 0) continue;
+
+      children.forEach((childId) => {
+        if (!memberLookup.has(childId)) return;
+        queue.push({ id: childId, depth: current.depth + 1 });
+      });
+    }
+
+    members.forEach((memberId) => {
+      if (!depthById.has(memberId)) {
+        depthById.set(memberId, 0);
+      }
+    });
+  });
+
+  return depthById;
+};
+
+const compressGroupMembers = (nodes, gap, depthById = new Map()) => {
+  if (!Array.isArray(nodes) || nodes.length === 0) {
+    return nodes;
+  }
+  if (!Number.isFinite(gap) || gap <= 0) {
+    return nodes;
+  }
+
+  const result = nodes.slice();
+  const membersByGroup = new Map();
+
+  nodes.forEach((node, index) => {
+    if (!node || node.hidden || node.groupHidden) return;
+
+    const parentGroupId = node.parentGroupId;
+    if (!parentGroupId) return;
+
+    const positionY = node?.position?.y;
+    if (!Number.isFinite(positionY)) return;
+
+    const depth = depthById.get(node.id) ?? 0;
+
+    let depthBuckets = membersByGroup.get(parentGroupId);
+    if (!depthBuckets) {
+      depthBuckets = new Map();
+      membersByGroup.set(parentGroupId, depthBuckets);
+    }
+
+    const members = depthBuckets.get(depth) ?? [];
+    members.push({ index, y: positionY });
+    depthBuckets.set(depth, members);
+  });
+
+  membersByGroup.forEach((depthBuckets) => {
+    depthBuckets.forEach((members) => {
+      if (!Array.isArray(members) || members.length < 2) return;
+
+      const sorted = members.slice().sort((a, b) => a.y - b.y);
+      const firstY = sorted[0].y;
+      const lastY = sorted[sorted.length - 1].y;
+
+      if (!Number.isFinite(firstY) || !Number.isFinite(lastY)) {
+        return;
+      }
+
+      const centerY = (firstY + lastY) / 2;
+      const offsetBase = (sorted.length - 1) / 2;
+
+      sorted.forEach((entry, positionIndex) => {
+        const originalNode = nodes[entry.index];
+        if (!originalNode) return;
+
+        const nextY = centerY + (positionIndex - offsetBase) * gap;
+        const nextPosition = {
+          ...(originalNode.position || {}),
+          y: nextY,
+        };
+
+        result[entry.index] = {
+          ...originalNode,
+          position: nextPosition,
+        };
+      });
+    });
+  });
+
+  return result;
+};
+
 export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
   const isHorizontal = direction === 'LR';
@@ -82,7 +272,11 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
     };
   });
 
-  return { nodes: newNodes, edges };
+  const groupGap = THEME?.groupNode?.layout?.memberVerticalGap ?? 0;
+  const depthById = buildGroupDepthMap(newNodes, edges);
+  const compactedNodes = compressGroupMembers(newNodes, groupGap, depthById);
+
+  return { nodes: compactedNodes, edges };
 };
 
 export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {

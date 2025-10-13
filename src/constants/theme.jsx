@@ -55,12 +55,15 @@ export const THEME = {
           base: 18,
         },
         y: {
-          base: 18,
-          increment: 12,
+          base: 14,
+          increment: 10,
           decay: 0.7,
           minStep: 1,
         },
       },
+    },
+    layout: {
+      memberVerticalGap: 80,
     },
   },
   tooltip: {
@@ -75,7 +78,7 @@ export const THEME = {
   dagre: {
     spacing: {
       horizontal: 50,
-      vertical: 50,
+      vertical: 45,
     },
   },
 };
