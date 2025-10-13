@@ -13,7 +13,7 @@ import {
   getExpandedGroupHalos,
   collapseSubtreeByHandles,
 } from '../src/utils/groupUtils.js';
-import { THEME } from '../src/constants/theme.jsx';
+import { THEME } from '../src/constants/theme.js';
 
 describe('getGroupDescendants', () => {
   test('finds direct children by parentGroupId', () => {

@@ -6,7 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import HotkeysPanel from '../../../src/HotkeysPanel';
 
 // Mock the THEME constant
-jest.mock('../../../src/constants/theme.jsx', () => ({
+jest.mock('../../../src/constants/theme.js', () => ({
   THEME: {
     node: {
       colors: {
