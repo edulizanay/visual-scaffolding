@@ -140,6 +140,7 @@ export const applyGroupVisibility = (nodes, edges) => {
 
   const nextNodes = nodes.map((node) => {
     const hiddenByAncestor = ancestorHidden.has(node.id);
+    const subtreeHidden = node.subtreeHidden === true;
     const previousGroupHidden = node.groupHidden ?? false;
     const previouslyHidden = node.hidden ?? false;
 
@@ -147,18 +148,30 @@ export const applyGroupVisibility = (nodes, edges) => {
       const isCollapsed = node.isCollapsed === true;
       // Group node is visible when collapsed, hidden when expanded (shows members instead)
       // Also hidden if inside a collapsed ancestor group
-      return {
+      const result = {
         ...node,
         groupHidden: hiddenByAncestor,
-        hidden: hiddenByAncestor || !isCollapsed,
+        hidden: hiddenByAncestor || subtreeHidden || !isCollapsed,
       };
+      if (subtreeHidden) {
+        result.subtreeHidden = true;
+      } else if ('subtreeHidden' in result) {
+        delete result.subtreeHidden;
+      }
+      return result;
     }
 
-    return {
+    const result = {
       ...node,
       groupHidden: hiddenByAncestor,
-      hidden: hiddenByAncestor || (previouslyHidden && !previousGroupHidden),
+      hidden: hiddenByAncestor || subtreeHidden || (previouslyHidden && !previousGroupHidden),
     };
+    if (subtreeHidden) {
+      result.subtreeHidden = true;
+    } else if ('subtreeHidden' in result) {
+      delete result.subtreeHidden;
+    }
+    return result;
   });
 
   // Filter out old synthetic edges and compute new ones dynamically
@@ -333,7 +346,13 @@ export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendants
       return { ...node, data: { ...node.data, collapsed } };
     }
     if (descendantSet.has(node.id)) {
-      return { ...node, hidden: collapsed };
+      const next = { ...node, hidden: collapsed };
+      if (collapsed) {
+        next.subtreeHidden = true;
+      } else if ('subtreeHidden' in next) {
+        delete next.subtreeHidden;
+      }
+      return next;
     }
     return node;
   });
