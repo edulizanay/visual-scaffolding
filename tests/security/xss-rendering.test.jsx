@@ -8,8 +8,8 @@ import CustomNode from '../../src/Node.jsx';
 import CustomEdge from '../../src/Edge.jsx';
 
 // Mock React Flow's Handle component
-vi.mock('@xyflow/react', () => {
-  const actual = vi.importActual('@xyflow/react');
+vi.mock('@xyflow/react', async () => {
+  const actual = await vi.importActual('@xyflow/react');
   return {
     ...actual,
     Handle: ({ type, position }) => <div data-testid={`handle-${type}-${position}`} />,

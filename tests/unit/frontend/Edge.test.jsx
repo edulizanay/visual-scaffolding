@@ -7,8 +7,8 @@ import { ReactFlowProvider } from '@xyflow/react';
 import CustomEdge from '../../../src/Edge.jsx';
 
 // Mock React Flow components
-vi.mock('@xyflow/react', () => {
-  const actual = vi.importActual('@xyflow/react');
+vi.mock('@xyflow/react', async () => {
+  const actual = await vi.importActual('@xyflow/react');
   return {
     ...actual,
     BaseEdge: ({ id, path }) => (
