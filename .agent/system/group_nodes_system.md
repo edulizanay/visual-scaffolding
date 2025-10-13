@@ -52,6 +52,7 @@ Groups can contain other groups, creating hierarchies:
 - **Group nesting**: Grouping multiple group nodes creates a parent group containing child groups
 - Sub-groups inherit the `parentGroupId` of their members
 - When a parent group is collapsed, all descendant groups and nodes are hidden
+- When ungrouping a nested group, its members are reassigned to the parent group (hierarchy preserved)
 
 ### Visibility States
 
@@ -123,13 +124,13 @@ They can operate on the same nodes simultaneously without conflicts.
 
 **`src/utils/groupUtils.js`** - Core group management utilities:
 - `createGroup(flow, options)` - Creates group node and assigns members
-- `ungroup(flow, groupId)` - Removes group and restores members
+- `ungroup(flow, groupId)` - Removes group and reassigns members to parent group (preserves hierarchy)
 - `toggleGroupExpansion(flow, groupId, collapseState)` - Toggles collapse state
 - `applyGroupVisibility(nodes, edges)` - Computes visibility and synthetic edges
 - `getGroupDescendants(nodeId, nodes)` - Recursively finds all descendants
 - `validateGroupMembership(nodeIds, nodes)` - Validates group creation
 - `detectCircularReference(nodeId, parentId, nodes)` - Prevents circular hierarchies
-- `getExpandedGroupHalos(nodes, getNodeDimensions, padding)` - Computes halo bounds
+- `getExpandedGroupHalos(nodes, getNodeDimensions, paddingConfig)` - Computes halo bounds with depth-based padding
 - `GroupHaloOverlay` - React component rendering group halos
 
 **`src/App.jsx`** - UI integration:
@@ -148,7 +149,7 @@ They can operate on the same nodes simultaneously without conflicts.
 
 **`server/tools/executor.js`** - Group tool executors:
 - `executeCreateGroup(params, flow)` - Creates group node, validates parent group compatibility, assigns members
-- `executeUngroup(params, flow)` - Removes group node and restores members to ungrouped state
+- `executeUngroup(params, flow)` - Removes group node and reassigns members to parent group (preserves hierarchy)
 - `executeToggleGroupExpansion(params, flow)` - Toggles `isCollapsed` state and member `hidden` properties
 
 **`server/llm/tools.js`** - LLM tool definitions:
@@ -197,6 +198,74 @@ Located in `src/utils/groupUtils.js` (`computeSyntheticEdges()`):
 - Filtered out before new computation to prevent duplication
 - Automatically cleaned up when group is ungrouped or expanded
 
+## Depth-Based Incremental Padding
+
+Visual Scaffolding uses a sophisticated padding system for group halos that increases spacing based on nesting depth, creating visual hierarchy for nested groups.
+
+### Configuration
+
+Located in `src/constants/theme.jsx` under `THEME.groupNode.halo.padding`:
+
+```javascript
+padding: {
+  x: {
+    base: 18,  // Horizontal padding (constant for all nesting levels)
+  },
+  y: {
+    base: 18,        // Base vertical padding for innermost groups
+    increment: 12,   // Initial padding increment for each nesting level
+    decay: 0.7,      // Multiplier applied to increment at each level
+    minStep: 1,      // Minimum padding increment per level
+  },
+}
+```
+
+### Algorithm
+
+Located in `src/utils/groupUtils.js` (`getExpandedGroupHalos()`):
+
+1. **Depth Calculation**: For each expanded group, compute nested group depth
+   - Depth = maximum number of nested group layers it contains
+   - Uses recursive traversal with cycle detection
+   - Example: Group with no child groups has depth 0
+
+2. **Padding Computation**: Calculate vertical padding based on depth
+   ```
+   padding = base + Σ(max(minStep, round(increment × decay^i))) for i=0 to depth-1
+   ```
+   - First level: `base + max(minStep, round(increment))`
+   - Second level: `base + max(minStep, round(increment)) + max(minStep, round(increment × decay))`
+   - Continues with decaying increments until depth reached
+
+3. **Halo Bounds**: Apply computed padding to group bounds
+   - Horizontal padding (x-axis): constant `base` value for all levels
+   - Vertical padding (y-axis): increases with nesting depth
+
+### Example
+
+With default config (base=18, increment=12, decay=0.7, minStep=1):
+
+- **Innermost group** (depth 0): 18px vertical padding
+- **Parent of innermost** (depth 1): 18 + 12 = 30px vertical padding
+- **Grandparent** (depth 2): 18 + 12 + 8 = 38px vertical padding (12 × 0.7 ≈ 8)
+- **Great-grandparent** (depth 3): 18 + 12 + 8 + 6 = 44px vertical padding (8 × 0.7 ≈ 6)
+
+### Visual Effect
+
+This creates progressively larger halos for ancestor groups, making the nesting hierarchy immediately visible:
+- Inner groups have tighter halos
+- Outer groups have more spacious halos
+- Decay prevents excessive padding at deep nesting levels
+- Horizontal padding remains constant for alignment consistency
+
+### Configuration Flexibility
+
+The padding system supports multiple configuration formats:
+- **Simple number**: `padding: 16` (applies to all axes as base)
+- **Axis-specific**: `padding: { x: 20, y: 25 }` (different base per axis)
+- **Full config**: `padding: { x: { base: 18 }, y: { base: 18, increment: 12, decay: 0.7, minStep: 1 } }`
+- Falls back to theme defaults if not specified
+
 ## Validation Rules
 
 ### Group Creation
@@ -233,8 +302,9 @@ This enables nested group hierarchies while preventing invalid cross-group struc
 
 ### Visual Feedback
 
-- **Expanded groups**: Purple halo border around members
+- **Expanded groups**: Purple halo border around members (padding increases with nesting depth)
 - **Collapsed groups**: Single node with group label
+- **Nested groups**: Progressively larger halos for ancestor groups create visual hierarchy
 
 ## AI Integration
 

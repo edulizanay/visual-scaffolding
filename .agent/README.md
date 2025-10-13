@@ -53,6 +53,8 @@ How AI/LLM works, tool definitions | [llm_integration.md](./system/llm_integrati
 Group nodes feature deep-dive | [group_nodes_system.md](./system/group_nodes_system.md)
 Dual collapse systems explained | [group_nodes_system.md](./system/group_nodes_system.md) → Dual Collapse Systems
 Synthetic edges algorithm | [group_nodes_system.md](./system/group_nodes_system.md) → Synthetic Edge Generation
+Depth-based halo padding system | [group_nodes_system.md](./system/group_nodes_system.md) → Depth-Based Incremental Padding
+Nested groups and hierarchy | [group_nodes_system.md](./system/group_nodes_system.md) → Nested Groups
 Keyboard shortcuts registry | [project_architecture.md](./system/project_architecture.md) → Centralized Hotkeys Registry
 Hardcoded theme system | [project_architecture.md](./system/project_architecture.md) → Hardcoded Theme System
 Development commands, setup | [project_architecture.md](./system/project_architecture.md) → Development Workflow
@@ -107,12 +109,14 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 
 **Last Updated**: October 13, 2025
 **Major Updates**:
+- **Depth-based incremental padding for nested group halos** - Visual hierarchy system with configurable decay
+- **Fixed ungroup operation for nested groups** - Members now properly reassigned to parent group
 - Implemented nested group creation and sub-grouping feature
 - Updated group validation to allow same-parent regrouping and group nesting
-- Comprehensive test coverage for nested groups (tests/api-group-operations.test.js)
+- Comprehensive test coverage for nested groups including padding tests (tests/groupHelpers.test.js, tests/api-group-operations.test.js)
 - Centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
 - HotkeysPanel component with slide-in UI (? button)
 - Completed visual customization removal (migration 002, hardcoded theme in src/constants/theme.jsx)
 - Test suite: 317+ tests across 13 test suites
 - Database: 4 tables (removed visual_settings)
-- Updated documentation: group system, LLM integration
+- Updated documentation: group system with depth-based padding, LLM integration
