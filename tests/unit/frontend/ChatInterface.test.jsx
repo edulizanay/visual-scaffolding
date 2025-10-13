@@ -2,7 +2,7 @@
 // ABOUTME: Tests message submission, keyboard interactions, loading states, and conversation management
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatInterface from '../../../src/ChatInterface.jsx';
 import * as api from '../../../src/api.js';
@@ -283,6 +283,28 @@ describe('ChatInterface Component', () => {
       // Should only be called once
       expect(api.sendMessage).toHaveBeenCalledTimes(1);
       expect(api.sendMessage).toHaveBeenCalledWith('First');
+    });
+
+    it('should ignore repeated Cmd+Enter events during key repeat', async () => {
+      api.sendMessage.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ response: 'ok' }), 100)));
+
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+
+      const textarea = screen.getByPlaceholderText(/Type a command/i);
+      await user.click(textarea);
+      await user.type(textarea, 'Hold to repeat');
+
+      fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true });
+      fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true, repeat: true });
+      fireEvent.keyUp(textarea, { key: 'Enter', metaKey: true });
+
+      await waitFor(() => {
+        expect(api.sendMessage).toHaveBeenCalledTimes(1);
+      });
+
+      await waitFor(() => {
+        expect(mockOnProcessingChange).toHaveBeenCalledWith(false);
+      });
     });
   });
 

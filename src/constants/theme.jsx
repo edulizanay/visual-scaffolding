@@ -30,7 +30,7 @@ export const THEME = {
         colors: {
           border: 'rgba(255, 255, 255, 0.4)',
         },
-        borderWidth: '2px',
+        borderWidth: '4px',
       },
     },
   },
