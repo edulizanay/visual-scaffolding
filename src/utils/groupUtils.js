@@ -344,7 +344,8 @@ export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendants
       : edge
   );
 
-  return { nodes: updatedNodes, edges: updatedEdges };
+  // Reapply group visibility rules to respect collapsed groups
+  return normalizeState(updatedNodes, updatedEdges);
 };
 
 export const addChildNode = (flow, parentId, factory) => {
