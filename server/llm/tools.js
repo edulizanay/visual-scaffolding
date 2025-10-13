@@ -177,7 +177,7 @@ export const toolDefinitions = [
         },
         label: {
           type: ['string', 'null'],
-          description: 'Optional label for the group. If omitted, a default name will be generated.',
+          description: 'Label for the group. Think carefully whats the best way to represent the content of the group.',
         },
         position: {
           type: ['object', 'null'],

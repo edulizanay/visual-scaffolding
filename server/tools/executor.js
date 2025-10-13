@@ -309,13 +309,14 @@ async function executeCreateGroup(params, flow) {
     return { success: false, error: `Nodes already in groups: ${alreadyGrouped.join(', ')}` };
   }
 
-  // Calculate position if not provided
+  // Calculate position if not provided - to the left of the members
   let groupPosition = position;
   if (!groupPosition) {
     const memberNodes = memberIds.map(id => flow.nodes.find(n => n.id === id));
-    const avgX = memberNodes.reduce((sum, n) => sum + n.position.x, 0) / memberNodes.length;
+    const minX = Math.min(...memberNodes.map(n => n.position.x));
     const avgY = memberNodes.reduce((sum, n) => sum + n.position.y, 0) / memberNodes.length;
-    groupPosition = { x: avgX, y: avgY - 100 };
+    groupPosition = { x: minX, y: avgY };
+
   }
 
   // Generate group ID and label
