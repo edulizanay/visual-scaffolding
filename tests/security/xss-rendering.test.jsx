@@ -1,6 +1,7 @@
 // ABOUTME: Security tests verifying Node and Edge components properly escape malicious HTML/JavaScript
 // ABOUTME: Tests XSS prevention by ensuring script tags, event handlers, and HTML entities are escaped on render
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';

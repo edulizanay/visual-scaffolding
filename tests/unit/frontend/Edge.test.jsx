@@ -1,6 +1,7 @@
 // ABOUTME: Comprehensive unit tests for CustomEdge component
 // ABOUTME: Tests label rendering, inline editing, label positioning, and React Flow integration
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';

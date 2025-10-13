@@ -1,6 +1,7 @@
 // ABOUTME: Comprehensive unit tests for the CustomNode component
 // ABOUTME: Tests rendering, inline editing, handles, styles, and user interactions
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
