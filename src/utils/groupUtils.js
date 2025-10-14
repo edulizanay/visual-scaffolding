@@ -161,6 +161,53 @@ const computeAncestorHiddenSet = (nodes) => {
 };
 
 /**
+ * Computes visibility state for a group node.
+ * Group nodes are visible when collapsed, hidden when expanded (shows members instead).
+ */
+const computeGroupNodeVisibility = (node, hiddenByAncestor) => {
+  const isCollapsed = node.isCollapsed === true;
+  const subtreeHidden = node.subtreeHidden === true;
+
+  const result = {
+    ...node,
+    groupHidden: hiddenByAncestor,
+    hidden: hiddenByAncestor || subtreeHidden || !isCollapsed,
+  };
+
+  if (subtreeHidden) {
+    result.subtreeHidden = true;
+  } else if ('subtreeHidden' in result) {
+    delete result.subtreeHidden;
+  }
+
+  return result;
+};
+
+/**
+ * Computes visibility state for a regular (non-group) node.
+ * Nodes are hidden if inside a collapsed ancestor or if explicitly hidden.
+ */
+const computeRegularNodeVisibility = (node, hiddenByAncestor) => {
+  const subtreeHidden = node.subtreeHidden === true;
+  const previouslyHidden = node.hidden ?? false;
+  const previousGroupHidden = node.groupHidden ?? false;
+
+  const result = {
+    ...node,
+    groupHidden: hiddenByAncestor,
+    hidden: hiddenByAncestor || subtreeHidden || (previouslyHidden && !previousGroupHidden),
+  };
+
+  if (subtreeHidden) {
+    result.subtreeHidden = true;
+  } else if ('subtreeHidden' in result) {
+    delete result.subtreeHidden;
+  }
+
+  return result;
+};
+
+/**
  * Applies visibility rules to edges based on their endpoint nodes.
  * An edge is hidden if either its source or target node is hidden.
  */
@@ -190,38 +237,9 @@ export const applyGroupVisibility = (nodes, edges) => {
 
   const nextNodes = nodes.map((node) => {
     const hiddenByAncestor = ancestorHidden.has(node.id);
-    const subtreeHidden = node.subtreeHidden === true;
-    const previousGroupHidden = node.groupHidden ?? false;
-    const previouslyHidden = node.hidden ?? false;
-
-    if (node.type === 'group') {
-      const isCollapsed = node.isCollapsed === true;
-      // Group node is visible when collapsed, hidden when expanded (shows members instead)
-      // Also hidden if inside a collapsed ancestor group
-      const result = {
-        ...node,
-        groupHidden: hiddenByAncestor,
-        hidden: hiddenByAncestor || subtreeHidden || !isCollapsed,
-      };
-      if (subtreeHidden) {
-        result.subtreeHidden = true;
-      } else if ('subtreeHidden' in result) {
-        delete result.subtreeHidden;
-      }
-      return result;
-    }
-
-    const result = {
-      ...node,
-      groupHidden: hiddenByAncestor,
-      hidden: hiddenByAncestor || subtreeHidden || (previouslyHidden && !previousGroupHidden),
-    };
-    if (subtreeHidden) {
-      result.subtreeHidden = true;
-    } else if ('subtreeHidden' in result) {
-      delete result.subtreeHidden;
-    }
-    return result;
+    return node.type === 'group'
+      ? computeGroupNodeVisibility(node, hiddenByAncestor)
+      : computeRegularNodeVisibility(node, hiddenByAncestor);
   });
 
   // Filter out old synthetic edges and compute new ones dynamically
