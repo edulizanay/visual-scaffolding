@@ -10,6 +10,7 @@ import { executeToolCalls } from './tools/executor.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const MAX_LLM_RETRY_ITERATIONS = 3;
 
 app.use(cors());
 app.use(express.json());
@@ -112,11 +113,10 @@ app.post('/api/conversation/message', async (req, res) => {
     const llmContext = await buildLLMContext(message);
 
     let currentMessage = message;
-    const MAX_ITERATIONS = 3;
     let iteration = 0;
 
-    // Error recovery loop: retry failed tool calls up to MAX_ITERATIONS times
-    while (iteration < MAX_ITERATIONS) {
+    // Error recovery loop: retry failed tool calls up to MAX_LLM_RETRY_ITERATIONS times
+    while (iteration < MAX_LLM_RETRY_ITERATIONS) {
       iteration++;
       console.log(`\n=== Iteration ${iteration} ===`);
 
@@ -184,9 +184,9 @@ app.post('/api/conversation/message', async (req, res) => {
       // Save assistant message to conversation history (so next iteration has context)
       await addAssistantMessage(llmResponse, parsed.toolCalls);
 
-      if (iteration === MAX_ITERATIONS) {
+      if (iteration === MAX_LLM_RETRY_ITERATIONS) {
         // Max retries reached, return failure
-        console.log(`⚠️  Max iterations (${MAX_ITERATIONS}) reached, giving up`);
+        console.log(`⚠️  Max iterations (${MAX_LLM_RETRY_ITERATIONS}) reached, giving up`);
 
         // Get updated flow state
         const updatedFlow = await readFlow();
@@ -199,7 +199,7 @@ app.post('/api/conversation/message', async (req, res) => {
           updatedFlow,
           errors: failures,
           iterations: iteration,
-          message: `Failed after ${MAX_ITERATIONS} attempts`
+          message: `Failed after ${MAX_LLM_RETRY_ITERATIONS} attempts`
         }));
       }
 
