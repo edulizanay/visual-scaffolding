@@ -80,4 +80,41 @@ describe('getLayoutedElements depth-aware expectations', () => {
       5,
     );
   });
+
+  it('should preserve horizontal layout matching Kay Adams scenario', () => {
+    // Regression test based on actual bug: Kay Adams (y=50.75) -> child (y=0)
+    // This reproduces the exact structure from the database
+    const nodes = [
+      // Vito in main group
+      makeNode('vito', { parentGroupId: 'main-group', position: { x: 222, y: 130.75 } }),
+      // Michael in nested sub-group
+      makeNode('michael', { parentGroupId: 'sub-group', position: { x: 444, y: 61.5 } }),
+      // Kay in main group (connected FROM Michael in different group)
+      makeNode('kay', { parentGroupId: 'main-group', position: { x: 666, y: 50.75 } }),
+      // Kay's child (THIS is where diagonal happens)
+      makeNode('kay-child', { parentGroupId: 'main-group', position: { x: 888, y: 50.75 } }),
+      // Groups
+      makeNode('sub-group', { type: 'group', parentGroupId: 'main-group', hidden: true }),
+      makeNode('main-group', { type: 'group', hidden: true }),
+    ];
+
+    const edges = [
+      makeEdge('vito', 'michael'),
+      makeEdge('michael', 'kay'),  // Cross-group edge
+      makeEdge('kay', 'kay-child'),  // This should stay horizontal!
+    ];
+
+    const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, 'LR');
+
+    const kay = layoutedNodes.find(n => n.id === 'kay');
+    const kayChild = layoutedNodes.find(n => n.id === 'kay-child');
+
+    console.log('===== KAY ADAMS SCENARIO =====');
+    console.log('Kay position:', kay.position);
+    console.log('Kay child position:', kayChild.position);
+    console.log('Y diff:', Math.abs(kayChild.position.y - kay.position.y));
+
+    // Kay's child should be horizontally right, NOT diagonal
+    expect(kayChild.position.y).toBeCloseTo(kay.position.y, 5);
+  });
 });
