@@ -200,7 +200,21 @@ function buildMaxIterationsResponse(thinking, toolCalls, execution, updatedFlow,
   };
 }
 
-// Builds consistent conversation endpoint responses with optional fields (generic fallback)
+/**
+ * Builds consistent conversation endpoint responses with optional fields (generic fallback)
+ * @param {Object} params - Response parameters
+ * @param {boolean} params.success - Whether the operation succeeded
+ * @param {string} params.thinking - LLM thinking content
+ * @param {number} params.iterations - Number of retry iterations
+ * @param {string} [params.response] - LLM response text
+ * @param {string} [params.parseError] - Parse error if any
+ * @param {Array} [params.toolCalls] - Tool calls made by LLM
+ * @param {Array} [params.execution] - Tool execution results
+ * @param {Object} [params.updatedFlow] - Updated flow state
+ * @param {Array} [params.errors] - Errors from failed tool calls
+ * @param {string} [params.message] - Additional message
+ * @returns {Object} Formatted response object
+ */
 function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
   const baseResponse = {
     success,
