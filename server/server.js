@@ -20,6 +20,18 @@ function logError(operation, error) {
   console.error(`Error ${operation}:`, error);
 }
 
+// Logs iteration progress with consistent formatting
+function logIteration(iteration, event, details = {}) {
+  const messages = {
+    start: () => console.log(`\n=== Iteration ${iteration} ===`),
+    success: () => console.log(`✅ All ${details.count} tool calls succeeded on iteration ${iteration}`),
+    failure: () => console.log(`❌ ${details.failed} of ${details.total} tool calls failed on iteration ${iteration}`),
+    maxIterations: () => console.log(`⚠️  Max iterations (${details.max}) reached, giving up`),
+    retry: () => console.log(`🔄 Retrying with message:\n${details.message}`)
+  };
+  messages[event]?.();
+}
+
 // Builds consistent conversation endpoint responses with optional fields
 function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
   const baseResponse = {
@@ -123,7 +135,7 @@ app.post('/api/conversation/message', async (req, res) => {
     // Error recovery loop: retry failed tool calls up to MAX_LLM_RETRY_ITERATIONS times
     while (iteration < MAX_LLM_RETRY_ITERATIONS) {
       iteration++;
-      console.log(`\n=== Iteration ${iteration} ===`);
+      logIteration(iteration, 'start');
 
       // Update llmContext with current message (initial or retry message)
       const contextWithMessage = { ...llmContext, userMessage: currentMessage };
@@ -165,7 +177,7 @@ app.post('/api/conversation/message', async (req, res) => {
 
       if (failures.length === 0) {
         // All tool calls succeeded!
-        console.log(`✅ All ${executionResults.length} tool calls succeeded on iteration ${iteration}`);
+        logIteration(iteration, 'success', { count: executionResults.length });
 
         // Save assistant message to conversation
         await addAssistantMessage(llmResponse, parsed.toolCalls);
@@ -184,14 +196,14 @@ app.post('/api/conversation/message', async (req, res) => {
       }
 
       // Some failures occurred
-      console.log(`❌ ${failures.length} of ${executionResults.length} tool calls failed on iteration ${iteration}`);
+      logIteration(iteration, 'failure', { failed: failures.length, total: executionResults.length });
 
       // Save assistant message to conversation history (so next iteration has context)
       await addAssistantMessage(llmResponse, parsed.toolCalls);
 
       if (iteration === MAX_LLM_RETRY_ITERATIONS) {
         // Max retries reached, return failure
-        console.log(`⚠️  Max iterations (${MAX_LLM_RETRY_ITERATIONS}) reached, giving up`);
+        logIteration(iteration, 'maxIterations', { max: MAX_LLM_RETRY_ITERATIONS });
 
         // Get updated flow state
         const updatedFlow = await readFlow();
@@ -212,7 +224,7 @@ app.post('/api/conversation/message', async (req, res) => {
       const currentFlow = await readFlow();
       currentMessage = buildRetryMessage(executionResults, parsed.toolCalls, currentFlow);
       await addUserMessage(currentMessage);
-      console.log(`🔄 Retrying with message:\n${currentMessage}`);
+      logIteration(iteration, 'retry', { message: currentMessage });
     }
 
   } catch (error) {
