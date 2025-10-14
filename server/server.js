@@ -106,6 +106,48 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
   };
 }
 
+// Executes message with automatic retry on tool call failures
+async function executeMessageWithRetry(message) {
+  await addUserMessage(message);
+  const llmContext = await buildLLMContext(message);
+
+  let currentMessage = message;
+  let iteration = 0;
+
+  while (iteration < MAX_LLM_RETRY_ITERATIONS) {
+    iteration++;
+
+    const result = await executeSingleIteration(currentMessage, llmContext, iteration);
+
+    // Return immediately for parse errors, no tools, or success
+    if (result.type !== 'retry') {
+      return result.response;
+    }
+
+    // Handle retry case
+    if (iteration === MAX_LLM_RETRY_ITERATIONS) {
+      // Max retries reached, return failure
+      logIteration(iteration, 'maxIterations', { max: MAX_LLM_RETRY_ITERATIONS });
+      const updatedFlow = await readFlow();
+      return buildMaxIterationsResponse(
+        result.parsed.thinking,
+        result.parsed.toolCalls,
+        result.executionResults,
+        updatedFlow,
+        result.failures,
+        iteration,
+        MAX_LLM_RETRY_ITERATIONS
+      );
+    }
+
+    // Build retry message and continue loop
+    const currentFlow = await readFlow();
+    currentMessage = buildRetryMessage(result.executionResults, result.parsed.toolCalls, currentFlow);
+    await addUserMessage(currentMessage);
+    logIteration(iteration, 'retry', { message: currentMessage });
+  }
+}
+
 // Response builders for conversation endpoint
 
 function buildParseErrorResponse(parseError, thinking, response, iteration) {
@@ -232,48 +274,8 @@ app.post('/api/conversation/message', async (req, res) => {
       return res.json(await buildNoLLMResponse());
     }
 
-    // Save user message to conversation history
-    await addUserMessage(message);
-
-    // Build complete LLM context (only once, for the initial user message)
-    const llmContext = await buildLLMContext(message);
-
-    let currentMessage = message;
-    let iteration = 0;
-
-    // Error recovery loop: retry failed tool calls up to MAX_LLM_RETRY_ITERATIONS times
-    while (iteration < MAX_LLM_RETRY_ITERATIONS) {
-      iteration++;
-
-      const result = await executeSingleIteration(currentMessage, llmContext, iteration);
-
-      // Return immediately for parse errors, no tools, or success
-      if (result.type !== 'retry') {
-        return res.json(result.response);
-      }
-
-      // Handle retry case
-      if (iteration === MAX_LLM_RETRY_ITERATIONS) {
-        // Max retries reached, return failure
-        logIteration(iteration, 'maxIterations', { max: MAX_LLM_RETRY_ITERATIONS });
-        const updatedFlow = await readFlow();
-        return res.json(buildMaxIterationsResponse(
-          result.parsed.thinking,
-          result.parsed.toolCalls,
-          result.executionResults,
-          updatedFlow,
-          result.failures,
-          iteration,
-          MAX_LLM_RETRY_ITERATIONS
-        ));
-      }
-
-      // Build retry message and add to conversation as user message
-      const currentFlow = await readFlow();
-      currentMessage = buildRetryMessage(result.executionResults, result.parsed.toolCalls, currentFlow);
-      await addUserMessage(currentMessage);
-      logIteration(iteration, 'retry', { message: currentMessage });
-    }
+    const response = await executeMessageWithRetry(message);
+    res.json(response);
 
   } catch (error) {
     logError('processing message', error);
