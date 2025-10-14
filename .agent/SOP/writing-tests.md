@@ -350,6 +350,39 @@ it('should return 400 for invalid node data', async () => {
 });
 ```
 
+### Testing Layout Algorithms
+Test layout calculations with specific node/edge structures:
+
+```javascript
+import { getLayoutedElements } from '../../src/hooks/useFlowLayout.js';
+
+// Helpers for creating test data
+const makeNode = (id, overrides = {}) => ({
+  id, type: overrides.type || 'default',
+  position: overrides.position || { x: 0, y: 0 },
+  data: { label: id, ...overrides.data },
+  parentGroupId: overrides.parentGroupId, hidden: overrides.hidden,
+});
+
+const makeEdge = (source, target) => ({ id: `${source}-${target}`, source, target });
+
+it('should maintain horizontal parent-child alignment', () => {
+  const nodes = [makeNode('parent'), makeNode('child')];
+  const edges = [makeEdge('parent', 'child')];
+  const { nodes: layouted } = getLayoutedElements(nodes, edges, 'LR');
+
+  const parent = layouted.find(n => n.id === 'parent');
+  const child = layouted.find(n => n.id === 'child');
+
+  expect(child.position.y).toBeCloseTo(parent.position.y, 5); // Same y = horizontal
+  expect(child.position.x).toBeGreaterThan(parent.position.x); // Child to the right
+});
+```
+
+**TDD for Layout Bugs:** RED (failing test) → GREEN (fix) → REFACTOR (clean up)
+
+**Tips:** Use `toBeCloseTo()` for positions, test cross-group edges, keep minimal test data, see [tests/unit/frontend/getLayoutedElements.test.js](../../tests/unit/frontend/getLayoutedElements.test.js) for examples
+
 ## Debugging Tests
 
 ### 1. Use Console Logs (Temporarily)

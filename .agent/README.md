@@ -5,11 +5,11 @@ This directory contains all project documentation. Use this index to quickly fin
 ## 📁 Documentation Structure
 
 ```
-.agent/ (2265 lines)
-├── README.md          # This file - documentation index (148 lines)
-├── system/            # Current state of the system (1229 lines)
+.agent/ (2284 lines)
+├── README.md          # This file - documentation index (126 lines)
+├── system/            # Current state of the system (1237 lines)
 ├── tasks/             # Feature PRDs & implementation plans (119 lines)
-└── SOP/               # Standard operating procedures (769 lines)
+└── SOP/               # Standard operating procedures (802 lines)
 ```
 
 **Documentation Guidelines**: Try to keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. The lines count is updated automatically.
@@ -42,7 +42,7 @@ Step-by-step guides for common development tasks:
 | **[unified-flow-commands.md](./SOP/unified-flow-commands.md)** | How to add flow mutations (nodes, groups, edges) - unified backend pattern |
 | **[hotkeys-management.md](./SOP/hotkeys-management.md)** | How to add or modify keyboard shortcuts in the centralized registry |
 | **[theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)** | How to work with design tokens and semantic theme system |
-| **[writing-tests.md](./SOP/writing-tests.md)** | How to write tests with Vitest - unit, integration, frontend, and API tests |
+| **[writing-tests.md](./SOP/writing-tests.md)** | How to write tests with Vitest - unit, integration, frontend, API tests, layout algorithm testing |
 | *(To be added)* | How to add a database migration |
 | *(To be added)* | How to add a new LLM tool |
 
@@ -67,6 +67,7 @@ How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-command
 How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
 How to work with design tokens/theme | [theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)
 How to write tests | [writing-tests.md](./SOP/writing-tests.md)
+How to test layout algorithms (TDD) | [writing-tests.md](./SOP/writing-tests.md) → Testing Layout Algorithms
 How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 
 ## 📝 Documentation Conventions
@@ -113,35 +114,12 @@ How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 ---
 
 **Last Updated**: October 14, 2025
-**Major Updates**:
-- **Major server.js refactoring** (October 14, 2025)
-  - Extracted helper functions for consistent error logging and iteration tracking
-  - Created `executeSingleIteration()` and `executeMessageWithRetry()` for LLM flow
-  - Introduced `toolEndpoint()` factory for REST API endpoints with unified patterns
-  - Added `buildConversationResponse()` for standardized response formatting
-  - Organized code into clear sections with headers (APP SETUP, HELPER FUNCTIONS, etc.)
-  - Unified undo/redo with `executeHistoryOperation()` helper
-  - Improved code maintainability and readability
-- **Frontend refactoring**
-  - Extracted node visibility helpers in groupUtils.js
-  - Created dedicated GroupHaloOverlay component
-  - Added JSDoc documentation to complex functions
-- **Migrated from Jest to Vitest 3.2.4** (October 14, 2025)
-  - 2.95x faster test execution (~7s vs ~10s)
-  - Discovered and fixed 170+ tests that weren't running in Jest
-  - Native ESM support (no experimental flags needed)
-  - Multi-project config for isolated test environments
-  - Fixed production bug: timestamp collision in group ID generation
-- **Migrated to structured design token system** - Two-tier architecture: design tokens (primitives) + semantic theme (application), merged from separate files into single theme.js
-- **Depth-based incremental padding for nested group halos** - Visual hierarchy system with configurable decay
-- **Fixed ungroup operation for nested groups** - Members now properly reassigned to parent group
-- Implemented nested group creation and sub-grouping feature
-- Updated group validation to allow same-parent regrouping and group nesting
-- Comprehensive test coverage for nested groups including padding tests (tests/groupHelpers.test.js, tests/api-group-operations.test.js)
-- Centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
-- HotkeysPanel component with slide-in UI (? button)
-- Completed visual customization removal (migration 002)
-- Test suite: 542 passing tests (2 skipped) across 34 test files
-- Test coverage: 86.38% overall (v8 provider)
-- Database: 4 tables (removed visual_settings)
-- Design system: Organized token categories (colors, typography, spacing 4px base, borders, shadows, animations, z-index, opacity)
+
+**Recent Major Changes**:
+- **Server.js refactoring** - Extracted helper functions, organized into sections, reduced conversation endpoint from 90→13 lines
+- **Layout algorithm** - Simplified to pure Dagre (removed compression causing diagonal bugs), TDD approach, 542 tests passing
+- **Frontend refactoring** - Extracted node visibility helpers, JSDoc documentation, 2-line ABOUTME headers
+- **Vitest migration** - 2.95x faster, 170+ hidden tests fixed, native ESM, 86.38% coverage
+- **Design tokens** - Two-tier system (primitives + semantic theme) in single theme.js file
+- **Group nodes** - Nested groups, depth-based halo padding, dual collapse systems
+- **Hotkeys** - Centralized registry with HotkeysPanel UI

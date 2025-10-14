@@ -121,7 +121,7 @@ visual-scaffolding/
 - **Dual collapse systems**:
   - Group collapse: Uses `isCollapsed` on group nodes, managed via backend API
   - Subtree collapse: Uses `data.collapsed` on any node, frontend-only (Alt + Click)
-- Auto-layout using dagre algorithm
+- **Auto-layout using pure Dagre algorithm** - no custom compression logic
 - Smooth animations for layout transitions
 - Real-time autosave (500ms debounce)
 - **Keyboard shortcuts panel** - slide-in panel showing all hotkeys (? button)
@@ -267,6 +267,14 @@ Server code organized into clear sections with consistent patterns:
 - **Factory pattern** for REST endpoints via `toolEndpoint()` configuration
 - **Consistent validation** with early returns and descriptive error messages
 - **Single responsibility** - each function does one thing well
+
+### 10. Pure Dagre Layout Algorithm
+Layout calculation uses Dagre algorithm without custom post-processing:
+- **Pure Dagre output** - removed custom compression logic that caused diagonal positioning bugs
+- **TDD approach** - regression tests ensure horizontal parent-child alignment
+- **Simplified maintenance** - easier to reason about layout behavior
+- **Trade-off** - siblings may have larger vertical gaps (Dagre's natural spacing)
+- **See**: [useFlowLayout.js](../../src/hooks/useFlowLayout.js:24-93) for implementation
 
 ## Test Strategy
 
