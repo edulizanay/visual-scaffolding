@@ -241,17 +241,23 @@ app.delete('/api/conversation/history', async (req, res) => {
   }
 });
 
+// Executes undo/redo operations with consistent null-check and state persistence
+async function executeHistoryOperation(operationFn, operationName) {
+  const state = await operationFn();
+
+  if (!state) {
+    return { success: false, message: `Nothing to ${operationName}` };
+  }
+
+  await writeFlow(state, true);
+  return { success: true, flow: state };
+}
+
 // Flow history endpoints
 app.post('/api/flow/undo', async (req, res) => {
   try {
-    const previousState = await historyUndo();
-
-    if (!previousState) {
-      return res.json({ success: false, message: 'Nothing to undo' });
-    }
-
-    await writeFlow(previousState, true); // Skip snapshot to avoid creating new state
-    res.json({ success: true, flow: previousState });
+    const result = await executeHistoryOperation(historyUndo, 'undo');
+    res.json(result);
   } catch (error) {
     console.error('Error undoing:', error);
     res.status(500).json({ error: 'Failed to undo' });
@@ -260,14 +266,8 @@ app.post('/api/flow/undo', async (req, res) => {
 
 app.post('/api/flow/redo', async (req, res) => {
   try {
-    const nextState = await historyRedo();
-
-    if (!nextState) {
-      return res.json({ success: false, message: 'Nothing to redo' });
-    }
-
-    await writeFlow(nextState, true); // Skip snapshot to avoid creating new state
-    res.json({ success: true, flow: nextState });
+    const result = await executeHistoryOperation(historyRedo, 'redo');
+    res.json(result);
   } catch (error) {
     console.error('Error redoing:', error);
     res.status(500).json({ error: 'Failed to redo' });
