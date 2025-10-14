@@ -522,33 +522,20 @@ const computeEligibleGroupDepthMap = (childGroupMap) => {
 };
 
 const computeHaloPaddingForDepth = (depth, config) => {
-  const base = typeof config.base === 'number' ? config.base : 0;
-  const minStep = typeof config.minStep === 'number' && config.minStep > 0 ? config.minStep : 0;
-  const decay = typeof config.decay === 'number' ? config.decay : 1;
-  const initialIncrement = typeof config.increment === 'number' ? config.increment : 0;
+  const { base = 0, minStep = 0, decay = 1, increment = 0 } = config;
 
   if (!Number.isFinite(depth) || depth <= 0) {
     return base;
   }
 
-  let padding = base;
-  let currentStep = initialIncrement;
-
-  for (let i = 0; i < depth; i += 1) {
-    let appliedStep = 0;
-
-    if (Number.isFinite(currentStep)) {
-      const rounded = Math.round(currentStep);
-      appliedStep = rounded <= 0 ? minStep : Math.max(minStep, rounded);
-    } else {
-      appliedStep = minStep;
-    }
-
-    padding += appliedStep;
-    currentStep = Number.isFinite(currentStep) ? currentStep * decay : 0;
-  }
-
-  return padding;
+  // Compute: base + sum of (increment × decay^level) for each nesting level
+  return Array.from({ length: depth }).reduce((padding, _, level) => {
+    const step = increment * Math.pow(decay, level);
+    const appliedStep = Number.isFinite(step)
+      ? Math.max(minStep, Math.round(step))
+      : minStep;
+    return padding + appliedStep;
+  }, base);
 };
 
 /**
