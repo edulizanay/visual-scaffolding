@@ -234,7 +234,9 @@ Visual styling uses a two-tier token system separating primitives from semantic 
 ### 3. Unified Flow Commands
 All flow mutations (node CRUD, grouping, visual changes) follow a unified pattern:
 - Backend command defined in `server/tools/executor.js`
-- Exposed to both LLM tools and REST API endpoints
+- Exposed to both LLM tools and REST API endpoints via `toolEndpoint()` factory
+- `toolEndpoint()` accepts configuration object with toolName, validation, param extraction
+- Consistent error handling and response formatting across all endpoints
 - Frontend calls via helpers in `src/api.js`
 - See [unified-flow-commands SOP](../SOP/unified-flow-commands.md)
 
@@ -250,13 +252,21 @@ Two independent collapse systems coexist:
 Tools executed sequentially with state passed between them. All changes batched in single DB write.
 
 ### 6. Undo/Redo State Management
-Snapshots stored in `undo_history` table with deduplication. Current position tracked in `undo_state` table. 50 snapshot limit with automatic truncation.
+Snapshots stored in `undo_history` table with deduplication. Current position tracked in `undo_state` table. 50 snapshot limit with automatic truncation. Unified implementation via `executeHistoryOperation()` helper.
 
 ### 7. Autosave with Debouncing
 Frontend debounces saves by 500ms to avoid excessive writes during canvas manipulation.
 
 ### 8. LLM Context Building
 Each request includes: system prompt, last 6 conversation turns, current flow state, available tools, and user message. See [llm_integration.md](./llm_integration.md).
+
+### 9. Code Organization (server.js)
+Server code organized into clear sections with consistent patterns:
+- **Section headers** clearly delineate functionality (APP SETUP, CONSTANTS, HELPER FUNCTIONS, etc.)
+- **Helper extraction** for reusable logic (logError, logIteration, executeSingleIteration)
+- **Factory pattern** for REST endpoints via `toolEndpoint()` configuration
+- **Consistent validation** with early returns and descriptive error messages
+- **Single responsibility** - each function does one thing well
 
 ## Test Strategy
 
