@@ -32,6 +32,23 @@ function logIteration(iteration, event, details = {}) {
   messages[event]?.();
 }
 
+// Checks if LLM API keys are configured
+function checkLLMAvailability() {
+  return Boolean(process.env.GROQ_API_KEY || process.env.CEREBRAS_API_KEY);
+}
+
+// Builds response when LLM is not available
+async function buildNoLLMResponse() {
+  const flowState = await readFlow();
+  return buildConversationResponse({
+    success: false,
+    thinking: 'LLM disabled: missing API keys',
+    response: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable AI-assisted updates.',
+    iterations: 0,
+    updatedFlow: flowState,
+  });
+}
+
 // Builds consistent conversation endpoint responses with optional fields
 function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
   const baseResponse = {
@@ -109,18 +126,8 @@ app.post('/api/conversation/message', async (req, res) => {
       return res.status(400).json({ error: 'Message is required and must be a string' });
     }
 
-    const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
-    const hasCerebrasKey = Boolean(process.env.CEREBRAS_API_KEY);
-    if (!hasGroqKey && !hasCerebrasKey) {
-      const flowState = await readFlow();
-
-      return res.json(buildConversationResponse({
-        success: false,
-        thinking: 'LLM disabled: missing API keys',
-        response: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable AI-assisted updates.',
-        iterations: 0,
-        updatedFlow: flowState,
-      }));
+    if (!checkLLMAvailability()) {
+      return res.json(await buildNoLLMResponse());
     }
 
     // Save user message to conversation history
