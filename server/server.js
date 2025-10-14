@@ -73,7 +73,13 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
   if (parsed.parseError) {
     return {
       type: 'parseError',
-      response: buildParseErrorResponse(parsed.parseError, parsed.thinking, llmResponse, iteration)
+      response: buildConversationResponse({
+        success: false,
+        parseError: parsed.parseError,
+        thinking: parsed.thinking,
+        response: llmResponse,
+        iterations: iteration
+      })
     };
   }
 
@@ -82,7 +88,12 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
     await addAssistantMessage(llmResponse, []);
     return {
       type: 'noTools',
-      response: buildNoToolsResponse(parsed.thinking, iteration)
+      response: buildConversationResponse({
+        success: true,
+        thinking: parsed.thinking,
+        response: 'No tool calls generated',
+        iterations: iteration
+      })
     };
   }
 
@@ -97,7 +108,14 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
     const updatedFlow = await readFlow();
     return {
       type: 'success',
-      response: buildSuccessResponse(parsed.thinking, parsed.toolCalls, executionResults, updatedFlow, iteration)
+      response: buildConversationResponse({
+        success: true,
+        thinking: parsed.thinking,
+        toolCalls: parsed.toolCalls,
+        execution: executionResults,
+        updatedFlow,
+        iterations: iteration
+      })
     };
   }
 
@@ -136,15 +154,16 @@ async function executeMessageWithRetry(message) {
       // Max retries reached, return failure
       logIteration(iteration, 'maxIterations', { max: MAX_LLM_RETRY_ITERATIONS });
       const updatedFlow = await readFlow();
-      return buildMaxIterationsResponse(
-        result.parsed.thinking,
-        result.parsed.toolCalls,
-        result.executionResults,
+      return buildConversationResponse({
+        success: false,
+        thinking: result.parsed.thinking,
+        toolCalls: result.parsed.toolCalls,
+        execution: result.executionResults,
         updatedFlow,
-        result.failures,
-        iteration,
-        MAX_LLM_RETRY_ITERATIONS
-      );
+        errors: result.failures,
+        iterations: iteration,
+        message: `Failed after ${MAX_LLM_RETRY_ITERATIONS} attempts`
+      });
     }
 
     // Build retry message and continue loop
@@ -156,49 +175,6 @@ async function executeMessageWithRetry(message) {
 }
 
 // ==================== RESPONSE BUILDERS ====================
-
-function buildParseErrorResponse(parseError, thinking, response, iteration) {
-  return {
-    success: false,
-    parseError,
-    thinking,
-    response,
-    iterations: iteration
-  };
-}
-
-function buildNoToolsResponse(thinking, iteration) {
-  return {
-    success: true,
-    thinking,
-    response: 'No tool calls generated',
-    iterations: iteration
-  };
-}
-
-function buildSuccessResponse(thinking, toolCalls, execution, updatedFlow, iteration) {
-  return {
-    success: true,
-    thinking,
-    toolCalls,
-    execution,
-    updatedFlow,
-    iterations: iteration
-  };
-}
-
-function buildMaxIterationsResponse(thinking, toolCalls, execution, updatedFlow, failures, iteration, maxIterations) {
-  return {
-    success: false,
-    thinking,
-    toolCalls,
-    execution,
-    updatedFlow,
-    errors: failures,
-    iterations: iteration,
-    message: `Failed after ${maxIterations} attempts`
-  };
-}
 
 /**
  * Builds consistent conversation endpoint responses with optional fields (generic fallback)
