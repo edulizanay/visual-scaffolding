@@ -15,6 +15,11 @@ const MAX_LLM_RETRY_ITERATIONS = 3;
 app.use(cors());
 app.use(express.json());
 
+// Logs errors with consistent formatting
+function logError(operation, error) {
+  console.error(`Error ${operation}:`, error);
+}
+
 // Builds consistent conversation endpoint responses with optional fields
 function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
   const baseResponse = {
@@ -61,7 +66,7 @@ app.get('/api/flow', async (req, res) => {
     const flow = await readFlow();
     res.json(flow);
   } catch (error) {
-    console.error('Error reading flow:', error);
+    logError('reading flow', error);
     res.status(500).json({ error: 'Failed to load flow data' });
   }
 });
@@ -78,7 +83,7 @@ app.post('/api/flow', async (req, res) => {
     await writeFlow(flowData, skipSnapshot);
     res.json({ success: true });
   } catch (error) {
-    console.error('Error saving flow:', error);
+    logError('saving flow', error);
     res.status(500).json({ error: 'Failed to save flow data' });
   }
 });
@@ -211,7 +216,7 @@ app.post('/api/conversation/message', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error processing message:', error);
+    logError('processing message', error);
     res.status(500).json({ error: 'Failed to process message' });
   }
 });
@@ -226,7 +231,7 @@ app.get('/api/conversation/debug', async (req, res) => {
       newestTimestamp: history.length > 0 ? history[history.length - 1].timestamp : null,
     });
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    logError('fetching conversation', error);
     res.status(500).json({ error: 'Failed to fetch conversation' });
   }
 });
@@ -236,7 +241,7 @@ app.delete('/api/conversation/history', async (req, res) => {
     await clearHistory();
     res.json({ success: true });
   } catch (error) {
-    console.error('Error clearing history:', error);
+    logError('clearing history', error);
     res.status(500).json({ error: 'Failed to clear history' });
   }
 });
@@ -259,7 +264,7 @@ app.post('/api/flow/undo', async (req, res) => {
     const result = await executeHistoryOperation(historyUndo, 'undo');
     res.json(result);
   } catch (error) {
-    console.error('Error undoing:', error);
+    logError('undoing', error);
     res.status(500).json({ error: 'Failed to undo' });
   }
 });
@@ -269,7 +274,7 @@ app.post('/api/flow/redo', async (req, res) => {
     const result = await executeHistoryOperation(historyRedo, 'redo');
     res.json(result);
   } catch (error) {
-    console.error('Error redoing:', error);
+    logError('redoing', error);
     res.status(500).json({ error: 'Failed to redo' });
   }
 });
@@ -279,7 +284,7 @@ app.get('/api/flow/history-status', async (req, res) => {
     const status = await getHistoryStatus();
     res.json(status);
   } catch (error) {
-    console.error('Error getting history status:', error);
+    logError('getting history status', error);
     res.status(500).json({ error: 'Failed to get history status' });
   }
 });
@@ -324,7 +329,7 @@ function toolEndpoint(config) {
         res.status(400).json({ success: false, error: result[0].error });
       }
     } catch (error) {
-      console.error(`Error ${config.action}:`, error);
+      logError(config.action, error);
       res.status(500).json({
         success: false,
         error: `Failed to ${config.action}`
@@ -414,7 +419,7 @@ if (process.env.NODE_ENV !== 'test') {
       await initializeHistory(currentFlow);
       console.log('History initialized with current flow state');
     } catch (error) {
-      console.error('Failed to initialize history:', error);
+      logError('initializing history', error);
     }
   });
 }
