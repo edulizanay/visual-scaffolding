@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { GroupHaloOverlay } from '../../../src/utils/groupUtils.js';
+import { GroupHaloOverlay } from '../../../src/GroupHaloOverlay.jsx';
 import { THEME } from '../../../src/constants/theme.js';
 
 vi.mock('@xyflow/react', () => {

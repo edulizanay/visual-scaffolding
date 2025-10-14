@@ -131,7 +131,11 @@ They can operate on the same nodes simultaneously without conflicts.
 - `validateGroupMembership(nodeIds, nodes)` - Validates group creation
 - `detectCircularReference(nodeId, parentId, nodes)` - Prevents circular hierarchies
 - `getExpandedGroupHalos(nodes, getNodeDimensions, paddingConfig)` - Computes halo bounds with depth-based padding
-- `GroupHaloOverlay` - React component rendering group halos
+- `computeNodeBounds(nodes, getNodeDimensions)` - Computes axis-aligned bounding box for nodes
+
+**`src/GroupHaloOverlay.jsx`** - Visual halo rendering component:
+- Displays SVG rectangles around expanded groups
+- Handles hover states and double-click collapse interactions
 
 **`src/App.jsx`** - UI integration:
 - Group keyboard shortcuts (⌘G, ⌘⇧G)
@@ -326,7 +330,8 @@ Test coverage: `tests/groupHelpers.test.js`, `tests/api-group-operations.test.js
 
 ## Key Files
 
-- `src/utils/groupUtils.js` - Core utilities and halo overlay
+- `src/utils/groupUtils.js` - Core utilities for group management
+- `src/GroupHaloOverlay.jsx` - Visual halo rendering component
 - `src/App.jsx` - UI integration and keyboard shortcuts
 - `server/tools/executor.js` - Backend executors
 - `server/llm/tools.js` - LLM tool definitions

@@ -30,11 +30,11 @@ import { useFlowLayout } from './hooks/useFlowLayout';
 import { useHotkeys } from './hooks/useHotkeys';
 import HotkeysPanel from './HotkeysPanel';
 import { THEME } from './constants/theme.js';
+import { GroupHaloOverlay } from './GroupHaloOverlay.jsx';
 import {
   validateGroupMembership,
   collapseSubtreeByHandles,
   getExpandedGroupHalos,
-  GroupHaloOverlay,
   applyGroupVisibility,
 } from './utils/groupUtils.js';
 
