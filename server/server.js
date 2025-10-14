@@ -49,7 +49,52 @@ async function buildNoLLMResponse() {
   });
 }
 
-// Builds consistent conversation endpoint responses with optional fields
+// Response builders for conversation endpoint
+
+function buildParseErrorResponse(parseError, thinking, response, iteration) {
+  return {
+    success: false,
+    parseError,
+    thinking,
+    response,
+    iterations: iteration
+  };
+}
+
+function buildNoToolsResponse(thinking, iteration) {
+  return {
+    success: true,
+    thinking,
+    response: 'No tool calls generated',
+    iterations: iteration
+  };
+}
+
+function buildSuccessResponse(thinking, toolCalls, execution, updatedFlow, iteration) {
+  return {
+    success: true,
+    thinking,
+    toolCalls,
+    execution,
+    updatedFlow,
+    iterations: iteration
+  };
+}
+
+function buildMaxIterationsResponse(thinking, toolCalls, execution, updatedFlow, failures, iteration, maxIterations) {
+  return {
+    success: false,
+    thinking,
+    toolCalls,
+    execution,
+    updatedFlow,
+    errors: failures,
+    iterations: iteration,
+    message: `Failed after ${maxIterations} attempts`
+  };
+}
+
+// Builds consistent conversation endpoint responses with optional fields (generic fallback)
 function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
   const baseResponse = {
     success,
@@ -155,25 +200,14 @@ app.post('/api/conversation/message', async (req, res) => {
 
       // Handle parse errors
       if (parsed.parseError) {
-        return res.json(buildConversationResponse({
-          success: false,
-          parseError: parsed.parseError,
-          thinking: parsed.thinking,
-          response: llmResponse,
-          iterations: iteration
-        }));
+        return res.json(buildParseErrorResponse(parsed.parseError, parsed.thinking, llmResponse, iteration));
       }
 
       // If no tool calls, LLM gave up or finished without tools
       if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
         // Save assistant message to conversation
         await addAssistantMessage(llmResponse, []);
-        return res.json(buildConversationResponse({
-          success: true,
-          thinking: parsed.thinking,
-          response: 'No tool calls generated',
-          iterations: iteration
-        }));
+        return res.json(buildNoToolsResponse(parsed.thinking, iteration));
       }
 
       // Execute tool calls
@@ -192,14 +226,7 @@ app.post('/api/conversation/message', async (req, res) => {
         // Get updated flow state
         const updatedFlow = await readFlow();
 
-        return res.json(buildConversationResponse({
-          success: true,
-          thinking: parsed.thinking,
-          toolCalls: parsed.toolCalls,
-          execution: executionResults,
-          updatedFlow,
-          iterations: iteration
-        }));
+        return res.json(buildSuccessResponse(parsed.thinking, parsed.toolCalls, executionResults, updatedFlow, iteration));
       }
 
       // Some failures occurred
@@ -215,16 +242,7 @@ app.post('/api/conversation/message', async (req, res) => {
         // Get updated flow state
         const updatedFlow = await readFlow();
 
-        return res.json(buildConversationResponse({
-          success: false,
-          thinking: parsed.thinking,
-          toolCalls: parsed.toolCalls,
-          execution: executionResults,
-          updatedFlow,
-          errors: failures,
-          iterations: iteration,
-          message: `Failed after ${MAX_LLM_RETRY_ITERATIONS} attempts`
-        }));
+        return res.json(buildMaxIterationsResponse(parsed.thinking, parsed.toolCalls, executionResults, updatedFlow, failures, iteration, MAX_LLM_RETRY_ITERATIONS));
       }
 
       // Build retry message and add to conversation as user message
