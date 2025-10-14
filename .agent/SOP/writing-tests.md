@@ -454,3 +454,4 @@ open coverage/index.html
 - [project_architecture.md](../system/project_architecture.md) - Testing strategy overview
 - [Vitest Documentation](https://vitest.dev/) - Official Vitest docs
 - [Testing Library Docs](https://testing-library.com/) - React Testing Library guides
+
