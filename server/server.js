@@ -359,11 +359,14 @@ function toolEndpoint(config) {
     try {
       const params = config.extractParams(req);
 
-      if (config.validate && !config.validate(params)) {
-        return res.status(400).json({
-          success: false,
-          error: config.validationError
-        });
+      if (config.validate) {
+        const error = config.validate(params);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            error
+          });
+        }
       }
 
       const [executionResult] = await executeToolCalls([{
@@ -426,8 +429,12 @@ app.post('/api/edge', toolEndpoint({
   toolName: 'addEdge',
   action: 'creating edge',
   extractParams: (req) => req.body,
-  validate: (params) => params.sourceNodeId && params.targetNodeId,
-  validationError: 'sourceNodeId and targetNodeId are required',
+  validate: (params) => {
+    if (!params.sourceNodeId || !params.targetNodeId) {
+      return 'sourceNodeId and targetNodeId are required';
+    }
+    return null;
+  },
   extraFields: (result) => ({ edgeId: result.edgeId })
 }));
 
@@ -449,8 +456,12 @@ app.post('/api/group', toolEndpoint({
   toolName: 'createGroup',
   action: 'creating group',
   extractParams: (req) => req.body,
-  validate: (params) => params.memberIds && Array.isArray(params.memberIds) && params.memberIds.length >= 2,
-  validationError: 'At least 2 memberIds are required',
+  validate: (params) => {
+    if (!params.memberIds || !Array.isArray(params.memberIds) || params.memberIds.length < 2) {
+      return 'At least 2 memberIds are required';
+    }
+    return null;
+  },
   extraFields: (result) => ({ groupId: result.groupId })
 }));
 
