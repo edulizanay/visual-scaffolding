@@ -49,6 +49,63 @@ async function buildNoLLMResponse() {
   });
 }
 
+// Executes a single iteration of LLM conversation with tool calling
+async function executeSingleIteration(currentMessage, llmContext, iteration) {
+  logIteration(iteration, 'start');
+
+  // Update llmContext with current message (initial or retry message)
+  const contextWithMessage = { ...llmContext, userMessage: currentMessage };
+
+  // Call LLM API
+  const llmResponse = await callLLM(contextWithMessage);
+
+  // Parse LLM response
+  const parsed = parseToolCalls(llmResponse);
+
+  // Handle parse errors
+  if (parsed.parseError) {
+    return {
+      type: 'parseError',
+      response: buildParseErrorResponse(parsed.parseError, parsed.thinking, llmResponse, iteration)
+    };
+  }
+
+  // If no tool calls, LLM gave up or finished without tools
+  if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
+    await addAssistantMessage(llmResponse, []);
+    return {
+      type: 'noTools',
+      response: buildNoToolsResponse(parsed.thinking, iteration)
+    };
+  }
+
+  // Execute tool calls
+  const executionResults = await executeToolCalls(parsed.toolCalls);
+  const failures = executionResults.filter(r => !r.success);
+
+  if (failures.length === 0) {
+    // All tool calls succeeded!
+    logIteration(iteration, 'success', { count: executionResults.length });
+    await addAssistantMessage(llmResponse, parsed.toolCalls);
+    const updatedFlow = await readFlow();
+    return {
+      type: 'success',
+      response: buildSuccessResponse(parsed.thinking, parsed.toolCalls, executionResults, updatedFlow, iteration)
+    };
+  }
+
+  // Some failures occurred
+  logIteration(iteration, 'failure', { failed: failures.length, total: executionResults.length });
+  await addAssistantMessage(llmResponse, parsed.toolCalls);
+
+  return {
+    type: 'retry',
+    parsed,
+    executionResults,
+    failures
+  };
+}
+
 // Response builders for conversation endpoint
 
 function buildParseErrorResponse(parseError, thinking, response, iteration) {
@@ -187,67 +244,33 @@ app.post('/api/conversation/message', async (req, res) => {
     // Error recovery loop: retry failed tool calls up to MAX_LLM_RETRY_ITERATIONS times
     while (iteration < MAX_LLM_RETRY_ITERATIONS) {
       iteration++;
-      logIteration(iteration, 'start');
 
-      // Update llmContext with current message (initial or retry message)
-      const contextWithMessage = { ...llmContext, userMessage: currentMessage };
+      const result = await executeSingleIteration(currentMessage, llmContext, iteration);
 
-      // Call Groq API
-      const llmResponse = await callLLM(contextWithMessage);
-
-      // Parse LLM response
-      const parsed = parseToolCalls(llmResponse);
-
-      // Handle parse errors
-      if (parsed.parseError) {
-        return res.json(buildParseErrorResponse(parsed.parseError, parsed.thinking, llmResponse, iteration));
+      // Return immediately for parse errors, no tools, or success
+      if (result.type !== 'retry') {
+        return res.json(result.response);
       }
 
-      // If no tool calls, LLM gave up or finished without tools
-      if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
-        // Save assistant message to conversation
-        await addAssistantMessage(llmResponse, []);
-        return res.json(buildNoToolsResponse(parsed.thinking, iteration));
-      }
-
-      // Execute tool calls
-      const executionResults = await executeToolCalls(parsed.toolCalls);
-
-      // Check for failures
-      const failures = executionResults.filter(r => !r.success);
-
-      if (failures.length === 0) {
-        // All tool calls succeeded!
-        logIteration(iteration, 'success', { count: executionResults.length });
-
-        // Save assistant message to conversation
-        await addAssistantMessage(llmResponse, parsed.toolCalls);
-
-        // Get updated flow state
-        const updatedFlow = await readFlow();
-
-        return res.json(buildSuccessResponse(parsed.thinking, parsed.toolCalls, executionResults, updatedFlow, iteration));
-      }
-
-      // Some failures occurred
-      logIteration(iteration, 'failure', { failed: failures.length, total: executionResults.length });
-
-      // Save assistant message to conversation history (so next iteration has context)
-      await addAssistantMessage(llmResponse, parsed.toolCalls);
-
+      // Handle retry case
       if (iteration === MAX_LLM_RETRY_ITERATIONS) {
         // Max retries reached, return failure
         logIteration(iteration, 'maxIterations', { max: MAX_LLM_RETRY_ITERATIONS });
-
-        // Get updated flow state
         const updatedFlow = await readFlow();
-
-        return res.json(buildMaxIterationsResponse(parsed.thinking, parsed.toolCalls, executionResults, updatedFlow, failures, iteration, MAX_LLM_RETRY_ITERATIONS));
+        return res.json(buildMaxIterationsResponse(
+          result.parsed.thinking,
+          result.parsed.toolCalls,
+          result.executionResults,
+          updatedFlow,
+          result.failures,
+          iteration,
+          MAX_LLM_RETRY_ITERATIONS
+        ));
       }
 
       // Build retry message and add to conversation as user message
       const currentFlow = await readFlow();
-      currentMessage = buildRetryMessage(executionResults, parsed.toolCalls, currentFlow);
+      currentMessage = buildRetryMessage(result.executionResults, result.parsed.toolCalls, currentFlow);
       await addUserMessage(currentMessage);
       logIteration(iteration, 'retry', { message: currentMessage });
     }
