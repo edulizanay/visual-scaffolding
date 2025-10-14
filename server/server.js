@@ -8,12 +8,19 @@ import { buildLLMContext, parseToolCalls, callLLM, buildRetryMessage } from './l
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 import { executeToolCalls } from './tools/executor.js';
 
+// ==================== APP SETUP ====================
+
 const app = express();
 const PORT = process.env.PORT || 3001;
-const MAX_LLM_RETRY_ITERATIONS = 3;
 
 app.use(cors());
 app.use(express.json());
+
+// ==================== CONSTANTS ====================
+
+const MAX_LLM_RETRY_ITERATIONS = 3;
+
+// ==================== HELPER FUNCTIONS ====================
 
 // Logs errors with consistent formatting
 function logError(operation, error) {
@@ -148,7 +155,7 @@ async function executeMessageWithRetry(message) {
   }
 }
 
-// Response builders for conversation endpoint
+// ==================== RESPONSE BUILDERS ====================
 
 function buildParseErrorResponse(parseError, thinking, response, iteration) {
   return {
@@ -212,6 +219,8 @@ function buildConversationResponse({ success, thinking, response, iterations, to
   return baseResponse;
 }
 
+// ==================== CORE DATA ACCESS ====================
+
 export async function readFlow() {
   return dbGetFlow();
 }
@@ -233,6 +242,10 @@ function validateFlow(data) {
   }
   return true;
 }
+
+// ==================== API ENDPOINTS ====================
+
+// Flow CRUD endpoints
 
 app.get('/api/flow', async (req, res) => {
   try {
@@ -262,6 +275,7 @@ app.post('/api/flow', async (req, res) => {
 });
 
 // Conversation endpoints
+
 app.post('/api/conversation/message', async (req, res) => {
   try {
     const { message } = req.body;
@@ -307,6 +321,8 @@ app.delete('/api/conversation/history', async (req, res) => {
     res.status(500).json({ error: 'Failed to clear history' });
   }
 });
+
+// Flow history endpoints
 
 // Executes a single tool call and returns the result
 async function executeSingleTool(toolName, params) {
@@ -357,8 +373,7 @@ app.get('/api/flow/history-status', async (req, res) => {
   }
 });
 
-// Unified Flow Command Endpoints
-// These endpoints provide REST API access to all flow operations for UI consistency
+// Tool operation endpoints (unified flow commands)
 
 function toolEndpoint(config) {
   return async (req, res) => {
@@ -480,9 +495,7 @@ app.put('/api/group/:id/expand', toolEndpoint({
   extractParams: (req) => ({ groupId: req.params.id, ...req.body })
 }));
 
-// Tool executor is used directly by tests from server/tools/executor.js
-
-// ==================== Server Startup ====================
+// ==================== SERVER STARTUP ====================
 
 // Only start server if not imported for testing
 if (process.env.NODE_ENV !== 'test') {
