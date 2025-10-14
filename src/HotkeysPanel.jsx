@@ -55,7 +55,7 @@ export default function HotkeysPanel() {
           position: 'fixed',
           top: 0,
           right: 0,
-          width: '320px',
+          width: '280px',
           height: '100vh',
           backgroundColor: THEME.node.colors.background,
           boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.3)',
@@ -63,7 +63,7 @@ export default function HotkeysPanel() {
           transition: 'transform 0.3s ease-in-out',
           zIndex: 999,
           overflowY: 'auto',
-          padding: '16px',
+          padding: '20px',
           color: 'white',
         }}
       >
@@ -87,23 +87,22 @@ export default function HotkeysPanel() {
             background: rgba(99, 102, 241, 0.6);
           }
         `}</style>
-        <div style={{ marginBottom: '16px' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '19px' }}>Keyboard Shortcuts</h2>
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{ margin: '0', fontSize: '17px', fontWeight: '500' }}>Shortcuts</h2>
         </div>
 
         {categories.map(category => {
           const hotkeysInCategory = HOTKEYS.filter(hk => hk.category === category);
 
           return (
-            <div key={category} style={{ marginBottom: '24px' }}>
+            <div key={category} style={{ marginBottom: '20px' }}>
               <h3
                 style={{
-                  margin: '0 0 12px 0',
+                  margin: '0 0 8px 0',
                   fontSize: '13px',
-                  fontWeight: 'bold',
-                  color: THEME.groupNode.colors.border,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.4px',
+                  fontWeight: '400',
+                  color: 'white',
+                  opacity: 0.5,
                 }}
               >
                 {category}
@@ -113,33 +112,30 @@ export default function HotkeysPanel() {
                 <div
                   key={hotkey.id}
                   style={{
-                    marginBottom: '12px',
-                    paddingBottom: '12px',
-                    borderBottom: `1px solid ${THEME.node.colors.border}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    minHeight: '24px',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '13px' }}>
-                        {hotkey.label}
-                      </div>
-                      <div style={{ fontSize: '11px', opacity: 0.7 }}>
-                        {hotkey.description}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginLeft: '12px',
-                        padding: '4px 8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '3px',
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {formatKeys(hotkey.keys)}
-                    </div>
+                  <div style={{ flex: 1, fontSize: '13px', fontWeight: '400', color: 'white', opacity: 0.85 }}>
+                    {hotkey.label}
+                  </div>
+                  <div
+                    style={{
+                      marginLeft: '12px',
+                      padding: '3px 6px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      borderRadius: '3px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      whiteSpace: 'nowrap',
+                      color: 'white',
+                      opacity: 0.9,
+                    }}
+                  >
+                    {formatKeys(hotkey.keys)}
                   </div>
                 </div>
               ))}

@@ -88,7 +88,7 @@ export const HOTKEYS = [
     id: 'group.toggleExpansion',
     category: 'Group Operations',
     keys: ['Double-Click'],
-    label: 'Toggle Group Expansion',
+    label: 'Expand/Collapse Group',
     description: 'Double-click on a group node to collapse or expand it',
     type: 'mouse',
   },
