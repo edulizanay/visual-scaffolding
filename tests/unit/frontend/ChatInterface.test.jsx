@@ -1,17 +1,17 @@
 // ABOUTME: Unit tests for ChatInterface component
 // ABOUTME: Tests message submission, keyboard interactions, loading states, and conversation management
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatInterface from '../../../src/ChatInterface.jsx';
 import * as api from '../../../src/api.js';
 
 // Mock the API module
-jest.mock('../../../src/api.js', () => ({
-  sendMessage: jest.fn(),
-  clearConversation: jest.fn(),
-  getConversationDebug: jest.fn(),
+vi.mock('../../../src/api.js', () => ({
+  sendMessage: vi.fn(),
+  clearConversation: vi.fn(),
+  getConversationDebug: vi.fn(),
 }));
 
 describe('ChatInterface Component', () => {
@@ -21,11 +21,11 @@ describe('ChatInterface Component', () => {
 
   beforeEach(() => {
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create mock callbacks
-    mockOnFlowUpdate = jest.fn();
-    mockOnProcessingChange = jest.fn();
+    mockOnFlowUpdate = vi.fn();
+    mockOnProcessingChange = vi.fn();
 
     // Setup default API responses
     api.getConversationDebug.mockResolvedValue({ history: [] });
@@ -396,7 +396,7 @@ describe('ChatInterface Component', () => {
         expect(api.clearConversation).toHaveBeenCalled();
       });
 
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       // Second message
       await user.type(textarea, 'Second');
@@ -418,7 +418,7 @@ describe('ChatInterface Component', () => {
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalled();
       });
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       await user.click(textarea);
       await user.type(textarea, 'Test');
@@ -588,7 +588,7 @@ describe('ChatInterface Component', () => {
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
       const consoleError = console.error;
-      console.error = jest.fn();
+      console.error = vi.fn();
 
       api.sendMessage.mockRejectedValue(new Error('API Error'));
 
@@ -613,7 +613,7 @@ describe('ChatInterface Component', () => {
 
     it('should handle conversation clear errors gracefully', async () => {
       const consoleWarn = console.warn;
-      console.warn = jest.fn();
+      console.warn = vi.fn();
 
       api.clearConversation.mockRejectedValue(new Error('Clear failed'));
 
@@ -636,7 +636,7 @@ describe('ChatInterface Component', () => {
 
     it('should handle history load errors gracefully', async () => {
       const consoleError = console.error;
-      console.error = jest.fn();
+      console.error = vi.fn();
 
       api.getConversationDebug.mockRejectedValue(new Error('Load failed'));
 

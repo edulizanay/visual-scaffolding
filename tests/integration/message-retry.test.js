@@ -1,7 +1,7 @@
 // ABOUTME: Integration tests for message retry loop in conversation endpoint
 // ABOUTME: Tests retry logic without LLM mocks (uses actual parseToolCalls)
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { closeDb, saveFlow } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';

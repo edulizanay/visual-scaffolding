@@ -18,7 +18,7 @@ Current state of the codebase - architecture, schema, and core systems:
 
 | Document | What's Inside |
 |----------|---------------|
-| **[project_architecture.md](./system/project_architecture.md)** | Tech stack, project structure, core features (groups, hotkeys panel), integration points, design patterns (centralized hotkeys, hardcoded theme, unified flow commands), development workflow |
+| **[project_architecture.md](./system/project_architecture.md)** | Tech stack, project structure, core features (groups, hotkeys panel), integration points, design patterns (centralized hotkeys, structured design token system, unified flow commands), development workflow |
 | **[database_schema.md](./system/database_schema.md)** | Complete schema (4 tables), data structures with group node examples, API functions, data flows, migrations, performance notes |
 | **[llm_integration.md](./system/llm_integration.md)** | LLM providers (Groq/Cerebras), system prompts, 13 tool definitions (including group operations), response parsing, error recovery |
 | **[group_nodes_system.md](./system/group_nodes_system.md)** | Complete group nodes feature documentation: dual collapse systems, synthetic edges, visibility computation, validation rules, UI interactions |
@@ -39,9 +39,10 @@ Step-by-step guides for common development tasks:
 |-----|-------------|
 | **[unified-flow-commands.md](./SOP/unified-flow-commands.md)** | How to add flow mutations (nodes, groups, edges) - unified backend pattern |
 | **[hotkeys-management.md](./SOP/hotkeys-management.md)** | How to add or modify keyboard shortcuts in the centralized registry |
+| **[theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)** | How to work with design tokens and semantic theme system |
+| **[writing-tests.md](./SOP/writing-tests.md)** | How to write tests with Vitest - unit, integration, frontend, and API tests |
 | *(To be added)* | How to add a database migration |
 | *(To be added)* | How to add a new LLM tool |
-| *(To be added)* | How to write tests |
 
 ## 🧭 Quick Navigation
 
@@ -56,13 +57,15 @@ Synthetic edges algorithm | [group_nodes_system.md](./system/group_nodes_system.
 Depth-based halo padding system | [group_nodes_system.md](./system/group_nodes_system.md) → Depth-Based Incremental Padding
 Nested groups and hierarchy | [group_nodes_system.md](./system/group_nodes_system.md) → Nested Groups
 Keyboard shortcuts registry | [project_architecture.md](./system/project_architecture.md) → Centralized Hotkeys Registry
-Hardcoded theme system | [project_architecture.md](./system/project_architecture.md) → Hardcoded Theme System
+Design token system | [project_architecture.md](./system/project_architecture.md) → Structured Design Token System
 Development commands, setup | [project_architecture.md](./system/project_architecture.md) → Development Workflow
 API endpoints | [project_architecture.md](./system/project_architecture.md) → Integration Points
 Feature requirements | `Tasks/` folder
 How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-commands.md)
 How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
-How to do X (migrations, tests, etc.) | `SOP/` folder
+How to work with design tokens/theme | [theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)
+How to write tests | [writing-tests.md](./SOP/writing-tests.md)
+How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 
 ## 📝 Documentation Conventions
 
@@ -107,8 +110,15 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 
 ---
 
-**Last Updated**: October 13, 2025
+**Last Updated**: October 14, 2025
 **Major Updates**:
+- **Migrated from Jest to Vitest 3.2.4** (October 14, 2025)
+  - 2.95x faster test execution (~7s vs ~10s)
+  - Discovered and fixed 170+ tests that weren't running in Jest
+  - Native ESM support (no experimental flags needed)
+  - Multi-project config for isolated test environments
+  - Fixed production bug: timestamp collision in group ID generation
+- **Migrated to structured design token system** - Two-tier architecture: design tokens (primitives) + semantic theme (application), merged from separate files into single theme.js
 - **Depth-based incremental padding for nested group halos** - Visual hierarchy system with configurable decay
 - **Fixed ungroup operation for nested groups** - Members now properly reassigned to parent group
 - Implemented nested group creation and sub-grouping feature
@@ -116,7 +126,8 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 - Comprehensive test coverage for nested groups including padding tests (tests/groupHelpers.test.js, tests/api-group-operations.test.js)
 - Centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
 - HotkeysPanel component with slide-in UI (? button)
-- Completed visual customization removal (migration 002, hardcoded theme in src/constants/theme.jsx)
-- Test suite: 317+ tests across 13 test suites
+- Completed visual customization removal (migration 002)
+- Test suite: 542 passing tests (2 skipped) across 34 test files
+- Test coverage: 86.38% overall (v8 provider)
 - Database: 4 tables (removed visual_settings)
-- Updated documentation: group system with depth-based padding, LLM integration
+- Design system: Organized token categories (colors, typography, spacing 4px base, borders, shadows, animations, z-index, opacity)

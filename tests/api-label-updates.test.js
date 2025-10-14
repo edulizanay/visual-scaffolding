@@ -1,7 +1,7 @@
 // ABOUTME: Integration tests for label update endpoints
 // ABOUTME: Tests node and edge label updates via API with validation
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { closeDb } from '../server/db.js';

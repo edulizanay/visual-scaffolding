@@ -1,12 +1,13 @@
 // ABOUTME: Tests for HotkeysPanel component
 // ABOUTME: Validates rendering, toggle behavior, and hotkey display
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import React from 'react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import HotkeysPanel from '../../../src/HotkeysPanel';
 
 // Mock the THEME constant
-jest.mock('../../../src/constants/theme.jsx', () => ({
+vi.mock('../../../src/constants/theme.js', () => ({
   THEME: {
     node: {
       colors: {
@@ -124,11 +125,6 @@ describe('HotkeysPanel Component', () => {
       overlay = container.querySelector('div[style*="position: fixed"][style*="width: 100%"][style*="height: 100%"]');
       expect(overlay).toBeFalsy();
     });
-  });
-
-  describe('Panel State', () => {
-    // Note: Removed stale tests that checked 'right' positioning
-    // Component now uses transform: translateX() for animations
   });
 
   describe('Accessibility', () => {

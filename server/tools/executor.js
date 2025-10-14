@@ -332,7 +332,7 @@ async function executeCreateGroup(params, flow) {
   }
 
   // Generate group ID and label
-  const groupId = `group-${Date.now()}`;
+  const groupId = generateId();
   const groupLabel = label || `Group ${Date.now()}`;
 
   // Create group node

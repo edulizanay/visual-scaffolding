@@ -1,7 +1,7 @@
 // ABOUTME: Tests for double-save prevention in save/snapshot system
 // ABOUTME: Verifies that operations save exactly once, not multiple times
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
 import { closeDb, getDb } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';

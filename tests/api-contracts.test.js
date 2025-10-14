@@ -1,7 +1,7 @@
 // ABOUTME: Tests API contract stability to ensure frontend compatibility
 // ABOUTME: Verifies response formats and status codes remain consistent
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import app from '../server/server.js';
 import { closeDb } from '../server/db.js';

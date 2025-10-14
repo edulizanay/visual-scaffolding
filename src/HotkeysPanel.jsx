@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { HOTKEYS, getCategories, formatKeys } from './hooks/useHotkeys';
-import { THEME } from './constants/theme.jsx';
+import { THEME } from './constants/theme.js';
 
 export default function HotkeysPanel() {
   const [isOpen, setIsOpen] = useState(false);

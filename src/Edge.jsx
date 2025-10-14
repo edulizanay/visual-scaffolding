@@ -2,6 +2,7 @@
 // ABOUTME: Allows double-click editing of edge labels directly on the canvas
 import { memo, useState, useCallback } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react';
+import { THEME } from './constants/theme.js';
 
 const CustomEdge = ({
   id,
@@ -67,7 +68,7 @@ const CustomEdge = ({
               onKeyDown={handleKeyDown}
               autoFocus
               style={{
-                background: '#1a192b',
+                background: THEME.colors.deepPurple,
                 border: '1px solid #555',
                 color: 'white',
                 padding: '2px 8px',
@@ -79,7 +80,7 @@ const CustomEdge = ({
           ) : (
             <div
               style={{
-                background: data?.label ? '#1a192b' : 'transparent',
+                background: data?.label ? THEME.colors.deepPurple : 'transparent',
                 opacity: data?.label ? 1 : 0,
                 padding: '2px 8px',
                 borderRadius: '3px',

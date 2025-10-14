@@ -1,7 +1,7 @@
 // ABOUTME: Tests for group utility functions controlling grouping behavior
 // ABOUTME: Validates descendants, validation, visibility, and group state transitions
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import {
   getGroupDescendants,
   detectCircularReference,
@@ -13,7 +13,7 @@ import {
   getExpandedGroupHalos,
   collapseSubtreeByHandles,
 } from '../src/utils/groupUtils.js';
-import { THEME } from '../src/constants/theme.jsx';
+import { THEME } from '../src/constants/theme.js';
 
 describe('getGroupDescendants', () => {
   test('finds direct children by parentGroupId', () => {

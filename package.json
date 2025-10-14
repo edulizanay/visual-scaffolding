@@ -10,8 +10,10 @@
     "server": "node server/server.js",
     "server:dev": "nodemon --ignore 'server/data/**' server/server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server:dev\"",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "migrate": "node server/migrate-to-sqlite.js"
   },
   "dependencies": {
@@ -36,17 +38,16 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",
-    "babel-jest": "^30.2.0",
     "concurrently": "^8.2.2",
     "happy-dom": "^20.0.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^30.2.0",
-    "jsdom": "^27.0.0",
     "nodemon": "^3.0.2",
     "postcss": "^8.5.6",
     "supertest": "^6.3.3",
     "tailwindcss": "^4.1.14",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "vitest": "^3.2.4"
   }
 }

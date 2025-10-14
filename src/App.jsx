@@ -29,10 +29,9 @@ import ChatInterface, { Kbd } from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { useHotkeys } from './hooks/useHotkeys';
 import HotkeysPanel from './HotkeysPanel';
-import { THEME } from './constants/theme.jsx';
+import { THEME } from './constants/theme.js';
 import {
   validateGroupMembership,
-  getGroupDescendants,
   collapseSubtreeByHandles,
   getExpandedGroupHalos,
   GroupHaloOverlay,
@@ -224,7 +223,6 @@ function App() {
   const nodesWithHandlers = useMemo(() => {
     return nodes.map((node) => {
       const isGroupNode = node.type === 'group';
-      const isCollapsed = isGroupNode && node.isCollapsed === true;
       const { width, height, borderRadius } = getNodeDimensions(node);
 
       // Use group-specific colors for group nodes, regular colors for others
@@ -234,9 +232,6 @@ function App() {
       const text = nodeColors.text;
 
       const isSelected = selectedNodeIds.includes(node.id);
-
-      // Count members if collapsed
-      const memberCount = isCollapsed ? getGroupDescendants(node.id, nodes).length : 0;
 
       const baseStyle = {
         background,
@@ -264,8 +259,7 @@ function App() {
           onLabelChange: updateNodeLabel,
           onDescriptionChange: updateNodeDescription,
           textColor: text,
-          // Show member count for collapsed groups
-          label: isCollapsed ? `${node.data.label} (${memberCount} nodes)` : node.data.label,
+          label: node.data.label,
         },
         style: {
           ...(node.style || {}),
@@ -614,7 +608,7 @@ function App() {
           animation: 'slideIn 0.3s ease-out',
         }}>
           <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{tooltipConfig.keys}</Kbd>
-          <span style={{ color: '#9ca3af', fontSize: '13px' }}>{tooltipConfig.label}</span>
+          <span style={{ color: THEME.text.tertiary, fontSize: '13px' }}>{tooltipConfig.label}</span>
         </div>
       )}
 
@@ -630,7 +624,7 @@ function App() {
           animation: 'slideIn 0.3s ease-out',
         }}>
           <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{toast === 'undo' ? '⌘ Z' : '⌘ Y'}</Kbd>
-          <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
+          <span style={{ color: THEME.text.secondary, fontSize: '14px' }}>
             {toast === 'undo' ? 'to undo' : 'to redo'}
           </span>
         </div>

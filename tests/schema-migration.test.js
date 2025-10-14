@@ -1,7 +1,7 @@
 // ABOUTME: Tests for group fields schema migration backward compatibility
 // ABOUTME: Ensures existing flows load correctly with new fields
 
-import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { getDb, closeDb } from '../server/db.js';
 
 describe('Group Fields Schema Migration', () => {

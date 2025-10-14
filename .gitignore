@@ -38,3 +38,4 @@ server/data/backup-*/
 *.sln
 *.sw?
 server/data/history.json
+coverage/

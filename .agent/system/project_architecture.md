@@ -20,12 +20,14 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 - **CORS** - Cross-origin support
 
 ### Testing
-- **Jest** - Test framework (with ES modules via `NODE_OPTIONS=--experimental-vm-modules`)
-- **React Testing Library** - Frontend component testing (with jsdom environment)
-- **@testing-library/jest-dom** - Custom Jest matchers for DOM assertions
+- **Vitest 3.2.4** - Test framework with native ESM support
+- **React Testing Library** - Frontend component testing
+- **@testing-library/jest-dom** - DOM assertion matchers (via `/vitest` entry point)
 - **@testing-library/user-event** - User interaction simulation
+- **happy-dom 20.0.0** - Lightweight browser environment (faster than jsdom)
 - **Supertest** - Backend API integration testing
 - **In-memory SQLite** - Isolated database testing (`:memory:`)
+- **@vitest/coverage-v8** - Code coverage reporting (86.38% overall)
 
 ## Project Structure
 
@@ -39,7 +41,7 @@ visual-scaffolding/
 │   ├── HotkeysPanel.jsx          # Keyboard shortcuts panel UI
 │   ├── api.js                    # Frontend API client
 │   ├── constants/
-│   │   └── theme.jsx             # Hardcoded theme constants (replaces visual_settings)
+│   │   └── theme.js              # Design tokens and semantic theme (replaces visual_settings)
 │   ├── hooks/
 │   │   ├── useFlowLayout.js      # Auto-layout with dagre
 │   │   └── useHotkeys.jsx        # Centralized hotkeys registry and hook
@@ -63,7 +65,7 @@ visual-scaffolding/
 │   └── data/
 │       └── flow.db               # SQLite database file
 │
-├── tests/                        # Comprehensive test suite (317 tests)
+├── tests/                        # Comprehensive test suite (542 tests)
 │   ├── db.test.js               # Database layer tests
 │   ├── conversationService.test.js
 │   ├── historyService.test.js
@@ -75,12 +77,14 @@ visual-scaffolding/
 │   ├── unit/
 │   │   ├── frontend/            # Frontend unit tests
 │   │   └── backend/             # Backend unit tests (hotkeys registry)
-│   └── security/                # Security tests (XSS prevention)
+│   ├── security/                # Security tests (XSS prevention)
+│   ├── setup-frontend.js        # Vitest setup for React component tests
+│   └── mocks/                   # Test mocks (styleMock.js)
 │
 ├── .agent/                      # Project documentation
 ├── package.json
 ├── vite.config.js
-├── jest.config.js
+├── vitest.config.js             # Vitest test configuration
 └── .env                         # API keys (gitignored)
 ```
 
@@ -102,7 +106,7 @@ visual-scaffolding/
 - React Flow built-ins - `onNodesChange`, `onEdgesChange`, `onConnect`
 
 ### Data Flow
-1. Load flow from backend on mount → Initialize React Flow with hardcoded theme
+1. Load flow from backend on mount → Initialize React Flow with design token theme
 2. User edits (drag, edit labels) → Debounced autosave (500ms)
 3. AI chat message → Backend processes → Frontend receives updated flow → Auto-layout
 4. Undo/Redo → Fetch snapshot from backend → Update React Flow state
@@ -215,13 +219,17 @@ All keyboard shortcuts and mouse interactions are defined in a single registry:
 - **UI integration**: HotkeysPanel component consumes registry for documentation
 - **See**: [hotkeys-visual-and-logic-centralization Task](../Tasks/hotkeys-visual-and-logic-centralization.md)
 
-### 2. Hardcoded Theme System
-Visual styling is centralized in a single theme constant:
-- **Theme file**: [src/constants/theme.jsx](../../src/constants/theme.jsx:1-72)
+### 2. Structured Design Token System
+Visual styling uses a two-tier token system separating primitives from semantic application:
+- **Theme file**: [src/constants/theme.js](../../src/constants/theme.js:1-262)
 - **Replaced**: Previous `visual_settings` table (removed in migration 002)
-- **Structure**: Nested object with canvas, node, groupNode, tooltip, and dagre settings
-- **Single source of truth**: All components import from theme constant
+- **Architecture**:
+  - **Design Tokens (Primitives)**: Raw values (colors, spacing, typography, shadows, etc.)
+  - **Semantic Theme**: Component-specific application of tokens (canvas, node, groupNode, tooltip, dagre)
+- **Token categories**: Color palette, typography, spacing scale (4px base), borders, shadows, animations, z-index, opacity
+- **Single source of truth**: All components import from `THEME` export
 - **No runtime customization**: Visual styling is hardcoded for consistency
+- **Maintainability**: Clear separation enables design system updates without touching component logic
 
 ### 3. Unified Flow Commands
 All flow mutations (node CRUD, grouping, visual changes) follow a unified pattern:
@@ -252,10 +260,15 @@ Each request includes: system prompt, last 6 conversation turns, current flow st
 
 ## Test Strategy
 
+- **Test Framework**: Vitest with multi-project configuration (4 isolated environments)
 - **Unit tests**: Database operations, services, tool execution
-- **Integration tests**: Message retry logic, API contracts
+- **Integration tests**: Message retry logic, API contracts, workflow state sync
 - **Security tests**: XSS prevention
+- **Frontend tests**: React component tests with happy-dom
 - **All tests use in-memory SQLite** (`DB_PATH=:memory:`)
+- **Test Execution**: ~7 seconds for 542 tests (2.95x faster than Jest)
+- **Coverage**: 86.38% overall (v8 provider)
+- **See**: [test_suite.md](./test_suite.md) for detailed test documentation
 
 ## Known Limitations
 

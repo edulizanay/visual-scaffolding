@@ -1,7 +1,7 @@
 // ABOUTME: Setup file for frontend tests with React Testing Library
 // ABOUTME: Configures testing environment and global mocks for components
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 // Mock window.matchMedia for React Flow
 Object.defineProperty(window, 'matchMedia', {

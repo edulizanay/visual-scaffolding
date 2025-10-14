@@ -1,7 +1,7 @@
 // ABOUTME: Integration tests for group operation endpoints
 // ABOUTME: Tests group creation, ungrouping, and expansion via API
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { closeDb } from '../server/db.js';
