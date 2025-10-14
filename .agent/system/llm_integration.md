@@ -168,6 +168,53 @@ Please retry the failed operations using the correct node IDs shown above.
 
 Frontend receives `iterations` field indicating how many attempts were made (e.g., `iterations: 2` means succeeded on 2nd attempt).
 
+## Request Flow Architecture
+
+The conversation endpoint follows a structured pipeline:
+
+### 1. Request Validation (`/api/conversation/message`)
+- Validates message is a non-empty string
+- Checks LLM availability via `checkLLMAvailability()`
+- Returns early if no API keys configured
+
+### 2. Message Execution (`executeMessageWithRetry()`)
+- Saves user message to conversation history
+- Builds LLM context with history + flow state
+- Runs retry loop (max 3 iterations)
+- Returns final response
+
+### 3. Single Iteration (`executeSingleIteration()`)
+- Calls LLM with current context
+- Parses response for tool calls
+- Executes tools and checks for failures
+- Returns success or retry signal
+
+### Helper Functions
+- **`logError(operation, error)`** - Consistent error logging
+- **`logIteration(iteration, event, details)`** - Iteration progress tracking
+- **`buildConversationResponse(params)`** - Standardized response formatting
+- **`buildNoLLMResponse()`** - Response when API keys missing
+- **`executeSingleTool(toolName, params)`** - Wrapper for single tool execution
+
+## Server Organization
+
+The server code is organized with clear section headers:
+
+```
+server.js
+├── APP SETUP           # Express initialization and middleware
+├── CONSTANTS           # MAX_LLM_RETRY_ITERATIONS
+├── HELPER FUNCTIONS    # Logging, validation, iteration logic
+├── RESPONSE BUILDERS   # buildConversationResponse()
+├── CORE DATA ACCESS    # readFlow(), writeFlow(), validateFlow()
+├── API ENDPOINTS       # Routes grouped by feature
+│   ├── Flow CRUD       # GET/POST /api/flow
+│   ├── Conversation    # /api/conversation/*
+│   ├── Flow history    # /api/flow/undo, /api/flow/redo
+│   └── Tool operations # Unified flow commands via toolEndpoint()
+└── SERVER STARTUP      # Listen and history initialization
+```
+
 ## Conversation Management
 
 All messages saved to `conversation_history` table. Only last 6 interaction pairs sent to LLM for context. Clear history via `DELETE /api/conversation/history` (not exposed in UI).

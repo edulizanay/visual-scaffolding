@@ -8,13 +8,189 @@ import { buildLLMContext, parseToolCalls, callLLM, buildRetryMessage } from './l
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 import { executeToolCalls } from './tools/executor.js';
 
+// ==================== APP SETUP ====================
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// Builds consistent conversation endpoint responses with optional fields
+// ==================== CONSTANTS ====================
+
+const MAX_LLM_RETRY_ITERATIONS = 3;
+
+// ==================== HELPER FUNCTIONS ====================
+
+// Logs errors with consistent formatting
+function logError(operation, error) {
+  console.error(`Error ${operation}:`, error);
+}
+
+// Logs iteration progress with consistent formatting
+function logIteration(iteration, event, details = {}) {
+  const messages = {
+    start: () => console.log(`\n=== Iteration ${iteration} ===`),
+    success: () => console.log(`✅ All ${details.count} tool calls succeeded on iteration ${iteration}`),
+    failure: () => console.log(`❌ ${details.failed} of ${details.total} tool calls failed on iteration ${iteration}`),
+    maxIterations: () => console.log(`⚠️  Max iterations (${details.max}) reached, giving up`),
+    retry: () => console.log(`🔄 Retrying with message:\n${details.message}`)
+  };
+  messages[event]?.();
+}
+
+// Checks if LLM API keys are configured
+function checkLLMAvailability() {
+  return Boolean(process.env.GROQ_API_KEY || process.env.CEREBRAS_API_KEY);
+}
+
+// Builds response when LLM is not available
+async function buildNoLLMResponse() {
+  const flowState = await readFlow();
+  return buildConversationResponse({
+    success: false,
+    thinking: 'LLM disabled: missing API keys',
+    response: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable AI-assisted updates.',
+    iterations: 0,
+    updatedFlow: flowState,
+  });
+}
+
+// Executes a single iteration of LLM conversation with tool calling
+async function executeSingleIteration(currentMessage, llmContext, iteration) {
+  logIteration(iteration, 'start');
+
+  // Update llmContext with current message (initial or retry message)
+  const contextWithMessage = { ...llmContext, userMessage: currentMessage };
+
+  // Call LLM API
+  const llmResponse = await callLLM(contextWithMessage);
+
+  // Parse LLM response
+  const parsed = parseToolCalls(llmResponse);
+
+  // Handle parse errors
+  if (parsed.parseError) {
+    return {
+      type: 'parseError',
+      response: buildConversationResponse({
+        success: false,
+        parseError: parsed.parseError,
+        thinking: parsed.thinking,
+        response: llmResponse,
+        iterations: iteration
+      })
+    };
+  }
+
+  // If no tool calls, LLM gave up or finished without tools
+  if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
+    await addAssistantMessage(llmResponse, []);
+    return {
+      type: 'noTools',
+      response: buildConversationResponse({
+        success: true,
+        thinking: parsed.thinking,
+        response: 'No tool calls generated',
+        iterations: iteration
+      })
+    };
+  }
+
+  // Execute tool calls
+  const executionResults = await executeToolCalls(parsed.toolCalls);
+  const failures = executionResults.filter(r => !r.success);
+
+  if (failures.length === 0) {
+    // All tool calls succeeded!
+    logIteration(iteration, 'success', { count: executionResults.length });
+    await addAssistantMessage(llmResponse, parsed.toolCalls);
+    const updatedFlow = await readFlow();
+    return {
+      type: 'success',
+      response: buildConversationResponse({
+        success: true,
+        thinking: parsed.thinking,
+        toolCalls: parsed.toolCalls,
+        execution: executionResults,
+        updatedFlow,
+        iterations: iteration
+      })
+    };
+  }
+
+  // Some failures occurred
+  logIteration(iteration, 'failure', { failed: failures.length, total: executionResults.length });
+  await addAssistantMessage(llmResponse, parsed.toolCalls);
+
+  return {
+    type: 'retry',
+    parsed,
+    executionResults,
+    failures
+  };
+}
+
+// Executes message with automatic retry on tool call failures
+async function executeMessageWithRetry(message) {
+  await addUserMessage(message);
+  const llmContext = await buildLLMContext(message);
+
+  let currentMessage = message;
+  let iteration = 0;
+
+  while (iteration < MAX_LLM_RETRY_ITERATIONS) {
+    iteration++;
+
+    const result = await executeSingleIteration(currentMessage, llmContext, iteration);
+
+    // Return immediately for parse errors, no tools, or success
+    if (result.type !== 'retry') {
+      return result.response;
+    }
+
+    // Handle retry case
+    if (iteration === MAX_LLM_RETRY_ITERATIONS) {
+      // Max retries reached, return failure
+      logIteration(iteration, 'maxIterations', { max: MAX_LLM_RETRY_ITERATIONS });
+      const updatedFlow = await readFlow();
+      return buildConversationResponse({
+        success: false,
+        thinking: result.parsed.thinking,
+        toolCalls: result.parsed.toolCalls,
+        execution: result.executionResults,
+        updatedFlow,
+        errors: result.failures,
+        iterations: iteration,
+        message: `Failed after ${MAX_LLM_RETRY_ITERATIONS} attempts`
+      });
+    }
+
+    // Build retry message and continue loop
+    const currentFlow = await readFlow();
+    currentMessage = buildRetryMessage(result.executionResults, result.parsed.toolCalls, currentFlow);
+    await addUserMessage(currentMessage);
+    logIteration(iteration, 'retry', { message: currentMessage });
+  }
+}
+
+// ==================== RESPONSE BUILDERS ====================
+
+/**
+ * Builds consistent conversation endpoint responses with optional fields (generic fallback)
+ * @param {Object} params - Response parameters
+ * @param {boolean} params.success - Whether the operation succeeded
+ * @param {string} params.thinking - LLM thinking content
+ * @param {number} params.iterations - Number of retry iterations
+ * @param {string} [params.response] - LLM response text
+ * @param {string} [params.parseError] - Parse error if any
+ * @param {Array} [params.toolCalls] - Tool calls made by LLM
+ * @param {Array} [params.execution] - Tool execution results
+ * @param {Object} [params.updatedFlow] - Updated flow state
+ * @param {Array} [params.errors] - Errors from failed tool calls
+ * @param {string} [params.message] - Additional message
+ * @returns {Object} Formatted response object
+ */
 function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
   const baseResponse = {
     success,
@@ -32,6 +208,8 @@ function buildConversationResponse({ success, thinking, response, iterations, to
 
   return baseResponse;
 }
+
+// ==================== CORE DATA ACCESS ====================
 
 export async function readFlow() {
   return dbGetFlow();
@@ -55,12 +233,16 @@ function validateFlow(data) {
   return true;
 }
 
+// ==================== API ENDPOINTS ====================
+
+// Flow CRUD endpoints
+
 app.get('/api/flow', async (req, res) => {
   try {
     const flow = await readFlow();
     res.json(flow);
   } catch (error) {
-    console.error('Error reading flow:', error);
+    logError('reading flow', error);
     res.status(500).json({ error: 'Failed to load flow data' });
   }
 });
@@ -77,12 +259,13 @@ app.post('/api/flow', async (req, res) => {
     await writeFlow(flowData, skipSnapshot);
     res.json({ success: true });
   } catch (error) {
-    console.error('Error saving flow:', error);
+    logError('saving flow', error);
     res.status(500).json({ error: 'Failed to save flow data' });
   }
 });
 
 // Conversation endpoints
+
 app.post('/api/conversation/message', async (req, res) => {
   try {
     const { message } = req.body;
@@ -91,127 +274,15 @@ app.post('/api/conversation/message', async (req, res) => {
       return res.status(400).json({ error: 'Message is required and must be a string' });
     }
 
-    const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
-    const hasCerebrasKey = Boolean(process.env.CEREBRAS_API_KEY);
-    if (!hasGroqKey && !hasCerebrasKey) {
-      const flowState = await readFlow();
-
-      return res.json(buildConversationResponse({
-        success: false,
-        thinking: 'LLM disabled: missing API keys',
-        response: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable AI-assisted updates.',
-        iterations: 0,
-        updatedFlow: flowState,
-      }));
+    if (!checkLLMAvailability()) {
+      return res.json(await buildNoLLMResponse());
     }
 
-    // Save user message to conversation history
-    await addUserMessage(message);
-
-    // Build complete LLM context (only once, for the initial user message)
-    const llmContext = await buildLLMContext(message);
-
-    let currentMessage = message;
-    const MAX_ITERATIONS = 3;
-    let iteration = 0;
-
-    // Error recovery loop: retry failed tool calls up to MAX_ITERATIONS times
-    while (iteration < MAX_ITERATIONS) {
-      iteration++;
-      console.log(`\n=== Iteration ${iteration} ===`);
-
-      // Update llmContext with current message (initial or retry message)
-      const contextWithMessage = { ...llmContext, userMessage: currentMessage };
-
-      // Call Groq API
-      const llmResponse = await callLLM(contextWithMessage);
-
-      // Parse LLM response
-      const parsed = parseToolCalls(llmResponse);
-
-      // Handle parse errors
-      if (parsed.parseError) {
-        return res.json(buildConversationResponse({
-          success: false,
-          parseError: parsed.parseError,
-          thinking: parsed.thinking,
-          response: llmResponse,
-          iterations: iteration
-        }));
-      }
-
-      // If no tool calls, LLM gave up or finished without tools
-      if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
-        // Save assistant message to conversation
-        await addAssistantMessage(llmResponse, []);
-        return res.json(buildConversationResponse({
-          success: true,
-          thinking: parsed.thinking,
-          response: 'No tool calls generated',
-          iterations: iteration
-        }));
-      }
-
-      // Execute tool calls
-      const executionResults = await executeToolCalls(parsed.toolCalls);
-
-      // Check for failures
-      const failures = executionResults.filter(r => !r.success);
-
-      if (failures.length === 0) {
-        // All tool calls succeeded!
-        console.log(`✅ All ${executionResults.length} tool calls succeeded on iteration ${iteration}`);
-
-        // Save assistant message to conversation
-        await addAssistantMessage(llmResponse, parsed.toolCalls);
-
-        // Get updated flow state
-        const updatedFlow = await readFlow();
-
-        return res.json(buildConversationResponse({
-          success: true,
-          thinking: parsed.thinking,
-          toolCalls: parsed.toolCalls,
-          execution: executionResults,
-          updatedFlow,
-          iterations: iteration
-        }));
-      }
-
-      // Some failures occurred
-      console.log(`❌ ${failures.length} of ${executionResults.length} tool calls failed on iteration ${iteration}`);
-
-      // Save assistant message to conversation history (so next iteration has context)
-      await addAssistantMessage(llmResponse, parsed.toolCalls);
-
-      if (iteration === MAX_ITERATIONS) {
-        // Max retries reached, return failure
-        console.log(`⚠️  Max iterations (${MAX_ITERATIONS}) reached, giving up`);
-
-        // Get updated flow state
-        const updatedFlow = await readFlow();
-
-        return res.json(buildConversationResponse({
-          success: false,
-          thinking: parsed.thinking,
-          toolCalls: parsed.toolCalls,
-          execution: executionResults,
-          updatedFlow,
-          errors: failures,
-          iterations: iteration,
-          message: `Failed after ${MAX_ITERATIONS} attempts`
-        }));
-      }
-
-      // Build retry message and add to conversation as user message
-      const currentFlow = await readFlow();
-      currentMessage = buildRetryMessage(executionResults, parsed.toolCalls, currentFlow);
-      await addUserMessage(currentMessage);
-      console.log(`🔄 Retrying with message:\n${currentMessage}`);
-    }
+    const response = await executeMessageWithRetry(message);
+    res.json(response);
 
   } catch (error) {
-    console.error('Error processing message:', error);
+    logError('processing message', error);
     res.status(500).json({ error: 'Failed to process message' });
   }
 });
@@ -226,7 +297,7 @@ app.get('/api/conversation/debug', async (req, res) => {
       newestTimestamp: history.length > 0 ? history[history.length - 1].timestamp : null,
     });
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    logError('fetching conversation', error);
     res.status(500).json({ error: 'Failed to fetch conversation' });
   }
 });
@@ -236,10 +307,18 @@ app.delete('/api/conversation/history', async (req, res) => {
     await clearHistory();
     res.json({ success: true });
   } catch (error) {
-    console.error('Error clearing history:', error);
+    logError('clearing history', error);
     res.status(500).json({ error: 'Failed to clear history' });
   }
 });
+
+// Flow history endpoints
+
+// Executes a single tool call and returns the result
+async function executeSingleTool(toolName, params) {
+  const [result] = await executeToolCalls([{ name: toolName, params }]);
+  return result;
+}
 
 // Executes undo/redo operations with consistent null-check and state persistence
 async function executeHistoryOperation(operationFn, operationName) {
@@ -259,7 +338,7 @@ app.post('/api/flow/undo', async (req, res) => {
     const result = await executeHistoryOperation(historyUndo, 'undo');
     res.json(result);
   } catch (error) {
-    console.error('Error undoing:', error);
+    logError('undoing', error);
     res.status(500).json({ error: 'Failed to undo' });
   }
 });
@@ -269,7 +348,7 @@ app.post('/api/flow/redo', async (req, res) => {
     const result = await executeHistoryOperation(historyRedo, 'redo');
     res.json(result);
   } catch (error) {
-    console.error('Error redoing:', error);
+    logError('redoing', error);
     res.status(500).json({ error: 'Failed to redo' });
   }
 });
@@ -279,52 +358,51 @@ app.get('/api/flow/history-status', async (req, res) => {
     const status = await getHistoryStatus();
     res.json(status);
   } catch (error) {
-    console.error('Error getting history status:', error);
+    logError('getting history status', error);
     res.status(500).json({ error: 'Failed to get history status' });
   }
 });
 
-// Unified Flow Command Endpoints
-// These endpoints provide REST API access to all flow operations for UI consistency
+// Tool operation endpoints (unified flow commands)
 
 function toolEndpoint(config) {
   return async (req, res) => {
     try {
       const params = config.extractParams(req);
 
-      if (config.validate && !config.validate(params)) {
-        return res.status(400).json({
-          success: false,
-          error: config.validationError
-        });
+      if (config.validate) {
+        const error = config.validate(params);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            error
+          });
+        }
       }
 
-      const result = await executeToolCalls([{
-        name: config.toolName,
-        params
-      }]);
+      const executionResult = await executeSingleTool(config.toolName, params);
 
-      if (result[0].success) {
+      if (executionResult.success) {
         await writeFlow(
-          result[0].updatedFlow,
-          config.skipSnapshot?.(req, result[0]) ?? false
+          executionResult.updatedFlow,
+          config.skipSnapshot ?? false
         );
 
         const response = {
           success: true,
-          flow: result[0].updatedFlow
+          flow: executionResult.updatedFlow
         };
 
         if (config.extraFields) {
-          Object.assign(response, config.extraFields(result[0]));
+          Object.assign(response, config.extraFields(executionResult));
         }
 
         res.json(response);
       } else {
-        res.status(400).json({ success: false, error: result[0].error });
+        res.status(400).json({ success: false, error: executionResult.error });
       }
     } catch (error) {
-      console.error(`Error ${config.action}:`, error);
+      logError(config.action, error);
       res.status(500).json({
         success: false,
         error: `Failed to ${config.action}`
@@ -345,7 +423,7 @@ app.put('/api/node/:id', toolEndpoint({
   toolName: 'updateNode',
   action: 'updating node',
   extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
-  skipSnapshot: () => true
+  skipSnapshot: true
 }));
 
 app.delete('/api/node/:id', toolEndpoint({
@@ -359,8 +437,12 @@ app.post('/api/edge', toolEndpoint({
   toolName: 'addEdge',
   action: 'creating edge',
   extractParams: (req) => req.body,
-  validate: (params) => params.sourceNodeId && params.targetNodeId,
-  validationError: 'sourceNodeId and targetNodeId are required',
+  validate: (params) => {
+    if (!params.sourceNodeId || !params.targetNodeId) {
+      return 'sourceNodeId and targetNodeId are required';
+    }
+    return null;
+  },
   extraFields: (result) => ({ edgeId: result.edgeId })
 }));
 
@@ -368,7 +450,7 @@ app.put('/api/edge/:id', toolEndpoint({
   toolName: 'updateEdge',
   action: 'updating edge',
   extractParams: (req) => ({ edgeId: req.params.id, ...req.body }),
-  skipSnapshot: () => true
+  skipSnapshot: true
 }));
 
 app.delete('/api/edge/:id', toolEndpoint({
@@ -382,8 +464,12 @@ app.post('/api/group', toolEndpoint({
   toolName: 'createGroup',
   action: 'creating group',
   extractParams: (req) => req.body,
-  validate: (params) => params.memberIds && Array.isArray(params.memberIds) && params.memberIds.length >= 2,
-  validationError: 'At least 2 memberIds are required',
+  validate: (params) => {
+    if (!params.memberIds || !Array.isArray(params.memberIds) || params.memberIds.length < 2) {
+      return 'At least 2 memberIds are required';
+    }
+    return null;
+  },
   extraFields: (result) => ({ groupId: result.groupId })
 }));
 
@@ -399,9 +485,7 @@ app.put('/api/group/:id/expand', toolEndpoint({
   extractParams: (req) => ({ groupId: req.params.id, ...req.body })
 }));
 
-// Tool executor is used directly by tests from server/tools/executor.js
-
-// ==================== Server Startup ====================
+// ==================== SERVER STARTUP ====================
 
 // Only start server if not imported for testing
 if (process.env.NODE_ENV !== 'test') {
@@ -414,7 +498,7 @@ if (process.env.NODE_ENV !== 'test') {
       await initializeHistory(currentFlow);
       console.log('History initialized with current flow state');
     } catch (error) {
-      console.error('Failed to initialize history:', error);
+      logError('initializing history', error);
     }
   });
 }

@@ -5,14 +5,14 @@ This directory contains all project documentation. Use this index to quickly fin
 ## 📁 Documentation Structure
 
 ```
-.agent/ (2196 lines)
-├── README.md          # This file - documentation index (136 lines)
-├── system/            # Current state of the system (1172 lines)
+.agent/ (2265 lines)
+├── README.md          # This file - documentation index (148 lines)
+├── system/            # Current state of the system (1229 lines)
 ├── tasks/             # Feature PRDs & implementation plans (119 lines)
 └── SOP/               # Standard operating procedures (769 lines)
 ```
 
-**Documentation Guidelines**: Try to keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. 
+**Documentation Guidelines**: Try to keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. The lines count is updated automatically.
 
 ## 📚 System Documentation
 
@@ -114,6 +114,18 @@ How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 
 **Last Updated**: October 14, 2025
 **Major Updates**:
+- **Major server.js refactoring** (October 14, 2025)
+  - Extracted helper functions for consistent error logging and iteration tracking
+  - Created `executeSingleIteration()` and `executeMessageWithRetry()` for LLM flow
+  - Introduced `toolEndpoint()` factory for REST API endpoints with unified patterns
+  - Added `buildConversationResponse()` for standardized response formatting
+  - Organized code into clear sections with headers (APP SETUP, HELPER FUNCTIONS, etc.)
+  - Unified undo/redo with `executeHistoryOperation()` helper
+  - Improved code maintainability and readability
+- **Frontend refactoring**
+  - Extracted node visibility helpers in groupUtils.js
+  - Created dedicated GroupHaloOverlay component
+  - Added JSDoc documentation to complex functions
 - **Migrated from Jest to Vitest 3.2.4** (October 14, 2025)
   - 2.95x faster test execution (~7s vs ~10s)
   - Discovered and fixed 170+ tests that weren't running in Jest

@@ -1,23 +1,5 @@
-// ABOUTME: Unified group manager handling creation, collapse, visibility, and halos
-//
-// IMPORTANT: This file manages GROUP COLLAPSE only (via isCollapsed property).
-// There is a SEPARATE collapse system for subtrees (via data.collapsed in App.jsx).
-//
-// GROUP COLLAPSE (this file):
-// - Uses isCollapsed: true/false on group nodes
-// - Managed by backend API (toggleGroupExpansion)
-// - Affects nodes based on parentGroupId hierarchy
-// - Creates synthetic edges for collapsed groups
-// - Nodes hidden when their parent group is collapsed
-//
-// SUBTREE COLLAPSE (Alt+Click in App.jsx):
-// - Uses data.collapsed: true/false on any node
-// - Frontend-only (no backend API)
-// - Affects nodes based on edge-based hierarchy
-// - Uses collapseSubtreeByHandles() function
-// - No synthetic edges generated
-//
-// These two systems are independent but can coexist on the same nodes.
+// ABOUTME: Group node operations (create, ungroup, collapse, halos, synthetic edges)
+// ABOUTME: Manages GROUP collapse (isCollapsed) only; subtree collapse (data.collapsed) lives in App.jsx
 
 import { THEME } from '../constants/theme.js';
 
@@ -160,43 +142,86 @@ const computeAncestorHiddenSet = (nodes) => {
   return hidden;
 };
 
+/**
+ * Computes visibility state for a group node.
+ * Group nodes are visible when collapsed, hidden when expanded (shows members instead).
+ */
+const computeGroupNodeVisibility = (node, hiddenByAncestor) => {
+  const isCollapsed = node.isCollapsed === true;
+  const subtreeHidden = node.subtreeHidden === true;
+
+  const result = {
+    ...node,
+    groupHidden: hiddenByAncestor,
+    hidden: hiddenByAncestor || subtreeHidden || !isCollapsed,
+  };
+
+  if (subtreeHidden) {
+    result.subtreeHidden = true;
+  } else if ('subtreeHidden' in result) {
+    delete result.subtreeHidden;
+  }
+
+  return result;
+};
+
+/**
+ * Computes visibility state for a regular (non-group) node.
+ * Nodes are hidden if inside a collapsed ancestor or if explicitly hidden.
+ */
+const computeRegularNodeVisibility = (node, hiddenByAncestor) => {
+  const subtreeHidden = node.subtreeHidden === true;
+  const previouslyHidden = node.hidden ?? false;
+  const previousGroupHidden = node.groupHidden ?? false;
+
+  const result = {
+    ...node,
+    groupHidden: hiddenByAncestor,
+    hidden: hiddenByAncestor || subtreeHidden || (previouslyHidden && !previousGroupHidden),
+  };
+
+  if (subtreeHidden) {
+    result.subtreeHidden = true;
+  } else if ('subtreeHidden' in result) {
+    delete result.subtreeHidden;
+  }
+
+  return result;
+};
+
+/**
+ * Applies visibility rules to edges based on their endpoint nodes.
+ * An edge is hidden if either its source or target node is hidden.
+ */
+const applyEdgeVisibility = (edges, nodeVisibilityMap) => {
+  return edges.map((edge) => {
+    const sourceInfo = nodeVisibilityMap.get(edge.source);
+    const targetInfo = nodeVisibilityMap.get(edge.target);
+    const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
+    const effectiveHidden = (sourceInfo?.hidden ?? false) || (targetInfo?.hidden ?? false);
+
+    return {
+      ...edge,
+      groupHidden: effectiveGroupHidden,
+      hidden: effectiveHidden,
+    };
+  });
+};
+
+/**
+ * Computes visibility state for all nodes and edges based on group collapse state.
+ * 1. Determines which nodes are hidden by collapsed ancestor groups
+ * 2. Generates synthetic edges for collapsed groups
+ * 3. Hides edges whose endpoints are hidden
+ */
 export const applyGroupVisibility = (nodes, edges) => {
   const ancestorHidden = computeAncestorHiddenSet(nodes);
 
   const nextNodes = nodes.map((node) => {
     const hiddenByAncestor = ancestorHidden.has(node.id);
-    const subtreeHidden = node.subtreeHidden === true;
-    const previousGroupHidden = node.groupHidden ?? false;
-    const previouslyHidden = node.hidden ?? false;
-
-    if (node.type === 'group') {
-      const isCollapsed = node.isCollapsed === true;
-      // Group node is visible when collapsed, hidden when expanded (shows members instead)
-      // Also hidden if inside a collapsed ancestor group
-      const result = {
-        ...node,
-        groupHidden: hiddenByAncestor,
-        hidden: hiddenByAncestor || subtreeHidden || !isCollapsed,
-      };
-      if (subtreeHidden) {
-        result.subtreeHidden = true;
-      } else if ('subtreeHidden' in result) {
-        delete result.subtreeHidden;
-      }
-      return result;
-    }
-
-    const result = {
-      ...node,
-      groupHidden: hiddenByAncestor,
-      hidden: hiddenByAncestor || subtreeHidden || (previouslyHidden && !previousGroupHidden),
-    };
-    if (subtreeHidden) {
-      result.subtreeHidden = true;
-    } else if ('subtreeHidden' in result) {
-      delete result.subtreeHidden;
-    }
-    return result;
+    return node.type === 'group'
+      ? computeGroupNodeVisibility(node, hiddenByAncestor)
+      : computeRegularNodeVisibility(node, hiddenByAncestor);
   });
 
   // Filter out old synthetic edges and compute new ones dynamically
@@ -209,19 +234,7 @@ export const applyGroupVisibility = (nodes, edges) => {
     return acc;
   }, new Map());
 
-  const nextEdges = allEdges.map((edge) => {
-    const sourceInfo = nodeHiddenLookup.get(edge.source);
-    const targetInfo = nodeHiddenLookup.get(edge.target);
-    const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
-    const effectiveHidden = (sourceInfo?.hidden ?? false) || (targetInfo?.hidden ?? false);
-
-    // If either endpoint node is hidden, hide the edge
-    return {
-      ...edge,
-      groupHidden: effectiveGroupHidden,
-      hidden: effectiveHidden,
-    };
-  });
+  const nextEdges = applyEdgeVisibility(allEdges, nodeHiddenLookup);
 
   return { nodes: nextNodes, edges: nextEdges };
 };

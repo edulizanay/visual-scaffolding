@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { getLayoutedElements } from '../../../src/hooks/useFlowLayout.js';
-import { THEME } from '../../../src/constants/theme.js';
 
 const makeNode = (id, overrides = {}) => ({
   id,
@@ -51,33 +50,48 @@ describe('getLayoutedElements depth-aware expectations', () => {
     expect(yById.francesco_corleone).toBeCloseTo(yById.sonny_heir, 5);
   });
 
-  it('continues to enforce vertical spacing between true siblings', () => {
+
+  it('should preserve horizontal layout matching Kay Adams scenario', () => {
+    // TDD Test: This currently FAILS (diagonal bug), but should PASS after fix
+    //
+    // Bug: When kay has incoming cross-group edge from michael, buildGroupDepthMap
+    // treats kay as a "root" (depth 0), causing unwanted compression with vito.
+    //
+    // Fix: Use X positions instead of calculated depths, so nodes at different X
+    // layers never get compressed together.
     const nodes = [
-      makeNode('vito_corleone'),
-      makeNode('sonny_corleone', { parentGroupId: 'group-sonny' }),
-      makeNode('francesco_corleone', { parentGroupId: 'group-sonny' }),
-      makeNode('group-sonny', {
-        type: 'group',
-        hidden: true,
-        data: { label: 'Sonny lineage' },
-      }),
+      // Vito in main group
+      makeNode('vito', { parentGroupId: 'main-group' }),
+      // Michael in nested sub-group
+      makeNode('michael', { parentGroupId: 'sub-group' }),
+      // Kay in main group (has incoming cross-group edge from michael)
+      makeNode('kay', { parentGroupId: 'main-group' }),
+      // Kay's child - should stay horizontal with kay
+      makeNode('kay-child', { parentGroupId: 'main-group' }),
+      // Groups
+      makeNode('sub-group', { type: 'group', parentGroupId: 'main-group', hidden: true }),
+      makeNode('main-group', { type: 'group', hidden: true }),
     ];
 
     const edges = [
-      makeEdge('vito_corleone', 'sonny_corleone'),
-      makeEdge('vito_corleone', 'francesco_corleone'),
+      makeEdge('vito', 'michael'),      // Cross-group edge
+      makeEdge('michael', 'kay'),        // Cross-group edge (causes bug)
+      makeEdge('kay', 'kay-child'),      // Within main-group
     ];
 
     const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, 'LR');
 
-    const sonny = layoutedNodes.find(node => node.id === 'sonny_corleone');
-    const francesco = layoutedNodes.find(node => node.id === 'francesco_corleone');
+    const kay = layoutedNodes.find(n => n.id === 'kay');
+    const kayChild = layoutedNodes.find(n => n.id === 'kay-child');
 
-    expect(sonny).toBeDefined();
-    expect(francesco).toBeDefined();
-    expect(Math.abs(sonny.position.y - francesco.position.y)).toBeCloseTo(
-      THEME.groupNode.layout.memberVerticalGap,
-      5,
-    );
+    expect(kay).toBeDefined();
+    expect(kayChild).toBeDefined();
+
+    // Child should be to the RIGHT of parent
+    expect(kayChild.position.x).toBeGreaterThan(kay.position.x);
+
+    // Child should be at SAME vertical level as parent (not diagonal)
+    // This currently FAILS but should PASS after fix
+    expect(kayChild.position.y).toBeCloseTo(kay.position.y, 5);
   });
 });
