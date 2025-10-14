@@ -316,29 +316,29 @@ function toolEndpoint(config) {
         });
       }
 
-      const result = await executeToolCalls([{
+      const [executionResult] = await executeToolCalls([{
         name: config.toolName,
         params
       }]);
 
-      if (result[0].success) {
+      if (executionResult.success) {
         await writeFlow(
-          result[0].updatedFlow,
-          config.skipSnapshot?.(req, result[0]) ?? false
+          executionResult.updatedFlow,
+          config.skipSnapshot?.(req, executionResult) ?? false
         );
 
         const response = {
           success: true,
-          flow: result[0].updatedFlow
+          flow: executionResult.updatedFlow
         };
 
         if (config.extraFields) {
-          Object.assign(response, config.extraFields(result[0]));
+          Object.assign(response, config.extraFields(executionResult));
         }
 
         res.json(response);
       } else {
-        res.status(400).json({ success: false, error: result[0].error });
+        res.status(400).json({ success: false, error: executionResult.error });
       }
     } catch (error) {
       logError(config.action, error);
