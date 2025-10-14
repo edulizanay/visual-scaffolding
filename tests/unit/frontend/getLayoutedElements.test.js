@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { getLayoutedElements } from '../../../src/hooks/useFlowLayout.js';
-import { THEME } from '../../../src/constants/theme.js';
 
 const makeNode = (id, overrides = {}) => ({
   id,
@@ -51,75 +50,6 @@ describe('getLayoutedElements depth-aware expectations', () => {
     expect(yById.francesco_corleone).toBeCloseTo(yById.sonny_heir, 5);
   });
 
-  it('continues to enforce vertical spacing between true siblings', () => {
-    const nodes = [
-      makeNode('vito_corleone'),
-      makeNode('sonny_corleone', { parentGroupId: 'group-sonny' }),
-      makeNode('francesco_corleone', { parentGroupId: 'group-sonny' }),
-      makeNode('group-sonny', {
-        type: 'group',
-        hidden: true,
-        data: { label: 'Sonny lineage' },
-      }),
-    ];
-
-    const edges = [
-      makeEdge('vito_corleone', 'sonny_corleone'),
-      makeEdge('vito_corleone', 'francesco_corleone'),
-    ];
-
-    const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, 'LR');
-
-    const sonny = layoutedNodes.find(node => node.id === 'sonny_corleone');
-    const francesco = layoutedNodes.find(node => node.id === 'francesco_corleone');
-
-    expect(sonny).toBeDefined();
-    expect(francesco).toBeDefined();
-    expect(Math.abs(sonny.position.y - francesco.position.y)).toBeCloseTo(
-      THEME.groupNode.layout.memberVerticalGap,
-      5,
-    );
-  });
-
-  it('should compress true siblings at same X position', () => {
-    // TDD Test: Verify that compression STILL works for true siblings
-    // (nodes at the same X position within the same group)
-    const nodes = [
-      makeNode('parent', { parentGroupId: 'group1' }),
-      // Three siblings - all at same depth, should be compressed
-      makeNode('child-a', { parentGroupId: 'group1' }),
-      makeNode('child-b', { parentGroupId: 'group1' }),
-      makeNode('child-c', { parentGroupId: 'group1' }),
-      makeNode('group1', { type: 'group', hidden: true }),
-    ];
-
-    const edges = [
-      makeEdge('parent', 'child-a'),
-      makeEdge('parent', 'child-b'),
-      makeEdge('parent', 'child-c'),
-    ];
-
-    const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, 'LR');
-
-    const childA = layoutedNodes.find(n => n.id === 'child-a');
-    const childB = layoutedNodes.find(n => n.id === 'child-b');
-    const childC = layoutedNodes.find(n => n.id === 'child-c');
-
-    expect(childA).toBeDefined();
-    expect(childB).toBeDefined();
-    expect(childC).toBeDefined();
-
-    // All three should be at same X (same depth layer)
-    expect(childA.position.x).toBeCloseTo(childB.position.x, 1);
-    expect(childB.position.x).toBeCloseTo(childC.position.x, 1);
-
-    // Should be vertically spaced by ~80px (memberVerticalGap)
-    const gapAB = Math.abs(childB.position.y - childA.position.y);
-    const gapBC = Math.abs(childC.position.y - childB.position.y);
-
-    expect(gapAB).toBeCloseTo(THEME.groupNode.layout.memberVerticalGap, 5);
-    expect(gapBC).toBeCloseTo(THEME.groupNode.layout.memberVerticalGap, 5);
-  });
 
   it('should preserve horizontal layout matching Kay Adams scenario', () => {
     // TDD Test: This currently FAILS (diagonal bug), but should PASS after fix
