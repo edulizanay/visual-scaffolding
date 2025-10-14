@@ -1,13 +1,16 @@
 # Test Suite Documentation
 
 ## Overview
-- **Total Tests**: 380+ tests across 20 test files
-- **Test Runner**: Jest with ES modules (`NODE_OPTIONS=--experimental-vm-modules`)
-- **Frontend Testing**: React Testing Library with jsdom environment
+- **Total Tests**: 542 passing tests (2 skipped) across 34 test files
+- **Test Runner**: Vitest (migrated from Jest October 2025)
+- **Frontend Testing**: React Testing Library with happy-dom environment
 - **Backend Integration**: Supertest for full-stack workflow testing
 - **Database**: In-memory SQLite (`:memory:`) for isolation
 - **Run All Tests**: `npm test`
-- **Run Specific**: `NODE_OPTIONS=--experimental-vm-modules npx jest <path>`
+- **Run with Coverage**: `npm run test:coverage` (86.38% overall coverage)
+- **Run Specific**: `npx vitest run <path>`
+- **Watch Mode**: `npm run test:watch`
+- **UI Mode**: `npm run test:ui`
 
 ## Testing Tools
 
@@ -15,7 +18,7 @@
 - **React Testing Library** - Component rendering and user interaction testing
 - **@testing-library/jest-dom** - DOM matchers (e.g., `toBeInTheDocument()`, `toHaveClass()`)
 - **@testing-library/user-event** - Realistic user event simulation
-- **jsdom** - Browser environment simulation for React components
+- **happy-dom** - Lightweight browser environment simulation for React components (faster than jsdom)
 - **Setup file**: [tests/setup-frontend.js](../../tests/setup-frontend.js) - Configures mocks for React Flow (matchMedia, IntersectionObserver, ResizeObserver)
 
 ### Backend/Integration Testing
@@ -29,8 +32,9 @@
 1. **All tests use in-memory database** - Set via `process.env.DB_PATH = ':memory:'` in `beforeEach`
 2. **All test files have ABOUTME comments** - Two lines at top explaining purpose
 3. **Database cleanup** - `closeDb()` called in `afterEach`
-4. **ES Modules** - All tests require `NODE_OPTIONS=--experimental-vm-modules`
-5. **Jest mock files must use `.cjs` extension** - Jest's `moduleNameMapper` uses `require()` which cannot load ES modules. All mock files in `tests/mocks/` must use `.cjs` extension (e.g., `styleMock.cjs`)
+4. **ES Modules** - Native ESM support with Vitest (no experimental flags needed)
+5. **Mock files use `.js` extension** - Standard ES module mocks in `tests/mocks/` (e.g., `styleMock.js`)
+6. **Coverage reports** - HTML reports generated at `coverage/index.html` via `npm run test:coverage`
 
 ## Test Organization
 
