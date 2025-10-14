@@ -160,6 +160,31 @@ const computeAncestorHiddenSet = (nodes) => {
   return hidden;
 };
 
+/**
+ * Applies visibility rules to edges based on their endpoint nodes.
+ * An edge is hidden if either its source or target node is hidden.
+ */
+const applyEdgeVisibility = (edges, nodeVisibilityMap) => {
+  return edges.map((edge) => {
+    const sourceInfo = nodeVisibilityMap.get(edge.source);
+    const targetInfo = nodeVisibilityMap.get(edge.target);
+    const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
+    const effectiveHidden = (sourceInfo?.hidden ?? false) || (targetInfo?.hidden ?? false);
+
+    return {
+      ...edge,
+      groupHidden: effectiveGroupHidden,
+      hidden: effectiveHidden,
+    };
+  });
+};
+
+/**
+ * Computes visibility state for all nodes and edges based on group collapse state.
+ * 1. Determines which nodes are hidden by collapsed ancestor groups
+ * 2. Generates synthetic edges for collapsed groups
+ * 3. Hides edges whose endpoints are hidden
+ */
 export const applyGroupVisibility = (nodes, edges) => {
   const ancestorHidden = computeAncestorHiddenSet(nodes);
 
@@ -209,19 +234,7 @@ export const applyGroupVisibility = (nodes, edges) => {
     return acc;
   }, new Map());
 
-  const nextEdges = allEdges.map((edge) => {
-    const sourceInfo = nodeHiddenLookup.get(edge.source);
-    const targetInfo = nodeHiddenLookup.get(edge.target);
-    const effectiveGroupHidden = (sourceInfo?.groupHidden ?? false) || (targetInfo?.groupHidden ?? false);
-    const effectiveHidden = (sourceInfo?.hidden ?? false) || (targetInfo?.hidden ?? false);
-
-    // If either endpoint node is hidden, hide the edge
-    return {
-      ...edge,
-      groupHidden: effectiveGroupHidden,
-      hidden: effectiveHidden,
-    };
-  });
+  const nextEdges = applyEdgeVisibility(allEdges, nodeHiddenLookup);
 
   return { nodes: nextNodes, edges: nextEdges };
 };
