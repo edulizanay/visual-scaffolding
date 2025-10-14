@@ -42,21 +42,6 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 
   const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
 
-  const syntheticEdges = edges.filter(e => e.data?.isSyntheticGroupEdge);
-  const skippedSynthetic = syntheticEdges.filter(e =>
-    !visibleNodeIds.has(e.source) || !visibleNodeIds.has(e.target)
-  );
-
-  if (skippedSynthetic.length > 0) {
-    console.log('[DEBUG DAGRE] Skipping synthetic edges:', skippedSynthetic.map(e => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      sourceVisible: visibleNodeIds.has(e.source),
-      targetVisible: visibleNodeIds.has(e.target),
-    })));
-  }
-
   edges.forEach((edge) => {
     if (visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)) {
       dagreGraph.setEdge(edge.source, edge.target);
@@ -66,9 +51,7 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   dagre.layout(dagreGraph);
 
   const newNodes = nodes.map((node) => {
-    if (node.hidden) return node;
-
-    const nodeWithPosition = dagreGraph.node(node.id);
+    const nodeWithPosition = !node.hidden && dagreGraph.node(node.id);
     if (!nodeWithPosition) return node;
 
     return {
@@ -120,7 +103,7 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
       // Interpolate node positions
       const animatedNodes = currentNodes.map((node) => {
         const targetNode = layoutedNodes.find(n => n.id === node.id);
-        if (!targetNode) return targetNode || node;
+        if (!targetNode) return node;
 
         return {
           ...targetNode,
@@ -165,6 +148,5 @@ export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
     isAnimating,
     fitViewPadding,
     getAllDescendants,
-    getLayoutedElements,
   };
 }
