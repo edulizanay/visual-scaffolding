@@ -374,7 +374,7 @@ function toolEndpoint(config) {
       if (executionResult.success) {
         await writeFlow(
           executionResult.updatedFlow,
-          config.skipSnapshot?.(req, executionResult) ?? false
+          config.skipSnapshot ?? false
         );
 
         const response = {
@@ -412,7 +412,7 @@ app.put('/api/node/:id', toolEndpoint({
   toolName: 'updateNode',
   action: 'updating node',
   extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
-  skipSnapshot: () => true
+  skipSnapshot: true
 }));
 
 app.delete('/api/node/:id', toolEndpoint({
@@ -435,7 +435,7 @@ app.put('/api/edge/:id', toolEndpoint({
   toolName: 'updateEdge',
   action: 'updating edge',
   extractParams: (req) => ({ edgeId: req.params.id, ...req.body }),
-  skipSnapshot: () => true
+  skipSnapshot: true
 }));
 
 app.delete('/api/edge/:id', toolEndpoint({
