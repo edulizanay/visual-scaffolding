@@ -272,10 +272,9 @@ app.get('/api/flow/history-status', async (req, res) => {
 app.post('/api/node', async (req, res) => {
   try {
     const { label, description, parentNodeId, edgeLabel, id } = req.body;
-    
+
     // Label is optional - will be auto-generated if not provided
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'addNode',
       params: { label, description, parentNodeId, edgeLabel, id }
@@ -298,7 +297,6 @@ app.put('/api/node/:id', async (req, res) => {
     const { id } = req.params;
     const { label, description, position } = req.body;
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'updateNode',
       params: { nodeId: id, label, description, position }
@@ -320,7 +318,6 @@ app.delete('/api/node/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'deleteNode',
       params: { nodeId: id }
@@ -342,12 +339,11 @@ app.delete('/api/node/:id', async (req, res) => {
 app.post('/api/edge', async (req, res) => {
   try {
     const { sourceNodeId, targetNodeId, label } = req.body;
-    
+
     if (!sourceNodeId || !targetNodeId) {
       return res.status(400).json({ success: false, error: 'sourceNodeId and targetNodeId are required' });
     }
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'addEdge',
       params: { sourceNodeId, targetNodeId, label }
@@ -370,7 +366,6 @@ app.put('/api/edge/:id', async (req, res) => {
     const { id } = req.params;
     const { label } = req.body;
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'updateEdge',
       params: { edgeId: id, label }
@@ -392,7 +387,6 @@ app.delete('/api/edge/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'deleteEdge',
       params: { edgeId: id }
@@ -414,12 +408,11 @@ app.delete('/api/edge/:id', async (req, res) => {
 app.post('/api/group', async (req, res) => {
   try {
     const { memberIds, label, position } = req.body;
-    
+
     if (!memberIds || !Array.isArray(memberIds) || memberIds.length < 2) {
       return res.status(400).json({ success: false, error: 'At least 2 memberIds are required' });
     }
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'createGroup',
       params: { memberIds, label, position }
@@ -441,7 +434,6 @@ app.delete('/api/group/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'ungroup',
       params: { groupId: id }
@@ -464,7 +456,6 @@ app.put('/api/group/:id/expand', async (req, res) => {
     const { id } = req.params;
     const { expand } = req.body;
 
-    const flow = await readFlow();
     const result = await executeToolCalls([{
       name: 'toggleGroupExpansion',
       params: { groupId: id, expand }
