@@ -551,6 +551,36 @@ const computeHaloPaddingForDepth = (depth, config) => {
   return padding;
 };
 
+/**
+ * Computes the axis-aligned bounding box for a collection of nodes.
+ * Returns null if nodes array is empty or bounds are invalid (non-finite).
+ */
+export const computeNodeBounds = (nodes, getNodeDimensions) => {
+  if (!nodes || nodes.length === 0) return null;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  nodes.forEach((node) => {
+    const { width = 0, height = 0 } = getNodeDimensions?.(node) ?? {};
+    const x = node?.position?.x ?? 0;
+    const y = node?.position?.y ?? 0;
+
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + width);
+    maxY = Math.max(maxY, y + height);
+  });
+
+  if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+    return null;
+  }
+
+  return { minX, minY, maxX, maxY };
+};
+
 export const getExpandedGroupHalos = (nodes, getNodeDimensions, paddingConfig = THEME.groupNode.halo.padding) => {
   if (!Array.isArray(nodes) || !nodes.length) return [];
 
@@ -573,29 +603,12 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, paddingConfig = 
 
     if (!descendants.length) return;
 
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    descendants.forEach((node) => {
-      const { width = 0, height = 0 } = getNodeDimensions ? getNodeDimensions(node) : {};
-      const x = node?.position?.x ?? 0;
-      const y = node?.position?.y ?? 0;
-
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + width);
-      maxY = Math.max(maxY, y + height);
-    });
-
-    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
-      return;
-    }
+    const bounds = computeNodeBounds(descendants, getNodeDimensions);
+    if (!bounds) return;
 
     candidates.push({
       node: groupNode,
-      bounds: { minX, minY, maxX, maxY },
+      bounds,
     });
   });
 

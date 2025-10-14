@@ -12,6 +12,7 @@ import {
   ungroup,
   getExpandedGroupHalos,
   collapseSubtreeByHandles,
+  computeNodeBounds,
 } from '../src/utils/groupUtils.js';
 import { THEME } from '../src/constants/theme.js';
 
@@ -99,31 +100,7 @@ describe('getExpandedGroupHalos', () => {
       .map((id) => nodes.find((node) => node.id === id))
       .filter((node) => node && !node.hidden && !node.groupHidden);
 
-    if (!descendants.length) {
-      return null;
-    }
-
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    descendants.forEach((node) => {
-      const { width = 0, height = 0 } = dimensions ? dimensions(node) : {};
-      const x = node?.position?.x ?? 0;
-      const y = node?.position?.y ?? 0;
-
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + width);
-      maxY = Math.max(maxY, y + height);
-    });
-
-    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
-      return null;
-    }
-
-    return { minX, minY, maxX, maxY };
+    return computeNodeBounds(descendants, dimensions);
   };
 
   test('returns empty array when no groups are expanded', () => {
