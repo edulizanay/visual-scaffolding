@@ -268,210 +268,117 @@ app.get('/api/flow/history-status', async (req, res) => {
 // Unified Flow Command Endpoints
 // These endpoints provide REST API access to all flow operations for UI consistency
 
+function toolEndpoint(config) {
+  return async (req, res) => {
+    try {
+      const params = config.extractParams(req);
+
+      if (config.validate && !config.validate(params)) {
+        return res.status(400).json({
+          success: false,
+          error: config.validationError
+        });
+      }
+
+      const result = await executeToolCalls([{
+        name: config.toolName,
+        params
+      }]);
+
+      if (result[0].success) {
+        await writeFlow(
+          result[0].updatedFlow,
+          config.skipSnapshot?.(req, result[0]) ?? false
+        );
+
+        const response = {
+          success: true,
+          flow: result[0].updatedFlow
+        };
+
+        if (config.extraFields) {
+          Object.assign(response, config.extraFields(result[0]));
+        }
+
+        res.json(response);
+      } else {
+        res.status(400).json({ success: false, error: result[0].error });
+      }
+    } catch (error) {
+      console.error(`Error ${config.action}:`, error);
+      res.status(500).json({
+        success: false,
+        error: `Failed to ${config.action}`
+      });
+    }
+  };
+}
+
 // Node operations
-app.post('/api/node', async (req, res) => {
-  try {
-    const { label, description, parentNodeId, edgeLabel, id } = req.body;
+app.post('/api/node', toolEndpoint({
+  toolName: 'addNode',
+  action: 'creating node',
+  extractParams: (req) => req.body,
+  extraFields: (result) => ({ nodeId: result.nodeId })
+}));
 
-    // Label is optional - will be auto-generated if not provided
+app.put('/api/node/:id', toolEndpoint({
+  toolName: 'updateNode',
+  action: 'updating node',
+  extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
+  skipSnapshot: () => true
+}));
 
-    const result = await executeToolCalls([{
-      name: 'addNode',
-      params: { label, description, parentNodeId, edgeLabel, id }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow, nodeId: result[0].nodeId });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error creating node:', error);
-    res.status(500).json({ success: false, error: 'Failed to create node' });
-  }
-});
-
-app.put('/api/node/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { label, description, position } = req.body;
-
-    const result = await executeToolCalls([{
-      name: 'updateNode',
-      params: { nodeId: id, label, description, position }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow, true); // Skip snapshot for label updates
-      res.json({ success: true, flow: result[0].updatedFlow });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error updating node:', error);
-    res.status(500).json({ success: false, error: 'Failed to update node' });
-  }
-});
-
-app.delete('/api/node/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await executeToolCalls([{
-      name: 'deleteNode',
-      params: { nodeId: id }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error deleting node:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete node' });
-  }
-});
+app.delete('/api/node/:id', toolEndpoint({
+  toolName: 'deleteNode',
+  action: 'deleting node',
+  extractParams: (req) => ({ nodeId: req.params.id })
+}));
 
 // Edge operations
-app.post('/api/edge', async (req, res) => {
-  try {
-    const { sourceNodeId, targetNodeId, label } = req.body;
+app.post('/api/edge', toolEndpoint({
+  toolName: 'addEdge',
+  action: 'creating edge',
+  extractParams: (req) => req.body,
+  validate: (params) => params.sourceNodeId && params.targetNodeId,
+  validationError: 'sourceNodeId and targetNodeId are required',
+  extraFields: (result) => ({ edgeId: result.edgeId })
+}));
 
-    if (!sourceNodeId || !targetNodeId) {
-      return res.status(400).json({ success: false, error: 'sourceNodeId and targetNodeId are required' });
-    }
+app.put('/api/edge/:id', toolEndpoint({
+  toolName: 'updateEdge',
+  action: 'updating edge',
+  extractParams: (req) => ({ edgeId: req.params.id, ...req.body }),
+  skipSnapshot: () => true
+}));
 
-    const result = await executeToolCalls([{
-      name: 'addEdge',
-      params: { sourceNodeId, targetNodeId, label }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow, edgeId: result[0].edgeId });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error creating edge:', error);
-    res.status(500).json({ success: false, error: 'Failed to create edge' });
-  }
-});
-
-app.put('/api/edge/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { label } = req.body;
-
-    const result = await executeToolCalls([{
-      name: 'updateEdge',
-      params: { edgeId: id, label }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow, true); // Skip snapshot for label updates
-      res.json({ success: true, flow: result[0].updatedFlow });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error updating edge:', error);
-    res.status(500).json({ success: false, error: 'Failed to update edge' });
-  }
-});
-
-app.delete('/api/edge/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await executeToolCalls([{
-      name: 'deleteEdge',
-      params: { edgeId: id }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error deleting edge:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete edge' });
-  }
-});
+app.delete('/api/edge/:id', toolEndpoint({
+  toolName: 'deleteEdge',
+  action: 'deleting edge',
+  extractParams: (req) => ({ edgeId: req.params.id })
+}));
 
 // Group operations
-app.post('/api/group', async (req, res) => {
-  try {
-    const { memberIds, label, position } = req.body;
+app.post('/api/group', toolEndpoint({
+  toolName: 'createGroup',
+  action: 'creating group',
+  extractParams: (req) => req.body,
+  validate: (params) => params.memberIds && Array.isArray(params.memberIds) && params.memberIds.length >= 2,
+  validationError: 'At least 2 memberIds are required',
+  extraFields: (result) => ({ groupId: result.groupId })
+}));
 
-    if (!memberIds || !Array.isArray(memberIds) || memberIds.length < 2) {
-      return res.status(400).json({ success: false, error: 'At least 2 memberIds are required' });
-    }
+app.delete('/api/group/:id', toolEndpoint({
+  toolName: 'ungroup',
+  action: 'ungrouping',
+  extractParams: (req) => ({ groupId: req.params.id })
+}));
 
-    const result = await executeToolCalls([{
-      name: 'createGroup',
-      params: { memberIds, label, position }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow, groupId: result[0].groupId });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error creating group:', error);
-    res.status(500).json({ success: false, error: 'Failed to create group' });
-  }
-});
-
-app.delete('/api/group/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await executeToolCalls([{
-      name: 'ungroup',
-      params: { groupId: id }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error ungrouping:', error);
-    res.status(500).json({ success: false, error: 'Failed to ungroup' });
-  }
-});
-
-app.put('/api/group/:id/expand', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { expand } = req.body;
-
-    const result = await executeToolCalls([{
-      name: 'toggleGroupExpansion',
-      params: { groupId: id, expand }
-    }]);
-
-    if (result[0].success) {
-      await writeFlow(result[0].updatedFlow);
-      res.json({ success: true, flow: result[0].updatedFlow });
-    } else {
-      res.status(400).json({ success: false, error: result[0].error });
-    }
-  } catch (error) {
-    console.error('Error toggling group expansion:', error);
-    res.status(500).json({ success: false, error: 'Failed to toggle group expansion' });
-  }
-});
+app.put('/api/group/:id/expand', toolEndpoint({
+  toolName: 'toggleGroupExpansion',
+  action: 'toggling group expansion',
+  extractParams: (req) => ({ groupId: req.params.id, ...req.body })
+}));
 
 // Tool executor is used directly by tests from server/tools/executor.js
 
