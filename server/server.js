@@ -308,6 +308,12 @@ app.delete('/api/conversation/history', async (req, res) => {
   }
 });
 
+// Executes a single tool call and returns the result
+async function executeSingleTool(toolName, params) {
+  const [result] = await executeToolCalls([{ name: toolName, params }]);
+  return result;
+}
+
 // Executes undo/redo operations with consistent null-check and state persistence
 async function executeHistoryOperation(operationFn, operationName) {
   const state = await operationFn();
@@ -369,10 +375,7 @@ function toolEndpoint(config) {
         }
       }
 
-      const [executionResult] = await executeToolCalls([{
-        name: config.toolName,
-        params
-      }]);
+      const executionResult = await executeSingleTool(config.toolName, params);
 
       if (executionResult.success) {
         await writeFlow(
