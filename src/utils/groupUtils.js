@@ -30,6 +30,33 @@ const buildNodeMap = (nodes) =>
   }, new Map());
 
 /**
+ * Normalizes a single axis config (x or y) by merging with fallback defaults.
+ * Validates that all numeric properties are actually numbers, falling back otherwise.
+ */
+const normalizeAxisConfig = (value, fallback) => {
+  if (typeof value === 'number') {
+    return { ...fallback, base: value };
+  }
+  if (!value || typeof value !== 'object') {
+    return fallback;
+  }
+  return {
+    base: typeof value.base === 'number' ? value.base : fallback.base,
+    increment: typeof value.increment === 'number' ? value.increment : fallback.increment,
+    decay: typeof value.decay === 'number' ? value.decay : fallback.decay,
+    minStep: typeof value.minStep === 'number' ? value.minStep : fallback.minStep,
+  };
+};
+
+/**
+ * Extracts x/y axis pair from config (handles number, object with x/y, or object with base).
+ */
+const extractAxisPair = (config, defaults) => ({
+  x: normalizeAxisConfig(config?.x ?? config?.base ?? config, defaults.x),
+  y: normalizeAxisConfig(config?.y ?? config?.base ?? config, defaults.y),
+});
+
+/**
  * Traverse descendants by parentGroupId (used by multiple operations).
  */
 export const getGroupDescendants = (nodeId, nodes) => {
@@ -399,63 +426,11 @@ export const addChildNode = (flow, parentId, factory) => {
 };
 
 const normalizeHaloPaddingConfig = (paddingConfig) => {
+  const defaultAxis = { base: 16, increment: 0, decay: 1, minStep: 0 };
   const themePadding = THEME?.groupNode?.halo?.padding ?? {};
 
-  const normalizeAxis = (axisConfig, fallback) => {
-    if (typeof axisConfig === 'number') {
-      return {
-        base: axisConfig,
-        increment: fallback.increment,
-        decay: fallback.decay,
-        minStep: fallback.minStep,
-      };
-    }
-    if (!axisConfig || typeof axisConfig !== 'object') {
-      return fallback;
-    }
-
-    return {
-      base: typeof axisConfig.base === 'number' ? axisConfig.base : fallback.base,
-      increment: typeof axisConfig.increment === 'number' ? axisConfig.increment : fallback.increment,
-      decay: typeof axisConfig.decay === 'number' ? axisConfig.decay : fallback.decay,
-      minStep: typeof axisConfig.minStep === 'number' ? axisConfig.minStep : fallback.minStep,
-    };
-  };
-
-  const defaultAxis = { base: 16, increment: 0, decay: 1, minStep: 0 };
-
-  let normalizedTheme = {
-    x: defaultAxis,
-    y: defaultAxis,
-  };
-
-  if (typeof themePadding === 'number') {
-    normalizedTheme = {
-      x: normalizeAxis(themePadding, defaultAxis),
-      y: normalizeAxis(themePadding, defaultAxis),
-    };
-  } else if (themePadding && typeof themePadding === 'object') {
-    normalizedTheme = {
-      x: normalizeAxis(themePadding.x ?? themePadding.base ?? themePadding, defaultAxis),
-      y: normalizeAxis(themePadding.y ?? themePadding.base ?? themePadding, defaultAxis),
-    };
-  }
-
-  if (typeof paddingConfig === 'number') {
-    return {
-      x: normalizeAxis(paddingConfig, normalizedTheme.x),
-      y: normalizeAxis(paddingConfig, normalizedTheme.y),
-    };
-  }
-
-  if (paddingConfig && typeof paddingConfig === 'object') {
-    return {
-      x: normalizeAxis(paddingConfig.x ?? paddingConfig.base ?? paddingConfig, normalizedTheme.x),
-      y: normalizeAxis(paddingConfig.y ?? paddingConfig.base ?? paddingConfig, normalizedTheme.y),
-    };
-  }
-
-  return normalizedTheme;
+  const themeDefaults = extractAxisPair(themePadding, { x: defaultAxis, y: defaultAxis });
+  return extractAxisPair(paddingConfig, themeDefaults);
 };
 
 const buildEligibleGroupChildMap = (nodes, eligibleGroupIds) => {
