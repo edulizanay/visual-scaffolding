@@ -53,48 +53,4 @@ describe('Undo/Redo with Auto-save', () => {
     const redoResult = await redo();
     expect(redoResult.nodes[0].data.label).toBe('C');
   });
-
-  test.skip('auto-save with position change after undo should not truncate redo chain', async () => {
-    // TODO: Feature not implemented - position-only updates should preserve redo chain
-    // See: .agent/tasks/tech-debt.md - "Undo/Redo Position-Only Update Feature"
-    // Currently, ANY snapshot after undo truncates the redo chain (expected behavior)
-
-    // Create state A
-    const stateA = {
-      nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'A' } }],
-      edges: []
-    };
-    await pushSnapshot(stateA);
-
-    // Create state B
-    const stateB = {
-      nodes: [{ id: '1', position: { x: 100, y: 100 }, data: { label: 'B' } }],
-      edges: []
-    };
-    await pushSnapshot(stateB);
-
-    // Create state C
-    const stateC = {
-      nodes: [{ id: '1', position: { x: 200, y: 200 }, data: { label: 'C' } }],
-      edges: []
-    };
-    await pushSnapshot(stateC);
-
-    // Undo to B
-    await undo();
-
-    // Simulate auto-save with position change (same label, different position)
-    const stateBMoved = {
-      nodes: [{ id: '1', position: { x: 150, y: 150 }, data: { label: 'B' } }],
-      edges: []
-    };
-    await pushSnapshot(stateBMoved);
-
-    // Should update position but keep redo chain
-    expect(await canRedo()).toBe(true);
-
-    // Verify redo still returns state C
-    const redoResult = await redo();
-    expect(redoResult.nodes[0].data.label).toBe('C');
-  });
 });

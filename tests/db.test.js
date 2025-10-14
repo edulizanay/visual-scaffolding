@@ -304,26 +304,6 @@ describe('Undo/Redo Operations', () => {
     expect(status.snapshotCount).toBe(1); // Only one saved
   });
 
-  it.skip('should update positions without creating new snapshot', () => {
-    // TODO: Feature not implemented - position-only updates should update existing snapshot
-    // See: .agent/tasks/tech-debt.md - "Undo/Redo Position-Only Update Feature"
-    // This test expects smart position-only change detection which doesn't exist yet
-    const state1 = { nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'A' } }], edges: [] };
-    const state2 = { nodes: [{ id: '1', position: { x: 100, y: 100 }, data: { label: 'A' } }], edges: [] };
-
-    pushUndoSnapshot(state1);
-    pushUndoSnapshot(state2); // Same data, different position
-
-    const status = getUndoStatus();
-    expect(status.snapshotCount).toBe(1); // Position update, not new snapshot
-
-    // Verify the snapshot was updated with new position
-    const db = getDb();
-    const snapshot = db.prepare('SELECT snapshot FROM undo_history WHERE id = 1').get();
-    const parsedSnapshot = JSON.parse(snapshot.snapshot);
-    expect(parsedSnapshot.nodes[0].position.x).toBe(100); // Updated position
-  });
-
   it('should truncate redo chain on new snapshot after undo', () => {
     const stateA = { nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'A' } }], edges: [] };
     const stateB = { nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'B' } }], edges: [] };

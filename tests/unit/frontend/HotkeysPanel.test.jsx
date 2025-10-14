@@ -2,7 +2,7 @@
 // ABOUTME: Validates rendering, toggle behavior, and hotkey display
 
 import React from 'react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import HotkeysPanel from '../../../src/HotkeysPanel';
 
@@ -22,6 +22,9 @@ vi.mock('../../../src/constants/theme.js', () => ({
         border: '#6366f1',
         text: '#ffffff',
       },
+    },
+    text: {
+      tertiary: 'rgba(255, 255, 255, 0.5)',
     },
   },
 }));
@@ -46,7 +49,7 @@ describe('HotkeysPanel Component', () => {
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
-      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
+      expect(screen.getByText('Shortcuts')).toBeInTheDocument();
     });
 
     it('should display all categories', () => {
@@ -70,13 +73,14 @@ describe('HotkeysPanel Component', () => {
       expect(screen.getByText('Ungroup')).toBeInTheDocument();
     });
 
-    it('should display hotkey descriptions', () => {
+    it('should display hotkey labels without descriptions', () => {
       render(<HotkeysPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
-      expect(screen.getByText('Undo the last action')).toBeInTheDocument();
-      expect(screen.getByText('Combine 2+ selected nodes into a group')).toBeInTheDocument();
+      // Component shows labels only (not descriptions) for streamlined UI
+      expect(screen.getByText('Undo')).toBeInTheDocument();
+      expect(screen.getByText('Group Nodes')).toBeInTheDocument();
     });
 
     it('should display formatted key combinations', () => {
