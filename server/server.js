@@ -14,6 +14,25 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Builds consistent conversation endpoint responses with optional fields
+function buildConversationResponse({ success, thinking, response, iterations, toolCalls, execution, updatedFlow, errors, message, parseError }) {
+  const baseResponse = {
+    success,
+    thinking,
+    iterations
+  };
+
+  if (response !== undefined) baseResponse.response = response;
+  if (parseError !== undefined) baseResponse.parseError = parseError;
+  if (toolCalls !== undefined) baseResponse.toolCalls = toolCalls;
+  if (execution !== undefined) baseResponse.execution = execution;
+  if (updatedFlow !== undefined) baseResponse.updatedFlow = updatedFlow;
+  if (errors !== undefined) baseResponse.errors = errors;
+  if (message !== undefined) baseResponse.message = message;
+
+  return baseResponse;
+}
+
 export async function readFlow() {
   return dbGetFlow();
 }
@@ -77,13 +96,13 @@ app.post('/api/conversation/message', async (req, res) => {
     if (!hasGroqKey && !hasCerebrasKey) {
       const flowState = await readFlow();
 
-      return res.json({
+      return res.json(buildConversationResponse({
         success: false,
         thinking: 'LLM disabled: missing API keys',
         response: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable AI-assisted updates.',
         iterations: 0,
         updatedFlow: flowState,
-      });
+      }));
     }
 
     // Save user message to conversation history
@@ -112,25 +131,25 @@ app.post('/api/conversation/message', async (req, res) => {
 
       // Handle parse errors
       if (parsed.parseError) {
-        return res.json({
+        return res.json(buildConversationResponse({
           success: false,
           parseError: parsed.parseError,
           thinking: parsed.thinking,
           response: llmResponse,
           iterations: iteration
-        });
+        }));
       }
 
       // If no tool calls, LLM gave up or finished without tools
       if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
         // Save assistant message to conversation
         await addAssistantMessage(llmResponse, []);
-        return res.json({
+        return res.json(buildConversationResponse({
           success: true,
           thinking: parsed.thinking,
           response: 'No tool calls generated',
           iterations: iteration
-        });
+        }));
       }
 
       // Execute tool calls
@@ -149,14 +168,14 @@ app.post('/api/conversation/message', async (req, res) => {
         // Get updated flow state
         const updatedFlow = await readFlow();
 
-        return res.json({
+        return res.json(buildConversationResponse({
           success: true,
           thinking: parsed.thinking,
           toolCalls: parsed.toolCalls,
           execution: executionResults,
           updatedFlow,
           iterations: iteration
-        });
+        }));
       }
 
       // Some failures occurred
@@ -172,7 +191,7 @@ app.post('/api/conversation/message', async (req, res) => {
         // Get updated flow state
         const updatedFlow = await readFlow();
 
-        return res.json({
+        return res.json(buildConversationResponse({
           success: false,
           thinking: parsed.thinking,
           toolCalls: parsed.toolCalls,
@@ -181,7 +200,7 @@ app.post('/api/conversation/message', async (req, res) => {
           errors: failures,
           iterations: iteration,
           message: `Failed after ${MAX_ITERATIONS} attempts`
-        });
+        }));
       }
 
       // Build retry message and add to conversation as user message
