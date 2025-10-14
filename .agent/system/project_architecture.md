@@ -20,12 +20,14 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 - **CORS** - Cross-origin support
 
 ### Testing
-- **Jest** - Test framework (with ES modules via `NODE_OPTIONS=--experimental-vm-modules`)
-- **React Testing Library** - Frontend component testing (with jsdom environment)
-- **@testing-library/jest-dom** - Custom Jest matchers for DOM assertions
+- **Vitest 3.2.4** - Test framework with native ESM support
+- **React Testing Library** - Frontend component testing
+- **@testing-library/jest-dom** - DOM assertion matchers (via `/vitest` entry point)
 - **@testing-library/user-event** - User interaction simulation
+- **happy-dom 20.0.0** - Lightweight browser environment (faster than jsdom)
 - **Supertest** - Backend API integration testing
 - **In-memory SQLite** - Isolated database testing (`:memory:`)
+- **@vitest/coverage-v8** - Code coverage reporting (86.38% overall)
 
 ## Project Structure
 
@@ -63,7 +65,7 @@ visual-scaffolding/
 │   └── data/
 │       └── flow.db               # SQLite database file
 │
-├── tests/                        # Comprehensive test suite (317 tests)
+├── tests/                        # Comprehensive test suite (542 tests)
 │   ├── db.test.js               # Database layer tests
 │   ├── conversationService.test.js
 │   ├── historyService.test.js
@@ -75,12 +77,14 @@ visual-scaffolding/
 │   ├── unit/
 │   │   ├── frontend/            # Frontend unit tests
 │   │   └── backend/             # Backend unit tests (hotkeys registry)
-│   └── security/                # Security tests (XSS prevention)
+│   ├── security/                # Security tests (XSS prevention)
+│   ├── setup-frontend.js        # Vitest setup for React component tests
+│   └── mocks/                   # Test mocks (styleMock.js)
 │
 ├── .agent/                      # Project documentation
 ├── package.json
 ├── vite.config.js
-├── jest.config.js
+├── vitest.config.js             # Vitest test configuration
 └── .env                         # API keys (gitignored)
 ```
 
@@ -256,10 +260,15 @@ Each request includes: system prompt, last 6 conversation turns, current flow st
 
 ## Test Strategy
 
+- **Test Framework**: Vitest with multi-project configuration (4 isolated environments)
 - **Unit tests**: Database operations, services, tool execution
-- **Integration tests**: Message retry logic, API contracts
+- **Integration tests**: Message retry logic, API contracts, workflow state sync
 - **Security tests**: XSS prevention
+- **Frontend tests**: React component tests with happy-dom
 - **All tests use in-memory SQLite** (`DB_PATH=:memory:`)
+- **Test Execution**: ~7 seconds for 542 tests (2.95x faster than Jest)
+- **Coverage**: 86.38% overall (v8 provider)
+- **See**: [test_suite.md](./test_suite.md) for detailed test documentation
 
 ## Known Limitations
 

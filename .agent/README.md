@@ -40,9 +40,9 @@ Step-by-step guides for common development tasks:
 | **[unified-flow-commands.md](./SOP/unified-flow-commands.md)** | How to add flow mutations (nodes, groups, edges) - unified backend pattern |
 | **[hotkeys-management.md](./SOP/hotkeys-management.md)** | How to add or modify keyboard shortcuts in the centralized registry |
 | **[theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)** | How to work with design tokens and semantic theme system |
+| **[writing-tests.md](./SOP/writing-tests.md)** | How to write tests with Vitest - unit, integration, frontend, and API tests |
 | *(To be added)* | How to add a database migration |
 | *(To be added)* | How to add a new LLM tool |
-| *(To be added)* | How to write tests |
 
 ## 🧭 Quick Navigation
 
@@ -64,7 +64,8 @@ Feature requirements | `Tasks/` folder
 How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-commands.md)
 How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
 How to work with design tokens/theme | [theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)
-How to do X (migrations, tests, etc.) | `SOP/` folder
+How to write tests | [writing-tests.md](./SOP/writing-tests.md)
+How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 
 ## 📝 Documentation Conventions
 
@@ -109,8 +110,14 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 
 ---
 
-**Last Updated**: October 13, 2025
+**Last Updated**: October 14, 2025
 **Major Updates**:
+- **Migrated from Jest to Vitest 3.2.4** (October 14, 2025)
+  - 2.95x faster test execution (~7s vs ~10s)
+  - Discovered and fixed 170+ tests that weren't running in Jest
+  - Native ESM support (no experimental flags needed)
+  - Multi-project config for isolated test environments
+  - Fixed production bug: timestamp collision in group ID generation
 - **Migrated to structured design token system** - Two-tier architecture: design tokens (primitives) + semantic theme (application), merged from separate files into single theme.js
 - **Depth-based incremental padding for nested group halos** - Visual hierarchy system with configurable decay
 - **Fixed ungroup operation for nested groups** - Members now properly reassigned to parent group
@@ -120,6 +127,7 @@ How to do X (migrations, tests, etc.) | `SOP/` folder
 - Centralized keyboard shortcuts registry (src/hooks/useHotkeys.jsx)
 - HotkeysPanel component with slide-in UI (? button)
 - Completed visual customization removal (migration 002)
-- Test suite: 317+ tests across 13 test suites
+- Test suite: 542 passing tests (2 skipped) across 34 test files
+- Test coverage: 86.38% overall (v8 provider)
 - Database: 4 tables (removed visual_settings)
 - Design system: Organized token categories (colors, typography, spacing 4px base, borders, shadows, animations, z-index, opacity)

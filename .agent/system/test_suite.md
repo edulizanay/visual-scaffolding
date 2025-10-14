@@ -2,23 +2,40 @@
 
 ## Overview
 - **Total Tests**: 542 passing tests (2 skipped) across 34 test files
-- **Test Runner**: Vitest (migrated from Jest October 2025)
+- **Test Runner**: Vitest 3.2.4 (migrated from Jest in October 2025)
+- **Execution Time**: ~7 seconds (2.95x faster than Jest's ~10 seconds)
+- **Test Discovery**: All tests running (170+ tests were excluded in Jest due to config issues)
 - **Frontend Testing**: React Testing Library with happy-dom environment
 - **Backend Integration**: Supertest for full-stack workflow testing
 - **Database**: In-memory SQLite (`:memory:`) for isolation
-- **Run All Tests**: `npm test`
-- **Run with Coverage**: `npm run test:coverage` (86.38% overall coverage)
-- **Run Specific**: `npx vitest run <path>`
-- **Watch Mode**: `npm run test:watch`
-- **UI Mode**: `npm run test:ui`
+- **Coverage**: 86.38% overall code coverage
+
+## Test Commands
+```bash
+npm test                  # Run all tests once
+npm run test:watch        # Watch mode (auto-rerun on changes)
+npm run test:ui           # Browser UI for debugging tests
+npm run test:coverage     # Run tests with coverage report
+npx vitest run <path>     # Run specific test file or directory
+```
 
 ## Testing Tools
+
+### Test Framework
+- **Vitest 3.2.4** - Fast test runner with native ESM support
+  - Compatible with Jest API (describe, it, expect, vi.fn(), etc.)
+  - Multi-project configuration for different environments
+  - Global test functions enabled (no imports needed)
+  - v8 coverage provider for fast, accurate coverage
+  - Hot Module Replacement for instant feedback
 
 ### Frontend Testing
 - **React Testing Library** - Component rendering and user interaction testing
 - **@testing-library/jest-dom** - DOM matchers (e.g., `toBeInTheDocument()`, `toHaveClass()`)
+  - Uses `/vitest` entry point for Vitest compatibility
 - **@testing-library/user-event** - Realistic user event simulation
-- **happy-dom** - Lightweight browser environment simulation for React components (faster than jsdom)
+- **happy-dom 20.0.0** - Lightweight browser environment (faster than jsdom)
+  - Returns hex/named colors instead of rgb() format
 - **Setup file**: [tests/setup-frontend.js](../../tests/setup-frontend.js) - Configures mocks for React Flow (matchMedia, IntersectionObserver, ResizeObserver)
 
 ### Backend/Integration Testing
@@ -28,13 +45,44 @@
   - Use with real server instance to test frontend-backend integration
   - Example: `await request(app).post('/api/node').send({ label: 'Test' })`
 
+## Vitest Configuration
+
+### Multi-Project Setup
+**File**: [vitest.config.js](../../vitest.config.js)
+
+Four isolated test environments:
+1. **backend** - Node environment for API and backend logic tests
+2. **frontend-api** - Node environment for frontend utilities without DOM
+3. **frontend-ui** - happy-dom environment for React component tests
+4. **security** - Node environment for security and XSS tests
+
+### Key Features
+- React plugin for JSX transform
+- Global test functions (no imports needed)
+- Multi-project isolation prevents environment conflicts
+- v8 coverage provider with HTML/JSON/text reporters
+- Coverage includes `src/**` and `server/**`, excludes `tests/**`
+
 ## Test Conventions
 1. **All tests use in-memory database** - Set via `process.env.DB_PATH = ':memory:'` in `beforeEach`
 2. **All test files have ABOUTME comments** - Two lines at top explaining purpose
 3. **Database cleanup** - `closeDb()` called in `afterEach`
-4. **ES Modules** - Native ESM support with Vitest (no experimental flags needed)
+4. **ES Modules** - Native ESM support (no experimental flags needed)
 5. **Mock files use `.js` extension** - Standard ES module mocks in `tests/mocks/` (e.g., `styleMock.js`)
 6. **Coverage reports** - HTML reports generated at `coverage/index.html` via `npm run test:coverage`
+7. **Async module imports** - Use `await vi.importActual()` for dynamic imports in mocks
+
+## Migration Notes
+
+### Jest → Vitest (October 2025)
+- **Performance**: 2.95x faster execution (7s vs ~10s)
+- **Test Discovery**: Fixed 170+ tests that weren't running in Jest
+- **Bug Found**: Fixed timestamp collision in group ID generation (exposed by faster execution)
+- **Dependencies Removed**: jest, babel-jest, jest-environment-jsdom, jsdom
+- **Dependencies Added**: vitest, @vitest/ui, @vitest/coverage-v8, happy-dom
+- **Breaking Changes**: None (zero production code changes except bug fix)
+- **Config**: jest.config.js removed, vitest.config.js added
+- **See**: [VITEST_MIGRATION_COMPLETE.md](../VITEST_MIGRATION_COMPLETE.md) for full details
 
 ## Test Organization
 
