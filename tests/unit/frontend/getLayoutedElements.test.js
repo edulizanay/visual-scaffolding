@@ -81,27 +81,72 @@ describe('getLayoutedElements depth-aware expectations', () => {
     );
   });
 
+  it('should compress true siblings at same X position', () => {
+    // TDD Test: Verify that compression STILL works for true siblings
+    // (nodes at the same X position within the same group)
+    const nodes = [
+      makeNode('parent', { parentGroupId: 'group1' }),
+      // Three siblings - all at same depth, should be compressed
+      makeNode('child-a', { parentGroupId: 'group1' }),
+      makeNode('child-b', { parentGroupId: 'group1' }),
+      makeNode('child-c', { parentGroupId: 'group1' }),
+      makeNode('group1', { type: 'group', hidden: true }),
+    ];
+
+    const edges = [
+      makeEdge('parent', 'child-a'),
+      makeEdge('parent', 'child-b'),
+      makeEdge('parent', 'child-c'),
+    ];
+
+    const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, 'LR');
+
+    const childA = layoutedNodes.find(n => n.id === 'child-a');
+    const childB = layoutedNodes.find(n => n.id === 'child-b');
+    const childC = layoutedNodes.find(n => n.id === 'child-c');
+
+    expect(childA).toBeDefined();
+    expect(childB).toBeDefined();
+    expect(childC).toBeDefined();
+
+    // All three should be at same X (same depth layer)
+    expect(childA.position.x).toBeCloseTo(childB.position.x, 1);
+    expect(childB.position.x).toBeCloseTo(childC.position.x, 1);
+
+    // Should be vertically spaced by ~80px (memberVerticalGap)
+    const gapAB = Math.abs(childB.position.y - childA.position.y);
+    const gapBC = Math.abs(childC.position.y - childB.position.y);
+
+    expect(gapAB).toBeCloseTo(THEME.groupNode.layout.memberVerticalGap, 5);
+    expect(gapBC).toBeCloseTo(THEME.groupNode.layout.memberVerticalGap, 5);
+  });
+
   it('should preserve horizontal layout matching Kay Adams scenario', () => {
-    // Regression test based on actual bug: Kay Adams (y=50.75) -> child (y=0)
-    // This reproduces the exact structure from the database
+    // TDD Test: This currently FAILS (diagonal bug), but should PASS after fix
+    //
+    // Bug: When kay has incoming cross-group edge from michael, buildGroupDepthMap
+    // treats kay as a "root" (depth 0), causing unwanted compression with vito.
+    //
+    // Fix: Use X positions instead of calculated depths, so nodes at different X
+    // layers never get compressed together.
     const nodes = [
       // Vito in main group
-      makeNode('vito', { parentGroupId: 'main-group', position: { x: 222, y: 130.75 } }),
+      makeNode('vito', { parentGroupId: 'main-group' }),
       // Michael in nested sub-group
-      makeNode('michael', { parentGroupId: 'sub-group', position: { x: 444, y: 61.5 } }),
-      // Kay in main group (connected FROM Michael in different group)
-      makeNode('kay', { parentGroupId: 'main-group', position: { x: 666, y: 50.75 } }),
-      // Kay's child (THIS is where diagonal happens)
-      makeNode('kay-child', { parentGroupId: 'main-group', position: { x: 888, y: 50.75 } }),
+      makeNode('michael', { parentGroupId: 'sub-group' }),
+      // Kay in main group (has incoming cross-group edge from michael)
+      makeNode('kay', { parentGroupId: 'main-group' }),
+      // Kay's child - should stay horizontal with kay
+      makeNode('kay-child', { parentGroupId: 'main-group' }),
       // Groups
       makeNode('sub-group', { type: 'group', parentGroupId: 'main-group', hidden: true }),
       makeNode('main-group', { type: 'group', hidden: true }),
     ];
 
     const edges = [
-      makeEdge('vito', 'michael'),
-      makeEdge('michael', 'kay'),  // Cross-group edge
-      makeEdge('kay', 'kay-child'),  // This should stay horizontal!
+      makeEdge('vito', 'michael'),      // Cross-group edge
+      makeEdge('michael', 'kay'),        // Cross-group edge (causes bug)
+      makeEdge('kay', 'kay-child'),      // Within main-group
     ];
 
     const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, 'LR');
@@ -109,12 +154,14 @@ describe('getLayoutedElements depth-aware expectations', () => {
     const kay = layoutedNodes.find(n => n.id === 'kay');
     const kayChild = layoutedNodes.find(n => n.id === 'kay-child');
 
-    console.log('===== KAY ADAMS SCENARIO =====');
-    console.log('Kay position:', kay.position);
-    console.log('Kay child position:', kayChild.position);
-    console.log('Y diff:', Math.abs(kayChild.position.y - kay.position.y));
+    expect(kay).toBeDefined();
+    expect(kayChild).toBeDefined();
 
-    // Kay's child should be horizontally right, NOT diagonal
+    // Child should be to the RIGHT of parent
+    expect(kayChild.position.x).toBeGreaterThan(kay.position.x);
+
+    // Child should be at SAME vertical level as parent (not diagonal)
+    // This currently FAILS but should PASS after fix
     expect(kayChild.position.y).toBeCloseTo(kay.position.y, 5);
   });
 });
