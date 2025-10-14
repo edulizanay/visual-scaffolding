@@ -112,6 +112,73 @@ Adding node with comment
       expect(result.toolCalls[1].params.label).toBe('End');
       expect(result.parseError).toBeNull();
     });
+
+    test('should strip block comments /* */ from JSON', () => {
+      const llmResponse = `
+<thinking>Adding nodes with block comment</thinking>
+<response>
+[
+  {"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "First"}},
+  /* This is a block comment */
+  {"type": "tool_use", "id": "toolu_02", "name": "addNode", "input": {"label": "Second"}}
+]
+</response>
+      `;
+
+      const result = parseToolCalls(llmResponse);
+
+      expect(result.toolCalls).toHaveLength(2);
+      expect(result.toolCalls[0].params.label).toBe('First');
+      expect(result.toolCalls[1].params.label).toBe('Second');
+      expect(result.parseError).toBeNull();
+    });
+
+    test('should strip multi-line block comments from JSON', () => {
+      const llmResponse = `
+<thinking>Complex operations</thinking>
+<response>
+[
+  {"type": "tool_use", "id": "toolu_01", "name": "updateEdge", "input": {"edgeId": "edge1", "label": "father"}},
+
+  /* reposition nodes
+     for a more dynamic layout */
+  {"type": "tool_use", "id": "toolu_02", "name": "updateNode", "input": {"nodeId": "node1", "position": {"x": 100, "y": 200}}}
+]
+</response>
+      `;
+
+      const result = parseToolCalls(llmResponse);
+
+      expect(result.toolCalls).toHaveLength(2);
+      expect(result.toolCalls[0].name).toBe('updateEdge');
+      expect(result.toolCalls[1].name).toBe('updateNode');
+      expect(result.parseError).toBeNull();
+    });
+
+    test('should handle mix of single-line and block comments', () => {
+      const llmResponse = `
+<thinking>Mixed comment styles</thinking>
+<response>
+[
+  // Single line comment
+  {"type": "tool_use", "id": "toolu_01", "name": "addNode", "input": {"label": "A"}},
+  /* block comment */
+  {"type": "tool_use", "id": "toolu_02", "name": "addNode", "input": {"label": "B"}},
+  // Another single line
+  {"type": "tool_use", "id": "toolu_03", "name": "addNode", "input": {"label": "C"}}
+  /* final block comment */
+]
+</response>
+      `;
+
+      const result = parseToolCalls(llmResponse);
+
+      expect(result.toolCalls).toHaveLength(3);
+      expect(result.toolCalls[0].params.label).toBe('A');
+      expect(result.toolCalls[1].params.label).toBe('B');
+      expect(result.toolCalls[2].params.label).toBe('C');
+      expect(result.parseError).toBeNull();
+    });
   });
 
   describe('trailing commas', () => {

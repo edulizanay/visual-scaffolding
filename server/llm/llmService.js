@@ -141,8 +141,12 @@ export function parseToolCalls(llmResponse) {
 
   if (content) {
     try {
-      // Strip JSON comments (// style) that LLMs sometimes add
-      const cleanedContent = content.replace(/\/\/.*$/gm, '').trim();
+      // Strip JSON comments that LLMs sometimes add
+      // Remove single-line comments (// style)
+      let cleanedContent = content.replace(/\/\/.*$/gm, '');
+      // Remove block comments (/* ... */ style, including multi-line)
+      cleanedContent = cleanedContent.replace(/\/\*[\s\S]*?\*\//g, '');
+      cleanedContent = cleanedContent.trim();
 
       // Parse as JSON array
       const parsed = JSON.parse(cleanedContent);

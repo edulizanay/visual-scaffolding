@@ -189,7 +189,7 @@ export const THEME = {
     },
     dimensions: {
       width: 172,
-      height: 76,
+      height: 70,
       borderRadius: BORDER_RADIUS_SM,
     },
 
@@ -246,11 +246,7 @@ export const THEME = {
           minStep: 1,
         },
       },
-    },
-
-    layout: {
-      memberVerticalGap: 80,
-    },
+    }
   },
 
   // --------------------------------------------------------------------------
@@ -272,7 +268,7 @@ export const THEME = {
   dagre: {
     spacing: {
       horizontal: 50,
-      vertical: 45,
+      vertical: 40,
     },
   },
 };

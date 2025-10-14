@@ -73,6 +73,7 @@ export const detectCircularReference = (nodeId, potentialParentId, nodes) => {
   return descendants.includes(potentialParentId);
 };
 
+// validate group creation, at least two nodes, no duplicates, no circular references
 export const validateGroupMembership = (selectedIds, nodes) => {
   if (selectedIds.length < 2) {
     return { valid: false, error: 'Group must contain at least 2 nodes' };
@@ -94,7 +95,7 @@ export const validateGroupMembership = (selectedIds, nodes) => {
     for (let j = i + 1; j < selectedIds.length; j += 1) {
       const a = selectedIds[i];
       const b = selectedIds[j];
-
+      //revise this 
       const descendantsA = getGroupDescendants(a, nodes);
       if (descendantsA.includes(b)) {
         return { valid: false, error: 'Cannot group node with its descendant' };
