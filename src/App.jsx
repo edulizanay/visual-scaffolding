@@ -73,19 +73,20 @@ function App() {
     edgesRef.current = edges;
   }, [edges]);
 
+  const normalizeFlow = useCallback((flow) => {
+    const nodesWithPosition = flow.nodes.map(node => ({
+      ...node,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+    }));
+    return applyGroupVisibility(nodesWithPosition, flow.edges);
+  }, []);
+
   useEffect(() => {
     const fetchFlow = async () => {
       try {
         const flow = await loadFlow();
-
-        const nodesWithPosition = flow.nodes.map(node => ({
-          ...node,
-          sourcePosition: Position.Right,
-          targetPosition: Position.Left,
-        }));
-
-        // Apply group visibility to compute synthetic edges
-        const normalizedFlow = applyGroupVisibility(nodesWithPosition, flow.edges);
+        const normalizedFlow = normalizeFlow(flow);
 
         setNodes(normalizedFlow.nodes);
         setEdges(normalizedFlow.edges);
@@ -97,7 +98,7 @@ function App() {
     };
 
     fetchFlow();
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, normalizeFlow]);
 
   useEffect(() => {
     if (isLoading || isAnimating || isBackendProcessing) return;
@@ -119,14 +120,7 @@ function App() {
   const handleFlowUpdate = useCallback((updatedFlow) => {
     if (!updatedFlow) return;
 
-    const nodesWithPosition = updatedFlow.nodes.map(node => ({
-      ...node,
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-    }));
-
-    // Apply group visibility to compute synthetic edges
-    const normalizedFlow = applyGroupVisibility(nodesWithPosition, updatedFlow.edges);
+    const normalizedFlow = normalizeFlow(updatedFlow);
 
     setNodes(normalizedFlow.nodes);
     setEdges(normalizedFlow.edges);
@@ -135,7 +129,7 @@ function App() {
     setTimeout(() => {
       applyLayoutWithAnimation(normalizedFlow.nodes, normalizedFlow.edges);
     }, 100);
-  }, [setNodes, setEdges, applyLayoutWithAnimation]);
+  }, [setNodes, setEdges, applyLayoutWithAnimation, normalizeFlow]);
 
   const handleMutation = useCallback(async (apiCall, {
     errorContext = 'perform operation',
@@ -495,32 +489,17 @@ function App() {
   }, [selectedNodeIds, nodes, handleMutation, setSelectedNodeIds]);
 
   // Register keyboard shortcuts
+  // Note: Meta keys are automatically expanded to include Control variants for cross-platform support
   useHotkeys([
     { keys: ['Meta', 'Z'], handler: handleUndo },
-    { keys: ['Control', 'Z'], handler: handleUndo },
     { keys: ['Meta', 'Y'], handler: handleRedo },
-    { keys: ['Control', 'Y'], handler: handleRedo },
     {
       keys: ['Meta', 'G'],
       handler: handleCreateGroup,
       isActive: (state) => state?.selectedNodeIds?.length >= 2,
     },
     {
-      keys: ['Control', 'G'],
-      handler: handleCreateGroup,
-      isActive: (state) => state?.selectedNodeIds?.length >= 2,
-    },
-    {
       keys: ['Meta', 'Shift', 'G'],
-      handler: ungroupNodes,
-      isActive: (state) => {
-        if (!state?.selectedNodeIds || state.selectedNodeIds.length !== 1) return false;
-        const selectedNode = state.nodes?.find(n => n.id === state.selectedNodeIds[0]);
-        return selectedNode?.type === 'group';
-      },
-    },
-    {
-      keys: ['Control', 'Shift', 'G'],
       handler: ungroupNodes,
       isActive: (state) => {
         if (!state?.selectedNodeIds || state.selectedNodeIds.length !== 1) return false;

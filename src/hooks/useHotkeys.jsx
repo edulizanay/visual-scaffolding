@@ -163,9 +163,42 @@ export function formatKeys(keys) {
 }
 
 /**
+ * Expands hotkey configurations to include cross-platform variants.
+ * If a hotkey uses 'Meta', also creates a 'Control' variant for Windows/Linux.
+ *
+ * @param {Array} hotkeys - Array of hotkey configurations
+ * @returns {Array} Expanded array with platform variants
+ *
+ * @example
+ * Input:  [{ keys: ['Meta', 'Z'], handler: undo }]
+ * Output: [
+ *   { keys: ['Meta', 'Z'], handler: undo },
+ *   { keys: ['Control', 'Z'], handler: undo }
+ * ]
+ */
+function expandPlatformKeys(hotkeys) {
+  return hotkeys.flatMap((config) => {
+    const { keys, handler, isActive } = config;
+
+    // If keys contain Meta, also create Control variant
+    if (keys.includes('Meta')) {
+      const controlKeys = keys.map(k => k === 'Meta' ? 'Control' : k);
+      return [
+        { keys, handler, isActive },              // Meta version (macOS)
+        { keys: controlKeys, handler, isActive }, // Control version (Windows/Linux)
+      ];
+    }
+
+    // No Meta key, return as-is
+    return [config];
+  });
+}
+
+/**
  * useHotkeys hook
  *
  * Registers keyboard shortcuts with automatic cleanup and conditional execution.
+ * Automatically creates cross-platform variants for Meta/Control keys.
  *
  * @param {Array} hotkeys - Array of hotkey configurations
  *   Each config should have:
@@ -185,20 +218,23 @@ export function formatKeys(keys) {
  * ], { selectedNodeIds, nodes });
  */
 export function useHotkeys(hotkeys, state = {}) {
+  // Expand Meta keys to include Control variants for cross-platform support
+  const expandedHotkeys = expandPlatformKeys(hotkeys);
+
   // Store handlers in ref to avoid re-registering on every render
   const handlersRef = useRef({});
 
   // Update handlers ref when they change
   useEffect(() => {
-    hotkeys.forEach(({ keys, handler }) => {
+    expandedHotkeys.forEach(({ keys, handler }) => {
       const keyCombo = keys.join('+');
       handlersRef.current[keyCombo] = handler;
     });
-  }, [hotkeys]);
+  }, [expandedHotkeys]);
 
   // Memoize keyboard event handler
   const handleKeyDown = useCallback((e) => {
-    hotkeys.forEach(({ keys, handler, isActive }) => {
+    expandedHotkeys.forEach(({ keys, handler, isActive }) => {
       // Check if isActive guard passes (if present)
       if (isActive && !isActive(state)) {
         return;
@@ -223,7 +259,7 @@ export function useHotkeys(hotkeys, state = {}) {
         handler(e);
       }
     });
-  }, [hotkeys, state]);
+  }, [expandedHotkeys, state]);
 
   // Register and cleanup event listener
   useEffect(() => {
