@@ -235,6 +235,18 @@ export const applyGroupVisibility = (nodes, edges) => {
 };
 
 /**
+ * Creates a synthetic edge object for collapsed group boundaries.
+ * Synthetic edges maintain visual flow continuity when groups are collapsed.
+ */
+const createSyntheticEdge = (source, target) => ({
+  id: `${GROUP_EDGE_PREFIX}${source}->${target}`,
+  source,
+  target,
+  type: 'smoothstep',
+  data: { isSyntheticGroupEdge: true },
+});
+
+/**
  * Computes synthetic edges for all collapsed groups.
  * Synthetic edges are boundary edges that connect external nodes to/from a collapsed group.
  * These replace the individual member edges when a group is collapsed.
@@ -264,26 +276,14 @@ const computeSyntheticEdges = (nodes, edges) => {
       if (sourceIsMember && !targetIsMember) {
         const key = `${groupId}->${edge.target}`;
         if (!syntheticMap.has(key)) {
-          syntheticMap.set(key, {
-            id: `${GROUP_EDGE_PREFIX}${key}`,
-            source: groupId,
-            target: edge.target,
-            type: 'smoothstep',
-            data: { isSyntheticGroupEdge: true },
-          });
+          syntheticMap.set(key, createSyntheticEdge(groupId, edge.target));
         }
       }
       // Inbound: external -> member becomes external -> group
       else if (!sourceIsMember && targetIsMember) {
         const key = `${edge.source}->${groupId}`;
         if (!syntheticMap.has(key)) {
-          syntheticMap.set(key, {
-            id: `${GROUP_EDGE_PREFIX}${key}`,
-            source: edge.source,
-            target: groupId,
-            type: 'smoothstep',
-            data: { isSyntheticGroupEdge: true },
-          });
+          syntheticMap.set(key, createSyntheticEdge(edge.source, groupId));
         }
       }
     });
@@ -293,8 +293,6 @@ const computeSyntheticEdges = (nodes, edges) => {
 
   return syntheticEdges;
 };
-
-const normalizeState = (nodes, edges) => applyGroupVisibility(nodes, edges);
 
 export const createGroup = (flow, options) => {
   const { nodes, edges } = flow;
@@ -326,7 +324,7 @@ export const createGroup = (flow, options) => {
   const nextNodes = [...updatedNodes, normalizedGroupNode];
 
   // Synthetic edges are now computed dynamically in applyGroupVisibility
-  return normalizeState(nextNodes, edges);
+  return applyGroupVisibility(nextNodes, edges);
 };
 
 export const toggleGroupExpansion = (flow, groupId, collapseState = null) => {
@@ -343,7 +341,7 @@ export const toggleGroupExpansion = (flow, groupId, collapseState = null) => {
       : node
   );
 
-  return normalizeState(updatedNodes, edges);
+  return applyGroupVisibility(updatedNodes, edges);
 };
 
 export const ungroup = (flow, groupId) => {
@@ -381,7 +379,7 @@ export const ungroup = (flow, groupId) => {
 
   // Synthetic edges are automatically cleaned up by applyGroupVisibility
   // since the group no longer exists, no synthetic edges will be generated for it
-  return normalizeState(updatedNodes, edges);
+  return applyGroupVisibility(updatedNodes, edges);
 };
 
 export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendantsFn = null) => {
@@ -417,7 +415,7 @@ export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendants
   );
 
   // Reapply group visibility rules to respect collapsed groups
-  return normalizeState(updatedNodes, updatedEdges);
+  return applyGroupVisibility(updatedNodes, updatedEdges);
 };
 
 export const addChildNode = (flow, parentId, factory) => {
@@ -430,7 +428,7 @@ export const addChildNode = (flow, parentId, factory) => {
   const nextNodes = [...nodes, newNode];
   const nextEdges = [...edges, newEdge];
 
-  return normalizeState(nextNodes, nextEdges);
+  return applyGroupVisibility(nextNodes, nextEdges);
 };
 
 const normalizeHaloPaddingConfig = (paddingConfig) => {
