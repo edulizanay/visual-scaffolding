@@ -1,10 +1,10 @@
-// ABOUTME: Tests for HotkeysPanel component
+// ABOUTME: Tests for KeyboardUI component
 // ABOUTME: Validates rendering, toggle behavior, and hotkey display
 
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import HotkeysPanel from '../../../src/HotkeysPanel';
+import KeyboardUI from '../../../src/KeyboardUI';
 
 // Mock the THEME constant
 vi.mock('../../../src/constants/theme.js', () => ({
@@ -29,10 +29,10 @@ vi.mock('../../../src/constants/theme.js', () => ({
   },
 }));
 
-describe('HotkeysPanel Component', () => {
+describe('KeyboardUI Component', () => {
   describe('Toggle Button', () => {
     it('should render toggle button', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       expect(button).toBeInTheDocument();
       expect(button.textContent).toBe('?');
@@ -45,7 +45,7 @@ describe('HotkeysPanel Component', () => {
 
   describe('Panel Content', () => {
     it('should display panel title', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -53,7 +53,7 @@ describe('HotkeysPanel Component', () => {
     });
 
     it('should display all categories', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -63,7 +63,7 @@ describe('HotkeysPanel Component', () => {
     });
 
     it('should display hotkey labels', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -74,7 +74,7 @@ describe('HotkeysPanel Component', () => {
     });
 
     it('should display hotkey labels without descriptions', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -84,7 +84,7 @@ describe('HotkeysPanel Component', () => {
     });
 
     it('should display formatted key combinations', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -97,7 +97,7 @@ describe('HotkeysPanel Component', () => {
 
   describe('Overlay', () => {
     it('should show overlay when panel is open', () => {
-      const { container } = render(<HotkeysPanel />);
+      const { container } = render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
 
       // Overlay should not exist when closed
@@ -116,7 +116,7 @@ describe('HotkeysPanel Component', () => {
     // Component now uses transform: translateX() for animations
 
     it('should hide overlay when panel is closed', () => {
-      const { container } = render(<HotkeysPanel />);
+      const { container } = render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
 
       // Open panel
@@ -133,7 +133,7 @@ describe('HotkeysPanel Component', () => {
 
   describe('Accessibility', () => {
     it('should have aria-label on toggle button', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       expect(button).toHaveAttribute('aria-label');
     });
@@ -141,7 +141,7 @@ describe('HotkeysPanel Component', () => {
 
   describe('All Hotkeys Display', () => {
     it('should display all hotkeys from registry', () => {
-      render(<HotkeysPanel />);
+      render(<KeyboardUI />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 

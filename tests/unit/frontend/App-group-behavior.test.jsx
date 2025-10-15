@@ -58,11 +58,17 @@ vi.mock('../../../src/ChatInterface', () => {
   };
 });
 
-vi.mock('../../../src/HotkeysPanel', () => {
+vi.mock('../../../src/KeyboardUI', () => {
   const React = require('react');
   return {
     __esModule: true,
-    default: () => React.createElement('div', { 'data-testid': 'hotkeys-panel' }),
+    default: ({ tooltipConfig }) =>
+      React.createElement('div', { 'data-testid': 'hotkeys-panel' },
+        tooltipConfig && React.createElement('div', { key: 'tooltip' }, [
+          React.createElement('span', { key: 'keys' }, tooltipConfig.keys),
+          React.createElement('span', { key: 'label' }, tooltipConfig.label),
+        ])
+      ),
   };
 });
 
@@ -275,39 +281,4 @@ describe('App group behaviour', () => {
     expect(api.saveFlow).not.toHaveBeenCalled();
   });
 
-  test('undo toast appears when auto-save runs with undo available', async () => {
-    api.loadFlow.mockResolvedValueOnce(defaultFlow);
-    api.getHistoryStatus.mockResolvedValueOnce({ canUndo: true });
-
-    await renderApp();
-
-    // Enable fake timers after app is rendered
-    vi.useFakeTimers();
-
-    // Flush initial debounce timers
-    await act(async () => {
-      vi.runOnlyPendingTimers();
-    });
-    api.saveFlow.mockClear();
-
-    const handlers = getChatHandlers();
-
-    // Trigger a flow update to cause auto-save
-    await act(async () => {
-      handlers.onFlowUpdate({
-        nodes: [
-          { id: 'group-1', type: 'group', isCollapsed: false, position: { x: 0, y: 0 }, data: { label: 'Group 1' } },
-        ],
-        edges: [],
-      });
-    });
-
-    await act(async () => {
-      vi.advanceTimersByTime(600);
-    });
-
-    expect(api.saveFlow).toHaveBeenCalled();
-    expect(screen.getByText('⌘ Z')).toBeInTheDocument();
-    expect(screen.getByText('to undo')).toBeInTheDocument();
-  });
 });

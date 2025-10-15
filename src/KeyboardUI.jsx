@@ -1,11 +1,12 @@
-// ABOUTME: Slide-in panel displaying all keyboard shortcuts and mouse interactions
-// ABOUTME: Toggleable with ? button in bottom-right corner
+// ABOUTME: Keyboard UI system: shortcuts panel, contextual tooltips, and action toasts
+// ABOUTME: Includes slide-in panel, bottom-right tooltip hints, and top-right feedback toasts
 
 import { useState, useEffect } from 'react';
 import { HOTKEYS, getCategories, formatKeys } from './hooks/useHotkeys';
 import { THEME } from './constants/theme.js';
+import { Kbd } from './ChatInterface';
 
-export default function HotkeysPanel() {
+export default function KeyboardUI({ tooltipConfig }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showContent, setShowContent] = useState(false);
 
@@ -135,6 +136,28 @@ export default function HotkeysPanel() {
           }}
         />
       )}
+
+      {/* Contextual tooltip (bottom-right corner) */}
+      {tooltipConfig && (
+        <div style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: THEME.tooltip.colors.background,
+          border: `${THEME.tooltip.borderWidth} solid ${THEME.tooltip.colors.border}`,
+          borderRadius: THEME.tooltip.borderRadius,
+          padding: THEME.tooltip.padding,
+          animation: 'slideIn 0.3s ease-out',
+        }}>
+          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{tooltipConfig.keys}</Kbd>
+          <span style={{ color: THEME.text.tertiary, fontSize: '13px' }}>{tooltipConfig.label}</span>
+        </div>
+      )}
+
     </>
   );
 }

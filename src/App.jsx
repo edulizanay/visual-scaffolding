@@ -11,12 +11,11 @@ import {
 import '@xyflow/react/dist/style.css';
 import Node from './Node';
 import Edge from './Edge';
-import { 
-  loadFlow, 
-  saveFlow, 
-  undoFlow, 
-  redoFlow, 
-  getHistoryStatus,
+import {
+  loadFlow,
+  saveFlow,
+  undoFlow,
+  redoFlow,
   createNode,
   updateNode,
   createEdge,
@@ -25,10 +24,10 @@ import {
   ungroup as apiUngroup,
   toggleGroupExpansion as apiToggleGroupExpansion
 } from './api';
-import ChatInterface, { Kbd } from './ChatInterface';
+import ChatInterface from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { useHotkeys } from './hooks/useHotkeys';
-import HotkeysPanel from './HotkeysPanel';
+import KeyboardUI from './KeyboardUI';
 import { THEME } from './constants/theme.js';
 import { GroupHaloOverlay } from './GroupHaloOverlay.jsx';
 import {
@@ -42,8 +41,6 @@ function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [canUndo, setCanUndo] = useState(false);
-  const [toast, setToast] = useState(null); // 'undo' | 'redo' | null
   const [isBackendProcessing, setIsBackendProcessing] = useState(false);
   const reactFlowInstance = useRef(null);
   const nodesRef = useRef([]);
@@ -106,16 +103,13 @@ function App() {
     const timeoutId = setTimeout(async () => {
       try {
         await saveFlow(nodes, edges);
-        if (canUndo) {
-          setToast('undo');
-        }
       } catch (error) {
         console.error('Failed to save flow:', error);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [nodes, edges, isLoading, canUndo, isAnimating, isBackendProcessing]);
+  }, [nodes, edges, isLoading, isAnimating, isBackendProcessing]);
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
     if (!updatedFlow) return;
@@ -405,40 +399,27 @@ function App() {
     [commitFlow, setSelectedNodeIds, getAllDescendants]
   );
 
-  const updateHistoryStatus = useCallback(async () => {
-    try {
-      const status = await getHistoryStatus();
-      setCanUndo(status.canUndo);
-    } catch (error) {
-      console.error('Failed to get history status:', error);
-    }
-  }, []);
-
   const handleUndo = useCallback(async () => {
     try {
       const result = await undoFlow();
       if (result.success && result.flow) {
         handleFlowUpdate(result.flow);
-        await updateHistoryStatus();
-        setToast('redo');
       }
     } catch (error) {
       console.error('Failed to undo:', error);
     }
-  }, [handleFlowUpdate, updateHistoryStatus]);
+  }, [handleFlowUpdate]);
 
   const handleRedo = useCallback(async () => {
     try {
       const result = await redoFlow();
       if (result.success && result.flow) {
         handleFlowUpdate(result.flow);
-        await updateHistoryStatus();
-        setToast('undo');
       }
     } catch (error) {
       console.error('Failed to redo:', error);
     }
-  }, [handleFlowUpdate, updateHistoryStatus]);
+  }, [handleFlowUpdate]);
 
   const handleCreateGroup = useCallback(async () => {
     if (selectedNodeIds.length < 2) {
@@ -509,21 +490,6 @@ function App() {
     },
   ], { selectedNodeIds, nodes });
 
-  useEffect(() => {
-    updateHistoryStatus();
-    const interval = setInterval(updateHistoryStatus, 1000);
-    return () => clearInterval(interval);
-  }, [updateHistoryStatus]);
-
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
   if (isLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', color: 'white' }}>Loading...</div>;
   }
@@ -559,46 +525,7 @@ function App() {
         <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} />
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
-      <HotkeysPanel />
-
-      {/* Tooltip section (bottom-right corner) */}
-      {tooltipConfig && (
-        <div style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 20,
-          zIndex: 2000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          background: THEME.tooltip.colors.background,
-          border: `${THEME.tooltip.borderWidth} solid ${THEME.tooltip.colors.border}`,
-          borderRadius: THEME.tooltip.borderRadius,
-          padding: THEME.tooltip.padding,
-          animation: 'slideIn 0.3s ease-out',
-        }}>
-          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{tooltipConfig.keys}</Kbd>
-          <span style={{ color: THEME.text.tertiary, fontSize: '13px' }}>{tooltipConfig.label}</span>
-        </div>
-      )}
-
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: 20,
-          right: 20,
-          zIndex: 2000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          animation: 'slideIn 0.3s ease-out',
-        }}>
-          <Kbd style={{ gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '14px' }}>{toast === 'undo' ? '⌘ Z' : '⌘ Y'}</Kbd>
-          <span style={{ color: THEME.text.secondary, fontSize: '14px' }}>
-            {toast === 'undo' ? 'to undo' : 'to redo'}
-          </span>
-        </div>
-      )}
+      <KeyboardUI tooltipConfig={tooltipConfig} />
     </div>
   );
 }
