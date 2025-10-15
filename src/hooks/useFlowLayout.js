@@ -31,7 +31,17 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
     nodesep: THEME.dagre.spacing.vertical,
   });
 
-  const visibleNodes = nodes.filter(node => !node.hidden);
+  const visibleNodes = nodes
+    .map((node, index) => ({ node, index }))
+    .filter(({ node }) => !node.hidden)
+    .sort((a, b) => {
+      const groupA = a.node.parentGroupId ?? '';
+      const groupB = b.node.parentGroupId ?? '';
+      return groupA.localeCompare(groupB) || a.index - b.index;
+    })
+    .map(({ node }) => node);
+
+  const visibleNodeMap = new Map(visibleNodes.map(node => [node.id, node]));
 
   visibleNodes.forEach((node) => {
     dagreGraph.setNode(node.id, {
@@ -42,10 +52,39 @@ export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 
   const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
 
-  edges.forEach((edge) => {
-    if (visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)) {
-      dagreGraph.setEdge(edge.source, edge.target);
+  const edgesBySource = new Map();
+  edges.forEach((edge, index) => {
+    if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) {
+      return;
     }
+
+    const bucket = edgesBySource.get(edge.source);
+    const entry = { edge, index };
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      edgesBySource.set(edge.source, [entry]);
+    }
+  });
+
+  const compareTargets = (left, right) => {
+    const nodeA = visibleNodeMap.get(left.edge.target);
+    const nodeB = visibleNodeMap.get(right.edge.target);
+    const groupA = nodeA?.parentGroupId ?? '';
+    const groupB = nodeB?.parentGroupId ?? '';
+    const groupedA = groupA ? 0 : 1;
+    const groupedB = groupB ? 0 : 1;
+
+    return groupedA - groupedB
+      || groupA.localeCompare(groupB)
+      || left.index - right.index;
+  };
+
+  edgesBySource.forEach((bucket) => {
+    // Emit grouped children first so Dagre keeps them contiguous, then reuse creation order.
+    bucket.sort(compareTargets).forEach(({ edge }) => {
+      dagreGraph.setEdge(edge.source, edge.target);
+    });
   });
 
   dagre.layout(dagreGraph);
