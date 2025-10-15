@@ -91,18 +91,17 @@ export const validateGroupMembership = (selectedIds, nodes) => {
     }
   }
 
+  // Pre-compute descendants once per node to avoid O(n²) traversals
+  const descendantMap = new Map(
+    selectedIds.map((id) => [id, new Set(getGroupDescendants(id, nodes))])
+  );
+
   for (let i = 0; i < selectedIds.length; i += 1) {
     for (let j = i + 1; j < selectedIds.length; j += 1) {
       const a = selectedIds[i];
       const b = selectedIds[j];
-      //revise this 
-      const descendantsA = getGroupDescendants(a, nodes);
-      if (descendantsA.includes(b)) {
-        return { valid: false, error: 'Cannot group node with its descendant' };
-      }
 
-      const descendantsB = getGroupDescendants(b, nodes);
-      if (descendantsB.includes(a)) {
+      if (descendantMap.get(a).has(b) || descendantMap.get(b).has(a)) {
         return { valid: false, error: 'Cannot group node with its descendant' };
       }
     }
