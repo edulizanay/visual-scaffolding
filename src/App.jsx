@@ -137,62 +137,67 @@ function App() {
     }, 100);
   }, [setNodes, setEdges, applyLayoutWithAnimation]);
 
-  const updateNodeLabel = useCallback(async (nodeId, newLabel) => {
+  const handleMutation = useCallback(async (apiCall, {
+    errorContext = 'perform operation',
+    onSuccess,
+    onError,
+  } = {}) => {
     try {
-      const result = await updateNode(nodeId, { label: newLabel });
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-      } else {
-        console.error('Failed to update node label:', result.error);
+      const result = await apiCall();
+
+      if (!result.success) {
+        const errorMsg = `Failed to ${errorContext}: ${result.error}`;
+        console.error(errorMsg);
+        onError?.(errorMsg);
+        return;
       }
+
+      handleFlowUpdate(result.flow);
+      onSuccess?.();
+
     } catch (error) {
-      console.error('Error updating node label:', error);
+      const errorMsg = `Error ${errorContext}: ${error}`;
+      console.error(errorMsg);
+      onError?.(errorMsg);
     }
   }, [handleFlowUpdate]);
 
-  const updateNodeDescription = useCallback(async (nodeId, newDescription) => {
-    try {
-      const result = await updateNode(nodeId, { description: newDescription });
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-      } else {
-        console.error('Failed to update node description:', result.error);
-      }
-    } catch (error) {
-      console.error('Error updating node description:', error);
-    }
-  }, [handleFlowUpdate]);
+  const updateNodeLabel = useCallback(
+    (nodeId, newLabel) => handleMutation(
+      () => updateNode(nodeId, { label: newLabel }),
+      { errorContext: 'update node label' }
+    ),
+    [handleMutation]
+  );
 
-  const updateEdgeLabel = useCallback(async (edgeId, newLabel) => {
-    try {
-      const result = await updateEdge(edgeId, { label: newLabel });
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-      } else {
-        console.error('Failed to update edge label:', result.error);
-      }
-    } catch (error) {
-      console.error('Error updating edge label:', error);
-    }
-  }, [handleFlowUpdate]);
+  const updateNodeDescription = useCallback(
+    (nodeId, newDescription) => handleMutation(
+      () => updateNode(nodeId, { description: newDescription }),
+      { errorContext: 'update node description' }
+    ),
+    [handleMutation]
+  );
 
-  const createChildNode = useCallback(async (parentNodeId) => {
-    try {
-      const result = await createNode({
+  const updateEdgeLabel = useCallback(
+    (edgeId, newLabel) => handleMutation(
+      () => updateEdge(edgeId, { label: newLabel }),
+      { errorContext: 'update edge label' }
+    ),
+    [handleMutation]
+  );
+
+  const createChildNode = useCallback(
+    (parentNodeId) => handleMutation(
+      () => createNode({
         label: `Node ${Date.now()}`,
         description: '',
         parentNodeId: parentNodeId,
         edgeLabel: ''
-      });
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-      } else {
-        console.error('Failed to create child node:', result.error);
-      }
-    } catch (error) {
-      console.error('Error creating child node:', error);
-    }
-  }, [handleFlowUpdate]);
+      }),
+      { errorContext: 'create child node' }
+    ),
+    [handleMutation]
+  );
 
   const getNodeDimensions = useCallback((node) => {
     return {
@@ -297,22 +302,17 @@ function App() {
   const nodeTypes = useMemo(() => ({ default: Node, group: Node }), []);
   const edgeTypes = useMemo(() => ({ smoothstep: Edge }), []);
 
-  const onConnect = useCallback(async (params) => {
-    try {
-      const result = await createEdge({
+  const onConnect = useCallback(
+    (params) => handleMutation(
+      () => createEdge({
         sourceNodeId: params.source,
         targetNodeId: params.target,
         label: ''
-      });
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-      } else {
-        console.error('Failed to create edge:', result.error);
-      }
-    } catch (error) {
-      console.error('Error creating edge:', error);
-    }
-  }, [handleFlowUpdate]);
+      }),
+      { errorContext: 'create edge' }
+    ),
+    [handleMutation]
+  );
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeIds([]);
@@ -458,22 +458,18 @@ function App() {
       return;
     }
 
-    try {
-      const result = await apiCreateGroup({
+    await handleMutation(
+      () => apiCreateGroup({
         memberIds: selectedNodeIds,
         label: `Group ${Date.now()}`
-      });
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-        setSelectedNodeIds([]);
-      } else {
-        alert(`Failed to create group: ${result.error}`);
+      }),
+      {
+        errorContext: 'create group',
+        onSuccess: () => setSelectedNodeIds([]),
+        onError: (msg) => alert(msg),
       }
-    } catch (error) {
-      console.error('Error creating group:', error);
-      alert('Failed to create group');
-    }
-  }, [selectedNodeIds, nodes, validateGroupMembership, handleFlowUpdate, setSelectedNodeIds]);
+    );
+  }, [selectedNodeIds, nodes, handleMutation, setSelectedNodeIds]);
 
   const ungroupNodes = useCallback(async () => {
     if (selectedNodeIds.length !== 1) {
@@ -481,27 +477,22 @@ function App() {
       return;
     }
 
-    const groupId = selectedNodeIds[0];
-    const groupNode = nodes.find((n) => n.id === groupId);
+    const groupNode = nodes.find((n) => n.id === selectedNodeIds[0]);
 
     if (!groupNode || groupNode.type !== 'group') {
       alert('Selected node is not a group');
       return;
     }
 
-    try {
-      const result = await apiUngroup(groupId);
-      if (result.success) {
-        handleFlowUpdate(result.flow);
-        setSelectedNodeIds([]);
-      } else {
-        alert(`Failed to ungroup: ${result.error}`);
+    await handleMutation(
+      () => apiUngroup(selectedNodeIds[0]),
+      {
+        errorContext: 'ungroup',
+        onSuccess: () => setSelectedNodeIds([]),
+        onError: (msg) => alert(msg),
       }
-    } catch (error) {
-      console.error('Error ungrouping:', error);
-      alert('Failed to ungroup');
-    }
-  }, [selectedNodeIds, nodes, handleFlowUpdate, setSelectedNodeIds]);
+    );
+  }, [selectedNodeIds, nodes, handleMutation, setSelectedNodeIds]);
 
   // Register keyboard shortcuts
   useHotkeys([
