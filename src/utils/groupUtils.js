@@ -213,20 +213,25 @@ const applyEdgeVisibility = (edges, nodeVisibilityMap) => {
 export const applyGroupVisibility = (nodes, edges) => {
   const ancestorHidden = computeAncestorHiddenSet(nodes);
 
-  const nextNodes = nodes.map((node) => {
-    const hiddenByAncestor = ancestorHidden.has(node.id);
-    return computeNodeVisibility(node, hiddenByAncestor);
-  });
+  // Single pass: compute visibility and build lookup map simultaneously
+  const { nextNodes, nodeHiddenLookup } = nodes.reduce(
+    (acc, node) => {
+      const hiddenByAncestor = ancestorHidden.has(node.id);
+      const next = computeNodeVisibility(node, hiddenByAncestor);
+      acc.nextNodes.push(next);
+      acc.nodeHiddenLookup.set(next.id, {
+        hidden: next.hidden,
+        groupHidden: next.groupHidden,
+      });
+      return acc;
+    },
+    { nextNodes: [], nodeHiddenLookup: new Map() }
+  );
 
   // Filter out old synthetic edges and compute new ones dynamically
   const realEdges = edges.filter(e => !e.data?.isSyntheticGroupEdge);
   const syntheticEdges = computeSyntheticEdges(nextNodes, realEdges);
   const allEdges = [...realEdges, ...syntheticEdges];
-
-  const nodeHiddenLookup = nextNodes.reduce((acc, node) => {
-    acc.set(node.id, { hidden: node.hidden, groupHidden: node.groupHidden });
-    return acc;
-  }, new Map());
 
   const nextEdges = applyEdgeVisibility(allEdges, nodeHiddenLookup);
 
