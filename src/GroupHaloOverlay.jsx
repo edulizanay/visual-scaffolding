@@ -100,10 +100,12 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                 return;
               }
 
+              setCollapsingId(halo.groupId);
+
               const rect = rectRefs.current.get(halo.groupId);
               if (rect && targetBounds && typeof rect.animate === 'function') {
                 // Animate using Web Animations API
-                rect.animate([
+                const animation = rect.animate([
                   {
                     x: screenX,
                     y: screenY,
@@ -121,10 +123,15 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                   easing: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
                   fill: 'forwards',
                 });
-              }
 
-              setCollapsingId(halo.groupId);
-              onCollapse?.(halo.groupId);
+                // Wait for animation to finish before collapsing
+                animation.onfinish = () => {
+                  onCollapse?.(halo.groupId);
+                };
+              } else {
+                // No animation support, collapse immediately
+                onCollapse?.(halo.groupId);
+              }
             }}
           />
         );
