@@ -118,14 +118,6 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                 const targetWidth = targetBounds.width * zoom;
                 const targetHeight = targetBounds.height * zoom;
 
-                console.log('Animation target:', {
-                  targetBounds,
-                  zoom,
-                  viewport: { x, y },
-                  final: { targetX, targetY, targetWidth, targetHeight },
-                  current: { screenX, screenY, screenWidth, screenHeight }
-                });
-
                 // Animate using Web Animations API (need string values for SVG)
                 const animation = rect.animate([
                   {
