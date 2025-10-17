@@ -104,19 +104,24 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
 
               const rect = rectRefs.current.get(halo.groupId);
               if (rect && targetBounds && typeof rect.animate === 'function') {
-                // Animate using Web Animations API
+                const targetX = targetBounds.x * zoom + x;
+                const targetY = targetBounds.y * zoom + y;
+                const targetWidth = targetBounds.width * zoom;
+                const targetHeight = targetBounds.height * zoom;
+
+                // Animate using Web Animations API (need string values for SVG)
                 const animation = rect.animate([
                   {
-                    x: screenX,
-                    y: screenY,
-                    width: screenWidth,
-                    height: screenHeight,
+                    x: `${screenX}px`,
+                    y: `${screenY}px`,
+                    width: `${screenWidth}px`,
+                    height: `${screenHeight}px`,
                   },
                   {
-                    x: targetBounds.x * zoom + x,
-                    y: targetBounds.y * zoom + y,
-                    width: targetBounds.width * zoom,
-                    height: targetBounds.height * zoom,
+                    x: `${targetX}px`,
+                    y: `${targetY}px`,
+                    width: `${targetWidth}px`,
+                    height: `${targetHeight}px`,
                   },
                 ], {
                   duration: 400,
