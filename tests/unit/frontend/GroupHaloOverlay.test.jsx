@@ -188,4 +188,43 @@ describe('GroupHaloOverlay', () => {
     });
   });
 
+  describe('collapse animation - Stage 4: color transition', () => {
+    test('should transition halo stroke color to GroupNode border color during collapse', () => {
+      const mockGetNodeDimensions = vi.fn(() => ({ width: 172, height: 70 }));
+
+      const haloWithNodes = {
+        groupId: 'group-1',
+        label: 'Group 1',
+        bounds: { x: 10, y: 20, width: 200, height: 150 },
+        memberNodes: [
+          { id: 'node-1', position: { x: 50, y: 50 } },
+          { id: 'node-2', position: { x: 100, y: 100 } },
+        ],
+      };
+
+      const onCollapse = vi.fn();
+
+      const { container } = render(
+        <GroupHaloOverlay
+          halos={[haloWithNodes]}
+          onCollapse={onCollapse}
+          getNodeDimensions={mockGetNodeDimensions}
+        />
+      );
+
+      const rect = container.querySelector('rect');
+
+      // Verify initial stroke color (from theme)
+      expect(rect).toHaveAttribute('data-initial-stroke', 'rgba(99, 102, 241, 0.45)');
+
+      // Double-click to trigger collapse animation
+      act(() => {
+        fireEvent.doubleClick(rect);
+      });
+
+      // Should set target stroke color to GroupNode border color
+      expect(rect).toHaveAttribute('data-target-stroke', '#6366f1');
+    });
+  });
+
 });

@@ -69,6 +69,9 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
         const screenWidth = halo.bounds.width * zoom;
         const screenHeight = halo.bounds.height * zoom;
         const isHovered = hoveredId === halo.groupId;
+        const currentStroke = isHovered
+          ? THEME.groupNode.halo.colors.hovered
+          : THEME.groupNode.halo.colors.normal;
 
         return (
           <rect
@@ -83,11 +86,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
             rx={THEME.groupNode.halo.borderRadius}
             ry={THEME.groupNode.halo.borderRadius}
             fill="none"
-            stroke={
-              isHovered
-                ? THEME.groupNode.halo.colors.hovered
-                : THEME.groupNode.halo.colors.normal
-            }
+            stroke={currentStroke}
             strokeWidth={
               isHovered
                 ? THEME.groupNode.halo.strokeWidth.hovered
@@ -100,6 +99,8 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
             data-target-height={targetBounds?.height}
             data-opacity="1"
             data-target-opacity="0.3"
+            data-initial-stroke={currentStroke}
+            data-target-stroke={THEME.groupNode.colors.border}
             data-animating={isCollapsing ? 'true' : undefined}
             onMouseEnter={() => setHoveredId(halo.groupId)}
             onMouseLeave={() =>
@@ -120,6 +121,10 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                 const targetWidth = targetBounds.width * zoom;
                 const targetHeight = targetBounds.height * zoom;
 
+                // Get stroke colors for animation
+                const initialStroke = rect.getAttribute('data-initial-stroke');
+                const targetStroke = rect.getAttribute('data-target-stroke');
+
                 // Animate using Web Animations API (need string values for SVG)
                 const animation = rect.animate([
                   {
@@ -128,6 +133,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                     width: `${screenWidth}px`,
                     height: `${screenHeight}px`,
                     opacity: 1.0,
+                    stroke: initialStroke,
                   },
                   {
                     x: `${targetX}px`,
@@ -135,6 +141,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                     width: `${targetWidth}px`,
                     height: `${targetHeight}px`,
                     opacity: 0.3,
+                    stroke: targetStroke,
                   },
                 ], {
                   duration: 400,
