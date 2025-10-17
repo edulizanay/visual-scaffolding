@@ -59,4 +59,55 @@ describe('GroupHaloOverlay', () => {
     expect(rect).toHaveAttribute('stroke', `${THEME.groupNode.halo.colors.hovered}`);
     expect(rect).toHaveAttribute('stroke-width', `${THEME.groupNode.halo.strokeWidth.hovered}`);
   });
+
+  describe('collapse animation - Stage 1: target bounds calculation', () => {
+    test('should calculate target bounds from member nodes when collapse starts', () => {
+      const mockGetNodeDimensions = vi.fn((node) => {
+        // Mock dimensions for the collapsed group node
+        if (node.id === 'group-1') {
+          return { width: 172, height: 70 }; // Standard node size from theme
+        }
+        return { width: 100, height: 50 };
+      });
+
+      const haloWithNodes = {
+        ...halo,
+        memberNodes: [
+          { id: 'node-1', position: { x: 15, y: 25 } },
+          { id: 'node-2', position: { x: 95, y: 75 } },
+        ],
+      };
+
+      const onCollapse = vi.fn();
+      const { container } = render(
+        <GroupHaloOverlay
+          halos={[haloWithNodes]}
+          onCollapse={onCollapse}
+          getNodeDimensions={mockGetNodeDimensions}
+        />
+      );
+
+      const rect = container.querySelector('rect');
+
+      act(() => {
+        fireEvent.doubleClick(rect);
+      });
+
+      // Should calculate target bounds as centroid of member nodes
+      // Expected: center of members is at (55, 50), GroupNode will be positioned there
+      // with size 172x70 from theme
+      const expectedTargetBounds = {
+        x: 55 - 172/2, // center x - half width
+        y: 50 - 70/2,  // center y - half height
+        width: 172,
+        height: 70,
+      };
+
+      // Check that rect has data attribute with target bounds for animation
+      expect(rect).toHaveAttribute('data-target-x', String(expectedTargetBounds.x));
+      expect(rect).toHaveAttribute('data-target-y', String(expectedTargetBounds.y));
+      expect(rect).toHaveAttribute('data-target-width', String(expectedTargetBounds.width));
+      expect(rect).toHaveAttribute('data-target-height', String(expectedTargetBounds.height));
+    });
+  });
 });

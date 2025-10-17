@@ -5,9 +5,33 @@ import { useState } from 'react';
 import { useViewport } from '@xyflow/react';
 import { THEME } from './constants/theme.js';
 
-export const GroupHaloOverlay = ({ halos, onCollapse }) => {
+export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
   const [hoveredId, setHoveredId] = useState(null);
   const { x = 0, y = 0, zoom = 1 } = useViewport() || {};
+
+  // Calculate target bounds for collapsed group node (centroid of members)
+  const calculateTargetBounds = (halo) => {
+    if (!halo.memberNodes || halo.memberNodes.length === 0) {
+      return null;
+    }
+
+    // Calculate centroid of member nodes
+    const sumX = halo.memberNodes.reduce((sum, node) => sum + node.position.x, 0);
+    const sumY = halo.memberNodes.reduce((sum, node) => sum + node.position.y, 0);
+    const centroidX = sumX / halo.memberNodes.length;
+    const centroidY = sumY / halo.memberNodes.length;
+
+    // Get dimensions for the collapsed group node
+    const groupNodeDimensions = getNodeDimensions?.({ id: halo.groupId }) || { width: 172, height: 70 };
+
+    // Position the group node centered at the centroid
+    return {
+      x: centroidX - groupNodeDimensions.width / 2,
+      y: centroidY - groupNodeDimensions.height / 2,
+      width: groupNodeDimensions.width,
+      height: groupNodeDimensions.height,
+    };
+  };
 
   if (!halos || halos.length === 0) {
     return null;
@@ -31,6 +55,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse }) => {
         const screenWidth = halo.bounds.width * zoom;
         const screenHeight = halo.bounds.height * zoom;
         const isHovered = hoveredId === halo.groupId;
+        const targetBounds = calculateTargetBounds(halo);
 
         return (
           <rect
@@ -53,6 +78,10 @@ export const GroupHaloOverlay = ({ halos, onCollapse }) => {
                 : THEME.groupNode.halo.strokeWidth.normal
             }
             pointerEvents="stroke"
+            data-target-x={targetBounds?.x}
+            data-target-y={targetBounds?.y}
+            data-target-width={targetBounds?.width}
+            data-target-height={targetBounds?.height}
             onMouseEnter={() => setHoveredId(halo.groupId)}
             onMouseLeave={() =>
               setHoveredId((current) => (current === halo.groupId ? null : current))
