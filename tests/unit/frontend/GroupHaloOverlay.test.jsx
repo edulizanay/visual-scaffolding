@@ -264,4 +264,46 @@ describe('GroupHaloOverlay', () => {
     });
   });
 
+  describe('expand animation', () => {
+    test('should render expand overlay when expandingGroupId is set', () => {
+      const mockGetNodeDimensions = vi.fn(() => ({ width: 172, height: 70 }));
+
+      const collapsedGroup = {
+        id: 'group-1',
+        type: 'group',
+        isCollapsed: true,
+        position: { x: 100, y: 100 },
+      };
+
+      const { container } = render(
+        <GroupHaloOverlay
+          halos={[]}
+          collapsedGroups={[collapsedGroup]}
+          expandingGroupId="group-1"
+          onExpand={vi.fn()}
+          getNodeDimensions={mockGetNodeDimensions}
+        />
+      );
+
+      const expandOverlay = container.querySelector('rect[data-expanding="true"]');
+      expect(expandOverlay).toBeTruthy();
+    });
+
+    test('should not render expand overlay when expandingGroupId is null', () => {
+      const mockGetNodeDimensions = vi.fn(() => ({ width: 172, height: 70 }));
+
+      const { container } = render(
+        <GroupHaloOverlay
+          halos={[]}
+          collapsedGroups={[]}
+          expandingGroupId={null}
+          getNodeDimensions={mockGetNodeDimensions}
+        />
+      );
+
+      const expandOverlay = container.querySelector('rect[data-expanding="true"]');
+      expect(expandOverlay).toBeFalsy();
+    });
+  });
+
 });
