@@ -271,10 +271,17 @@ function App() {
                 boxShadow: `0 0 0 ${THEME.node.states.selection.shadowSpread} ${THEME.node.states.selection.colors.shadow}`,
               }
             : {}),
+          // Hide node during expand animation
+          ...(expandingGroupId === node.id
+            ? {
+                opacity: 0,
+                pointerEvents: 'none',
+              }
+            : {}),
         },
       };
     });
-  }, [nodes, updateNodeLabel, updateNodeDescription, selectedNodeIds, getNodeDimensions]);
+  }, [nodes, updateNodeLabel, updateNodeDescription, selectedNodeIds, getNodeDimensions, expandingGroupId]);
 
   const edgesWithHandlers = useMemo(() => {
     return edges.map((edge) => ({

@@ -19,6 +19,9 @@ export const GroupHaloOverlay = ({
   const rectRefs = useRef(new Map());
   const expandOverlayRef = useRef(null);
 
+  // Store expanded halo bounds when collapsing, for use in reverse expand animation
+  const storedExpandedBoundsRef = useRef(new Map());
+
   // Calculate target bounds for collapsed group node (centroid of member node centers)
   const calculateTargetBounds = (halo) => {
     if (!halo.memberNodes || halo.memberNodes.length === 0) {
@@ -60,22 +63,31 @@ export const GroupHaloOverlay = ({
     const groupNode = collapsedGroups.find(g => g.id === expandingGroupId);
     if (!groupNode) return;
 
-    // Find the future halo bounds (need to calculate where it will be after expansion)
-    // For now, we'll need to get this from the backend or estimate it
-    // This is a simplified version - we may need to pass target bounds from App.jsx
+    // Get the stored expanded bounds from when this group was previously collapsed
+    const storedData = storedExpandedBoundsRef.current.get(expandingGroupId);
+    if (!storedData) {
+      // No stored bounds - expand immediately without animation
+      console.warn('No stored bounds for group', expandingGroupId, '- expanding without animation');
+      onExpand(expandingGroupId);
+      return;
+    }
+
     const rect = expandOverlayRef.current;
     if (rect && typeof rect.animate === 'function') {
-      // Get GroupNode screen position
+      // Get GroupNode screen position (starting point)
       const nodeDims = getNodeDimensions(groupNode);
       const nodeScreenX = groupNode.position.x * zoom + x;
       const nodeScreenY = groupNode.position.y * zoom + y;
       const nodeScreenWidth = nodeDims.width * zoom;
       const nodeScreenHeight = nodeDims.height * zoom;
 
-      // TODO: Calculate target expanded halo bounds
-      // For now, animate to a placeholder position
-      // We'll need to pass the target halo from App.jsx after we know member positions
+      // Get target expanded halo bounds (ending point)
+      const targetScreenX = storedData.bounds.x * zoom + x;
+      const targetScreenY = storedData.bounds.y * zoom + y;
+      const targetScreenWidth = storedData.bounds.width * zoom;
+      const targetScreenHeight = storedData.bounds.height * zoom;
 
+      // Animate from GroupNode appearance to halo appearance (reverse of collapse)
       const animation = rect.animate([
         {
           x: `${nodeScreenX}px`,
@@ -87,10 +99,10 @@ export const GroupHaloOverlay = ({
           fill: THEME.groupNode.colors.background,
         },
         {
-          x: `${nodeScreenX - 50}px`,  // Placeholder expansion
-          y: `${nodeScreenY - 50}px`,
-          width: `${nodeScreenWidth + 100}px`,
-          height: `${nodeScreenHeight + 100}px`,
+          x: `${targetScreenX}px`,
+          y: `${targetScreenY}px`,
+          width: `${targetScreenWidth}px`,
+          height: `${targetScreenHeight}px`,
           opacity: 1.0,
           stroke: THEME.groupNode.halo.colors.normal,
           fill: 'transparent',
@@ -181,6 +193,12 @@ export const GroupHaloOverlay = ({
               if (event.metaKey || event.ctrlKey) {
                 return;
               }
+
+              // Store the expanded bounds for future expand animation
+              storedExpandedBoundsRef.current.set(halo.groupId, {
+                bounds: halo.bounds,
+                memberNodes: halo.memberNodes,
+              });
 
               setCollapsingId(halo.groupId);
 
