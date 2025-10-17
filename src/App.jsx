@@ -331,6 +331,11 @@ function App() {
     [nodes, getNodeDimensions],
   );
 
+  const collapsedGroups = useMemo(
+    () => nodes.filter(n => n.type === 'group' && n.isCollapsed),
+    [nodes],
+  );
+
   const selectedGroupNode = useMemo(() => {
     if (selectedNodeIds.length !== 1) {
       return null;
@@ -340,8 +345,19 @@ function App() {
     return node?.type === 'group' ? node : null;
   }, [selectedNodeIds, nodes]);
 
+  const [expandingGroupId, setExpandingGroupId] = useState(null);
+
   const collapseExpandedGroup = useCallback(
     (groupId) => applyGroupExpansion(groupId, false),
+    [applyGroupExpansion],
+  );
+
+  const expandCollapsedGroup = useCallback(
+    (groupId) => {
+      applyGroupExpansion(groupId, true).finally(() => {
+        setExpandingGroupId(null);
+      });
+    },
     [applyGroupExpansion],
   );
 
@@ -349,6 +365,12 @@ function App() {
     (event, node) => {
       // Double-click on group node: toggle collapse/expand
       if (node.type === 'group') {
+        // If collapsed, trigger expand animation first
+        if (node.isCollapsed) {
+          setExpandingGroupId(node.id);
+          return;
+        }
+        // If expanded, collapse immediately (halo handles its own animation)
         applyGroupExpansion(node.id);
         return;
       }
@@ -522,7 +544,14 @@ function App() {
         fitViewOptions={{ padding: fitViewPadding }}
         proOptions={{ hideAttribution: true }}
       >
-        <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} getNodeDimensions={getNodeDimensions} />
+        <GroupHaloOverlay
+          halos={groupHalos}
+          onCollapse={collapseExpandedGroup}
+          collapsedGroups={collapsedGroups}
+          expandingGroupId={expandingGroupId}
+          onExpand={expandCollapsedGroup}
+          getNodeDimensions={getNodeDimensions}
+        />
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
       <KeyboardUI tooltipConfig={tooltipConfig} />

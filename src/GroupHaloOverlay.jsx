@@ -1,15 +1,23 @@
 // ABOUTME: Visual halo overlay for expanded group nodes
 // ABOUTME: Renders SVG rectangles around group members with hover states and morphing animations
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useViewport } from '@xyflow/react';
 import { THEME } from './constants/theme.js';
 
-export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
+export const GroupHaloOverlay = ({
+  halos,
+  onCollapse,
+  collapsedGroups = [],
+  expandingGroupId = null,
+  onExpand,
+  getNodeDimensions
+}) => {
   const [hoveredId, setHoveredId] = useState(null);
   const [collapsingId, setCollapsingId] = useState(null);
   const { x = 0, y = 0, zoom = 1 } = useViewport() || {};
   const rectRefs = useRef(new Map());
+  const expandOverlayRef = useRef(null);
 
   // Calculate target bounds for collapsed group node (centroid of member node centers)
   const calculateTargetBounds = (halo) => {
@@ -44,15 +52,75 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
     };
   };
 
-  if (!halos || halos.length === 0) {
+  // Handle expand animation when expandingGroupId changes
+  useEffect(() => {
+    if (!expandingGroupId || !onExpand) return;
+
+    // Find the collapsed group node
+    const groupNode = collapsedGroups.find(g => g.id === expandingGroupId);
+    if (!groupNode) return;
+
+    // Find the future halo bounds (need to calculate where it will be after expansion)
+    // For now, we'll need to get this from the backend or estimate it
+    // This is a simplified version - we may need to pass target bounds from App.jsx
+    const rect = expandOverlayRef.current;
+    if (rect && typeof rect.animate === 'function') {
+      // Get GroupNode screen position
+      const nodeDims = getNodeDimensions(groupNode);
+      const nodeScreenX = groupNode.position.x * zoom + x;
+      const nodeScreenY = groupNode.position.y * zoom + y;
+      const nodeScreenWidth = nodeDims.width * zoom;
+      const nodeScreenHeight = nodeDims.height * zoom;
+
+      // TODO: Calculate target expanded halo bounds
+      // For now, animate to a placeholder position
+      // We'll need to pass the target halo from App.jsx after we know member positions
+
+      const animation = rect.animate([
+        {
+          x: `${nodeScreenX}px`,
+          y: `${nodeScreenY}px`,
+          width: `${nodeScreenWidth}px`,
+          height: `${nodeScreenHeight}px`,
+          opacity: 1.0,
+          stroke: THEME.groupNode.colors.border,
+          fill: THEME.groupNode.colors.background,
+        },
+        {
+          x: `${nodeScreenX - 50}px`,  // Placeholder expansion
+          y: `${nodeScreenY - 50}px`,
+          width: `${nodeScreenWidth + 100}px`,
+          height: `${nodeScreenHeight + 100}px`,
+          opacity: 1.0,
+          stroke: THEME.groupNode.halo.colors.normal,
+          fill: 'transparent',
+        },
+      ], {
+        duration: 400,
+        easing: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
+        fill: 'forwards',
+      });
+
+      animation.onfinish = () => {
+        onExpand(expandingGroupId);
+      };
+    } else {
+      // No animation support, expand immediately
+      onExpand(expandingGroupId);
+    }
+  }, [expandingGroupId, collapsedGroups, onExpand, getNodeDimensions, x, y, zoom]);
+
+  const hasHalos = halos && halos.length > 0;
+
+  if (!hasHalos && !expandingGroupId) {
     return null;
   }
 
-  const sortedHalos = [...halos].sort((a, b) => {
+  const sortedHalos = hasHalos ? [...halos].sort((a, b) => {
     const areaA = a.bounds.width * a.bounds.height;
     const areaB = b.bounds.width * b.bounds.height;
     return areaA - areaB;
-  });
+  }) : [];
 
   return (
     <svg
@@ -167,6 +235,35 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
           />
         );
       })}
+
+      {/* Expand overlay - temporary rect for expand animation */}
+      {expandingGroupId && (() => {
+        const groupNode = collapsedGroups.find(g => g.id === expandingGroupId);
+        if (!groupNode) return null;
+
+        const nodeDims = getNodeDimensions(groupNode);
+        const nodeScreenX = groupNode.position.x * zoom + x;
+        const nodeScreenY = groupNode.position.y * zoom + y;
+        const nodeScreenWidth = nodeDims.width * zoom;
+        const nodeScreenHeight = nodeDims.height * zoom;
+
+        return (
+          <rect
+            ref={expandOverlayRef}
+            x={nodeScreenX}
+            y={nodeScreenY}
+            width={nodeScreenWidth}
+            height={nodeScreenHeight}
+            rx={THEME.groupNode.halo.borderRadius}
+            ry={THEME.groupNode.halo.borderRadius}
+            fill={THEME.groupNode.colors.background}
+            stroke={THEME.groupNode.colors.border}
+            strokeWidth={1}
+            pointerEvents="none"
+            data-expanding="true"
+          />
+        );
+      })()}
     </svg>
   );
 };
