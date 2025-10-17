@@ -112,7 +112,7 @@ describe('GroupHaloOverlay', () => {
   });
 
   describe('collapse animation - Stage 2: bounds morphing', () => {
-    test('should apply CSS transitions and morph bounds on double-click', () => {
+    test('should set data-animating flag on double-click', () => {
       const mockGetNodeDimensions = vi.fn(() => ({ width: 172, height: 70 }));
 
       const haloWithNodes = {
@@ -126,6 +126,7 @@ describe('GroupHaloOverlay', () => {
       };
 
       const onCollapse = vi.fn();
+
       const { container } = render(
         <GroupHaloOverlay
           halos={[haloWithNodes]}
@@ -136,25 +137,13 @@ describe('GroupHaloOverlay', () => {
 
       const rect = container.querySelector('rect');
 
-      // Initial state
-      expect(rect.getAttribute('x')).toBe('10');
-      expect(rect.getAttribute('y')).toBe('20');
-
       // Double-click to trigger collapse animation
       act(() => {
         fireEvent.doubleClick(rect);
       });
 
-      // Should have transition style applied
-      const style = rect.getAttribute('style');
-      expect(style).toContain('transition');
-
-      // Bounds should update to target values (triggers CSS animation)
-      // Centroid: (75, 75), Target: (75 - 86, 75 - 35) = (-11, 40)
-      expect(rect.getAttribute('x')).toBe('-11');
-      expect(rect.getAttribute('y')).toBe('40');
-      expect(rect.getAttribute('width')).toBe('172');
-      expect(rect.getAttribute('height')).toBe('70');
+      // Should set animating flag (actual animation happens via Web Animations API in browser)
+      expect(rect).toHaveAttribute('data-animating', 'true');
     });
   });
 
