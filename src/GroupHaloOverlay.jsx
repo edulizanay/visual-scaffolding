@@ -98,6 +98,8 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
             data-target-y={targetBounds?.y}
             data-target-width={targetBounds?.width}
             data-target-height={targetBounds?.height}
+            data-opacity="1"
+            data-target-opacity="0.3"
             data-animating={isCollapsing ? 'true' : undefined}
             onMouseEnter={() => setHoveredId(halo.groupId)}
             onMouseLeave={() =>
@@ -125,12 +127,14 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                     y: `${screenY}px`,
                     width: `${screenWidth}px`,
                     height: `${screenHeight}px`,
+                    opacity: 1.0,
                   },
                   {
                     x: `${targetX}px`,
                     y: `${targetY}px`,
                     width: `${targetWidth}px`,
                     height: `${targetHeight}px`,
+                    opacity: 0.3,
                   },
                 ], {
                   duration: 400,
