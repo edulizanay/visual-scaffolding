@@ -24,3 +24,5 @@ We try to maintain & update the .agent folder which should include all critical 
 - Please read README.md first to get understanding of what already exist
 - Update relevant parts in system & architecture design, or SOP for mistakes we made
 - In the end, always update the README.md too to include an index of all documentation files
+
+REMINDER: total line count is being updated automatically with a script, you dont need to update that yourself.
