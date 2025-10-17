@@ -46,6 +46,7 @@ function App() {
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
+  const [expandingGroupId, setExpandingGroupId] = useState(null);
 
   const {
     applyLayoutWithAnimation,
@@ -351,8 +352,6 @@ function App() {
     const node = nodes.find((n) => n.id === selectedId);
     return node?.type === 'group' ? node : null;
   }, [selectedNodeIds, nodes]);
-
-  const [expandingGroupId, setExpandingGroupId] = useState(null);
 
   const collapseExpandedGroup = useCallback(
     (groupId) => applyGroupExpansion(groupId, false),
