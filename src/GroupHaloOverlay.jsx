@@ -11,17 +11,26 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
   const { x = 0, y = 0, zoom = 1 } = useViewport() || {};
   const rectRefs = useRef(new Map());
 
-  // Calculate target bounds for collapsed group node (centroid of members)
+  // Calculate target bounds for collapsed group node (centroid of member node centers)
   const calculateTargetBounds = (halo) => {
     if (!halo.memberNodes || halo.memberNodes.length === 0) {
       return null;
     }
 
-    // Calculate centroid of member nodes
-    const sumX = halo.memberNodes.reduce((sum, node) => sum + node.position.x, 0);
-    const sumY = halo.memberNodes.reduce((sum, node) => sum + node.position.y, 0);
-    const centroidX = sumX / halo.memberNodes.length;
-    const centroidY = sumY / halo.memberNodes.length;
+    // Calculate centroid from CENTER of each member node, not top-left corner
+    let sumCenterX = 0;
+    let sumCenterY = 0;
+
+    halo.memberNodes.forEach((node) => {
+      const dims = getNodeDimensions?.(node) || { width: 172, height: 70 };
+      const centerX = node.position.x + dims.width / 2;
+      const centerY = node.position.y + dims.height / 2;
+      sumCenterX += centerX;
+      sumCenterY += centerY;
+    });
+
+    const centroidX = sumCenterX / halo.memberNodes.length;
+    const centroidY = sumCenterY / halo.memberNodes.length;
 
     // Get dimensions for the collapsed group node
     const groupNodeDimensions = getNodeDimensions?.({ id: halo.groupId }) || { width: 172, height: 70 };

@@ -93,12 +93,14 @@ describe('GroupHaloOverlay', () => {
         fireEvent.doubleClick(rect);
       });
 
-      // Should calculate target bounds as centroid of member nodes
-      // Expected: center of members is at (55, 50), GroupNode will be positioned there
-      // with size 172x70 from theme
+      // Should calculate target bounds as centroid of member node CENTERS
+      // Node 1: position (15, 25) + dims (100, 50) = center at (65, 50)
+      // Node 2: position (95, 75) + dims (100, 50) = center at (145, 100)
+      // Centroid: ((65+145)/2, (50+100)/2) = (105, 75)
+      // GroupNode positioned centered at centroid
       const expectedTargetBounds = {
-        x: 55 - 172/2, // center x - half width
-        y: 50 - 70/2,  // center y - half height
+        x: 105 - 172/2, // 19
+        y: 75 - 70/2,   // 40
         width: 172,
         height: 70,
       };
