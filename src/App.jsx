@@ -522,7 +522,7 @@ function App() {
         fitViewOptions={{ padding: fitViewPadding }}
         proOptions={{ hideAttribution: true }}
       >
-        <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} />
+        <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} getNodeDimensions={getNodeDimensions} />
       </ReactFlow>
       <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
       <KeyboardUI tooltipConfig={tooltipConfig} />

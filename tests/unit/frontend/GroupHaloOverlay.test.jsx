@@ -110,4 +110,5 @@ describe('GroupHaloOverlay', () => {
       expect(rect).toHaveAttribute('data-target-height', String(expectedTargetBounds.height));
     });
   });
+
 });

@@ -579,6 +579,7 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, paddingConfig = 
     candidates.push({
       node: groupNode,
       bounds,
+      descendants,
     });
   });
 
@@ -588,7 +589,7 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, paddingConfig = 
   const childGroupMap = buildEligibleGroupChildMap(nodes, eligibleGroupIds);
   const depthMap = computeEligibleGroupDepthMap(childGroupMap);
 
-  return candidates.map(({ node, bounds }) => {
+  return candidates.map(({ node, bounds, descendants }) => {
     const nestedDepth = depthMap.get(node.id) ?? 0;
     const horizontalPadding = computeHaloPaddingForDepth(0, config.x);
     const verticalPadding = computeHaloPaddingForDepth(nestedDepth, config.y);
@@ -602,6 +603,7 @@ export const getExpandedGroupHalos = (nodes, getNodeDimensions, paddingConfig = 
         width: (bounds.maxX - bounds.minX) + horizontalPadding * 2,
         height: (bounds.maxY - bounds.minY) + verticalPadding * 2,
       },
+      memberNodes: descendants,
     };
   });
 };
