@@ -85,7 +85,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
             height={screenHeight}
             rx={THEME.groupNode.halo.borderRadius}
             ry={THEME.groupNode.halo.borderRadius}
-            fill="none"
+            fill="transparent"
             stroke={currentStroke}
             strokeWidth={
               isHovered
@@ -101,6 +101,8 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
             data-target-opacity="0.3"
             data-initial-stroke={currentStroke}
             data-target-stroke={THEME.groupNode.colors.border}
+            data-initial-fill="transparent"
+            data-target-fill={THEME.groupNode.colors.background}
             data-animating={isCollapsing ? 'true' : undefined}
             onMouseEnter={() => setHoveredId(halo.groupId)}
             onMouseLeave={() =>
@@ -121,9 +123,11 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                 const targetWidth = targetBounds.width * zoom;
                 const targetHeight = targetBounds.height * zoom;
 
-                // Get stroke colors for animation
+                // Get colors for animation
                 const initialStroke = rect.getAttribute('data-initial-stroke');
                 const targetStroke = rect.getAttribute('data-target-stroke');
+                const initialFill = rect.getAttribute('data-initial-fill');
+                const targetFill = rect.getAttribute('data-target-fill');
 
                 // Animate using Web Animations API (need string values for SVG)
                 const animation = rect.animate([
@@ -134,6 +138,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                     height: `${screenHeight}px`,
                     opacity: 1.0,
                     stroke: initialStroke,
+                    fill: initialFill,
                   },
                   {
                     x: `${targetX}px`,
@@ -142,6 +147,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
                     height: `${targetHeight}px`,
                     opacity: 0.3,
                     stroke: targetStroke,
+                    fill: targetFill,
                   },
                 ], {
                   duration: 400,
