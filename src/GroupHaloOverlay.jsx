@@ -5,6 +5,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useViewport } from '@xyflow/react';
 import { THEME } from './constants/theme.js';
 
+// Animation configuration
+const ANIMATION_DURATION_MS = 400;
+const ANIMATION_EASING = 'cubic-bezier(0.0, 0.0, 0.2, 1)';
+
 export const GroupHaloOverlay = ({
   halos,
   onCollapse,
@@ -21,6 +25,20 @@ export const GroupHaloOverlay = ({
 
   // Store expanded halo bounds when collapsing, for use in reverse expand animation
   const storedExpandedBoundsRef = useRef(new Map());
+
+  // Cleanup stored bounds for deleted groups to prevent memory leaks
+  useEffect(() => {
+    const currentGroupIds = new Set([
+      ...halos.map(h => h.groupId),
+      ...collapsedGroups.map(g => g.id),
+    ]);
+
+    for (const [groupId] of storedExpandedBoundsRef.current) {
+      if (!currentGroupIds.has(groupId)) {
+        storedExpandedBoundsRef.current.delete(groupId);
+      }
+    }
+  }, [halos, collapsedGroups]);
 
   // Calculate target bounds for collapsed group node (centroid of member node centers)
   const calculateTargetBounds = (halo) => {
@@ -67,55 +85,62 @@ export const GroupHaloOverlay = ({
     const storedData = storedExpandedBoundsRef.current.get(expandingGroupId);
     if (!storedData) {
       // No stored bounds - expand immediately without animation
-      console.warn('No stored bounds for group', expandingGroupId, '- expanding without animation');
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('No stored bounds for group', expandingGroupId, '- expanding without animation');
+      }
       onExpand(expandingGroupId);
       return;
     }
 
     const rect = expandOverlayRef.current;
     if (rect && typeof rect.animate === 'function') {
-      // Get GroupNode screen position (starting point)
-      const nodeDims = getNodeDimensions(groupNode);
-      const nodeScreenX = groupNode.position.x * zoom + x;
-      const nodeScreenY = groupNode.position.y * zoom + y;
-      const nodeScreenWidth = nodeDims.width * zoom;
-      const nodeScreenHeight = nodeDims.height * zoom;
+      try {
+        // Get GroupNode screen position (starting point)
+        const nodeDims = getNodeDimensions(groupNode);
+        const nodeScreenX = groupNode.position.x * zoom + x;
+        const nodeScreenY = groupNode.position.y * zoom + y;
+        const nodeScreenWidth = nodeDims.width * zoom;
+        const nodeScreenHeight = nodeDims.height * zoom;
 
-      // Get target expanded halo bounds (ending point)
-      const targetScreenX = storedData.bounds.x * zoom + x;
-      const targetScreenY = storedData.bounds.y * zoom + y;
-      const targetScreenWidth = storedData.bounds.width * zoom;
-      const targetScreenHeight = storedData.bounds.height * zoom;
+        // Get target expanded halo bounds (ending point)
+        const targetScreenX = storedData.bounds.x * zoom + x;
+        const targetScreenY = storedData.bounds.y * zoom + y;
+        const targetScreenWidth = storedData.bounds.width * zoom;
+        const targetScreenHeight = storedData.bounds.height * zoom;
 
-      // Animate from GroupNode appearance to halo appearance (reverse of collapse)
-      const animation = rect.animate([
-        {
-          x: `${nodeScreenX}px`,
-          y: `${nodeScreenY}px`,
-          width: `${nodeScreenWidth}px`,
-          height: `${nodeScreenHeight}px`,
-          opacity: 1.0,
-          stroke: THEME.groupNode.colors.border,
-          fill: THEME.groupNode.colors.background,
-        },
-        {
-          x: `${targetScreenX}px`,
-          y: `${targetScreenY}px`,
-          width: `${targetScreenWidth}px`,
-          height: `${targetScreenHeight}px`,
-          opacity: 1.0,
-          stroke: THEME.groupNode.halo.colors.normal,
-          fill: 'transparent',
-        },
-      ], {
-        duration: 400,
-        easing: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
-        fill: 'forwards',
-      });
+        // Animate from GroupNode appearance to halo appearance (reverse of collapse)
+        const animation = rect.animate([
+          {
+            x: `${nodeScreenX}px`,
+            y: `${nodeScreenY}px`,
+            width: `${nodeScreenWidth}px`,
+            height: `${nodeScreenHeight}px`,
+            opacity: 1.0,
+            stroke: THEME.groupNode.colors.border,
+            fill: THEME.groupNode.colors.background,
+          },
+          {
+            x: `${targetScreenX}px`,
+            y: `${targetScreenY}px`,
+            width: `${targetScreenWidth}px`,
+            height: `${targetScreenHeight}px`,
+            opacity: 1.0,
+            stroke: THEME.groupNode.halo.colors.normal,
+            fill: 'transparent',
+          },
+        ], {
+          duration: ANIMATION_DURATION_MS,
+          easing: ANIMATION_EASING,
+          fill: 'forwards',
+        });
 
-      animation.onfinish = () => {
+        animation.onfinish = () => {
+          onExpand(expandingGroupId);
+        };
+      } catch (error) {
+        console.error('Expand animation failed, expanding immediately:', error);
         onExpand(expandingGroupId);
-      };
+      }
     } else {
       // No animation support, expand immediately
       onExpand(expandingGroupId);
@@ -204,47 +229,52 @@ export const GroupHaloOverlay = ({
 
               const rect = rectRefs.current.get(halo.groupId);
               if (rect && targetBounds && typeof rect.animate === 'function') {
-                const targetX = targetBounds.x * zoom + x;
-                const targetY = targetBounds.y * zoom + y;
-                const targetWidth = targetBounds.width * zoom;
-                const targetHeight = targetBounds.height * zoom;
+                try {
+                  const targetX = targetBounds.x * zoom + x;
+                  const targetY = targetBounds.y * zoom + y;
+                  const targetWidth = targetBounds.width * zoom;
+                  const targetHeight = targetBounds.height * zoom;
 
-                // Get colors for animation
-                const initialStroke = rect.getAttribute('data-initial-stroke');
-                const targetStroke = rect.getAttribute('data-target-stroke');
-                const initialFill = rect.getAttribute('data-initial-fill');
-                const targetFill = rect.getAttribute('data-target-fill');
+                  // Get colors for animation
+                  const initialStroke = rect.getAttribute('data-initial-stroke');
+                  const targetStroke = rect.getAttribute('data-target-stroke');
+                  const initialFill = rect.getAttribute('data-initial-fill');
+                  const targetFill = rect.getAttribute('data-target-fill');
 
-                // Animate using Web Animations API (need string values for SVG)
-                const animation = rect.animate([
-                  {
-                    x: `${screenX}px`,
-                    y: `${screenY}px`,
-                    width: `${screenWidth}px`,
-                    height: `${screenHeight}px`,
-                    opacity: 1.0,
-                    stroke: initialStroke,
-                    fill: initialFill,
-                  },
-                  {
-                    x: `${targetX}px`,
-                    y: `${targetY}px`,
-                    width: `${targetWidth}px`,
-                    height: `${targetHeight}px`,
-                    opacity: 0.3,
-                    stroke: targetStroke,
-                    fill: targetFill,
-                  },
-                ], {
-                  duration: 400,
-                  easing: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
-                  fill: 'forwards',
-                });
+                  // Animate using Web Animations API (need string values for SVG)
+                  const animation = rect.animate([
+                    {
+                      x: `${screenX}px`,
+                      y: `${screenY}px`,
+                      width: `${screenWidth}px`,
+                      height: `${screenHeight}px`,
+                      opacity: 1.0,
+                      stroke: initialStroke,
+                      fill: initialFill,
+                    },
+                    {
+                      x: `${targetX}px`,
+                      y: `${targetY}px`,
+                      width: `${targetWidth}px`,
+                      height: `${targetHeight}px`,
+                      opacity: 0.3,
+                      stroke: targetStroke,
+                      fill: targetFill,
+                    },
+                  ], {
+                    duration: ANIMATION_DURATION_MS,
+                    easing: ANIMATION_EASING,
+                    fill: 'forwards',
+                  });
 
-                // Wait for animation to finish before collapsing
-                animation.onfinish = () => {
+                  // Wait for animation to finish before collapsing
+                  animation.onfinish = () => {
+                    onCollapse?.(halo.groupId);
+                  };
+                } catch (error) {
+                  console.error('Collapse animation failed, collapsing immediately:', error);
                   onCollapse?.(halo.groupId);
-                };
+                }
               } else {
                 // No animation support, collapse immediately
                 onCollapse?.(halo.groupId);
