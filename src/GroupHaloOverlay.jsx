@@ -7,6 +7,7 @@ import { THEME } from './constants/theme.js';
 
 export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
   const [hoveredId, setHoveredId] = useState(null);
+  const [collapsingId, setCollapsingId] = useState(null);
   const { x = 0, y = 0, zoom = 1 } = useViewport() || {};
 
   // Calculate target bounds for collapsed group node (centroid of members)
@@ -50,12 +51,19 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
       height="100%"
     >
       {sortedHalos.map((halo) => {
-        const screenX = halo.bounds.x * zoom + x;
-        const screenY = halo.bounds.y * zoom + y;
-        const screenWidth = halo.bounds.width * zoom;
-        const screenHeight = halo.bounds.height * zoom;
-        const isHovered = hoveredId === halo.groupId;
+        const isCollapsing = collapsingId === halo.groupId;
         const targetBounds = calculateTargetBounds(halo);
+
+        // Use target bounds if collapsing, otherwise use current bounds
+        const displayBounds = isCollapsing && targetBounds
+          ? targetBounds
+          : halo.bounds;
+
+        const screenX = displayBounds.x * zoom + x;
+        const screenY = displayBounds.y * zoom + y;
+        const screenWidth = displayBounds.width * zoom;
+        const screenHeight = displayBounds.height * zoom;
+        const isHovered = hoveredId === halo.groupId;
 
         return (
           <rect
@@ -64,6 +72,9 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
             y={screenY}
             width={screenWidth}
             height={screenHeight}
+            style={{
+              transition: isCollapsing ? 'all 400ms cubic-bezier(0.0, 0.0, 0.2, 1)' : undefined,
+            }}
             rx={THEME.groupNode.halo.borderRadius}
             ry={THEME.groupNode.halo.borderRadius}
             fill="none"
@@ -91,6 +102,7 @@ export const GroupHaloOverlay = ({ halos, onCollapse, getNodeDimensions }) => {
               if (event.metaKey || event.ctrlKey) {
                 return;
               }
+              setCollapsingId(halo.groupId);
               onCollapse?.(halo.groupId);
             }}
           />
