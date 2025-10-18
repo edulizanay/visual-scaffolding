@@ -48,6 +48,7 @@ function App() {
   const edgesRef = useRef([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
+  const [notesBullets, setNotesBullets] = useState(null);
 
   const {
     applyLayoutWithAnimation,
@@ -551,6 +552,7 @@ function App() {
       <NotesPanel
         isOpen={isNotesPanelOpen}
         onClose={() => setIsNotesPanelOpen(false)}
+        externalBullets={notesBullets}
       />
 
       <ReactFlow
@@ -577,6 +579,7 @@ function App() {
         onFlowUpdate={handleFlowUpdate}
         onProcessingChange={setIsBackendProcessing}
         isNotesPanelOpen={isNotesPanelOpen}
+        onNotesUpdate={setNotesBullets}
       />
       <KeyboardUI tooltipConfig={tooltipConfig} />
     </div>

@@ -26,7 +26,7 @@ export const Kbd = ({ children, style = {} }) => (
   </kbd>
 );
 
-function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = false }) {
+function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = false, onNotesUpdate }) {
   const [message, setMessage] = useState('');
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [draftMessage, setDraftMessage] = useState('');
@@ -85,6 +85,10 @@ function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = fa
       try {
         const response = await sendNotesMessage(messageToSend);
         console.log('✅ Notes Response:', response);
+        // Notify NotesPanel of new bullets
+        if (response.success && response.bullets && onNotesUpdate) {
+          onNotesUpdate(response.bullets);
+        }
       } catch (error) {
         console.error('❌ Failed to send notes message:', error);
       } finally {

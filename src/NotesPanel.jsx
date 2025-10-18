@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadNotes, updateNotes } from './api';
 import { COLOR_DEEP_PURPLE, COLOR_INDIGO_LIGHT, TRANSITION_NORMAL, EASING_DECELERATE, EASING_ACCELERATE, Z_INDEX_NOTES_PANEL } from './constants/theme.js';
 
-function NotesPanel({ isOpen, onClose }) {
+function NotesPanel({ isOpen, onClose, externalBullets }) {
   const [bullets, setBullets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const debounceTimerRef = useRef(null);
@@ -27,6 +27,22 @@ function NotesPanel({ isOpen, onClose }) {
       fetchNotes();
     }
   }, [isOpen]);
+
+  // Update bullets when external bullets change (from ChatInterface)
+  useEffect(() => {
+    if (externalBullets) {
+      setBullets(externalBullets);
+    }
+  }, [externalBullets]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Auto-save bullets with debouncing
   const saveBullets = useCallback((updatedBullets) => {
@@ -68,6 +84,9 @@ function NotesPanel({ isOpen, onClose }) {
   return (
     <div
       data-testid="notes-panel"
+      role="complementary"
+      aria-label="Notes and ideas panel"
+      aria-hidden={!isOpen}
       style={{
         position: 'fixed',
         top: 0,
@@ -162,6 +181,7 @@ function NotesPanel({ isOpen, onClose }) {
         {bullets.length > 0 && (
           <button
             onClick={handleAddBullet}
+            aria-label="Add new bullet point"
             style={{
               marginTop: '12px',
               padding: '8px 12px',
@@ -240,6 +260,8 @@ function BulletItem({ value, onChange, onDelete }) {
         }}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        aria-label="Edit bullet point"
+        placeholder="Type your note here..."
         style={{
           flex: 1,
           background: isFocused ? 'rgba(99, 102, 241, 0.05)' : 'transparent',

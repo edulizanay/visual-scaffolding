@@ -30,6 +30,13 @@ export default defineConfig({
             'tests/toolExecution*.test.js',
             'tests/undo-redo-autosave.test.js',
           ],
+          // Run integration/E2E tests sequentially to avoid file conflicts
+          pool: 'forks',
+          poolOptions: {
+            forks: {
+              singleFork: true
+            }
+          },
         }
       },
 
