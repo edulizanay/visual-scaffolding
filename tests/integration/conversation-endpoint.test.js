@@ -4,8 +4,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 
-// Mock the callLLM function before importing anything that uses it
-let mockCallLLM;
+// Mock the callConversationLLM function before importing anything that uses it
+let mockCallConversationLLM;
 vi.mock('../../server/llm/llmService.js', () => ({
   buildLLMContext: vi.fn(async (userMessage) => ({
     systemPrompt: 'Mock system prompt',
@@ -42,7 +42,36 @@ vi.mock('../../server/llm/llmService.js', () => ({
 
     return { thinking, content, toolCalls, parseError };
   }),
-  callLLM: vi.fn((...args) => mockCallLLM(...args)),
+  callConversationLLM: vi.fn(async (...args) => {
+    // Call the mock and return parsed result directly
+    const llmResponse = await mockCallConversationLLM(...args);
+
+    // Parse the response
+    const thinkingMatch = llmResponse.match(/<thinking>([\s\S]*?)<\/thinking>/);
+    const thinking = thinkingMatch ? thinkingMatch[1].trim() : '';
+    const responseMatch = llmResponse.match(/<response>([\s\S]*?)<\/response>/);
+    const content = responseMatch ? responseMatch[1].trim() : '';
+
+    let toolCalls = [];
+    let parseError = null;
+
+    if (content) {
+      try {
+        const cleanedContent = content.replace(/\/\/.*$/gm, '').trim();
+        const parsed = JSON.parse(cleanedContent);
+        const toolUseBlocks = Array.isArray(parsed) ? parsed : [parsed];
+        toolCalls = toolUseBlocks.map(block => ({
+          id: block.id,
+          name: block.name,
+          params: block.input || {}
+        }));
+      } catch (error) {
+        parseError = `Failed to parse tool calls: ${error.message}`;
+      }
+    }
+
+    return { thinking, content, toolCalls, parseError };
+  }),
   buildRetryMessage: vi.fn((executionResults, toolCalls, currentFlow) => {
     // Real implementation for testing
     const lines = ["Previous tool execution results:\n"];
@@ -98,7 +127,7 @@ beforeEach(() => {
   saveFlow({ nodes: [], edges: [] });
 
   // Reset mock between tests
-  mockCallLLM = vi.fn();
+  mockCallConversationLLM = vi.fn();
 });
 
 afterEach(() => {
@@ -128,7 +157,7 @@ I need to create a login node as requested.
 ]
 </response>`;
 
-      mockCallLLM.mockResolvedValue(mockLLMResponse);
+      mockCallConversationLLM.mockResolvedValue(mockLLMResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -185,7 +214,7 @@ I need to create two nodes: Login and Dashboard, and connect them.
 ]
 </response>`;
 
-      mockCallLLM.mockResolvedValue(mockLLMResponse);
+      mockCallConversationLLM.mockResolvedValue(mockLLMResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -258,7 +287,7 @@ The edge failed because the nodes don't exist. I need to create them first.
 ]
 </response>`;
 
-      mockCallLLM
+      mockCallConversationLLM
         .mockResolvedValueOnce(firstLLMResponse)
         .mockResolvedValueOnce(secondLLMResponse);
 
@@ -268,7 +297,7 @@ The edge failed because the nodes don't exist. I need to create them first.
         .expect(200);
 
       // Verify retry occurred
-      expect(mockCallLLM).toHaveBeenCalledTimes(2);
+      expect(mockCallConversationLLM).toHaveBeenCalledTimes(2);
 
       // Verify final success
       expect(response.body.success).toBe(true);
@@ -277,7 +306,7 @@ The edge failed because the nodes don't exist. I need to create them first.
       expect(response.body.updatedFlow.edges).toHaveLength(1);
 
       // Verify buildRetryMessage was used correctly
-      const secondCallContext = mockCallLLM.mock.calls[1][0];
+      const secondCallContext = mockCallConversationLLM.mock.calls[1][0];
       expect(secondCallContext.userMessage).toContain('Previous tool execution results');
       expect(secondCallContext.userMessage).toContain('❌');
       expect(secondCallContext.userMessage).toContain('addEdge');
@@ -331,7 +360,7 @@ The settings node doesn't exist. I'll update the about node instead.
 ]
 </response>`;
 
-      mockCallLLM
+      mockCallConversationLLM
         .mockResolvedValueOnce(firstLLMResponse)
         .mockResolvedValueOnce(secondLLMResponse);
 
@@ -344,7 +373,7 @@ The settings node doesn't exist. I'll update the about node instead.
       expect(response.body.iterations).toBe(2);
 
       // Verify retry message format
-      const retryMessage = mockCallLLM.mock.calls[1][0].userMessage;
+      const retryMessage = mockCallConversationLLM.mock.calls[1][0].userMessage;
       expect(retryMessage).toContain('Previous tool execution results');
       expect(retryMessage).toContain('❌ updateNode');
       expect(retryMessage).toContain('settings');
@@ -408,7 +437,7 @@ The first two operations succeeded. I won't retry the delete since that node doe
 []
 </response>`;
 
-      mockCallLLM
+      mockCallConversationLLM
         .mockResolvedValueOnce(firstLLMResponse)
         .mockResolvedValueOnce(secondLLMResponse);
 
@@ -418,10 +447,10 @@ The first two operations succeeded. I won't retry the delete since that node doe
         .expect(200);
 
       // First iteration should report mixed results
-      expect(mockCallLLM).toHaveBeenCalledTimes(2);
+      expect(mockCallConversationLLM).toHaveBeenCalledTimes(2);
 
       // Verify retry message includes both successes and failures
-      const retryMessage = mockCallLLM.mock.calls[1][0].userMessage;
+      const retryMessage = mockCallConversationLLM.mock.calls[1][0].userMessage;
       expect(retryMessage).toContain('✅ addNode');
       expect(retryMessage).toContain('✅ updateNode');
       expect(retryMessage).toContain('❌ deleteNode');
@@ -449,7 +478,7 @@ I'll try to delete a non-existent node.
 ]
 </response>`;
 
-      mockCallLLM.mockResolvedValue(failingLLMResponse);
+      mockCallConversationLLM.mockResolvedValue(failingLLMResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -457,7 +486,7 @@ I'll try to delete a non-existent node.
         .expect(200);
 
       // Should have attempted 3 times
-      expect(mockCallLLM).toHaveBeenCalledTimes(3);
+      expect(mockCallConversationLLM).toHaveBeenCalledTimes(3);
 
       // Should report failure after max iterations
       expect(response.body.success).toBe(false);
@@ -523,7 +552,7 @@ I need to create the nodes first.
 ]
 </response>`;
 
-      mockCallLLM
+      mockCallConversationLLM
         .mockResolvedValueOnce(firstLLMResponse)
         .mockResolvedValueOnce(secondLLMResponse);
 
@@ -533,7 +562,7 @@ I need to create the nodes first.
         .expect(200);
 
       // Should stop after 2 iterations (not continue to 3)
-      expect(mockCallLLM).toHaveBeenCalledTimes(2);
+      expect(mockCallConversationLLM).toHaveBeenCalledTimes(2);
       expect(response.body.success).toBe(true);
       expect(response.body.iterations).toBe(2);
     });
@@ -557,7 +586,7 @@ Creating a test node.
 ]
 </response>`;
 
-      mockCallLLM.mockResolvedValue(mockLLMResponse);
+      mockCallConversationLLM.mockResolvedValue(mockLLMResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -597,7 +626,7 @@ Trying to delete a non-existent node.
 ]
 </response>`;
 
-      mockCallLLM.mockResolvedValue(failingLLMResponse);
+      mockCallConversationLLM.mockResolvedValue(failingLLMResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -624,7 +653,7 @@ Creating a node.
 This is not valid JSON!
 </response>`;
 
-      mockCallLLM.mockResolvedValue(invalidLLMResponse);
+      mockCallConversationLLM.mockResolvedValue(invalidLLMResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -647,7 +676,7 @@ I understand the request but cannot help with that.
 []
 </response>`;
 
-      mockCallLLM.mockResolvedValue(noToolCallsResponse);
+      mockCallConversationLLM.mockResolvedValue(noToolCallsResponse);
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -696,7 +725,7 @@ I understand the request but cannot help with that.
     });
 
     it('should handle LLM service errors', async () => {
-      mockCallLLM.mockRejectedValue(new Error('LLM service unavailable'));
+      mockCallConversationLLM.mockRejectedValue(new Error('LLM service unavailable'));
 
       const response = await request(app)
         .post('/api/conversation/message')
@@ -749,7 +778,7 @@ The first node was created, I'll create the second node and retry the edge.
 ]
 </response>`;
 
-      mockCallLLM
+      mockCallConversationLLM
         .mockResolvedValueOnce(firstLLMResponse)
         .mockResolvedValueOnce(secondLLMResponse);
 
@@ -759,7 +788,7 @@ The first node was created, I'll create the second node and retry the edge.
         .expect(200);
 
       // Verify retry message shows created node ID
-      const retryMessage = mockCallLLM.mock.calls[1][0].userMessage;
+      const retryMessage = mockCallConversationLLM.mock.calls[1][0].userMessage;
       expect(retryMessage).toContain('✅ addNode');
       expect(retryMessage).toContain('Created node with ID:');
       expect(retryMessage).toContain('❌ addEdge');

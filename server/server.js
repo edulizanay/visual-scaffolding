@@ -4,11 +4,10 @@ import express from 'express';
 import cors from 'cors';
 import { getFlow as dbGetFlow, saveFlow as dbSaveFlow } from './db.js';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from './conversationService.js';
-import { buildLLMContext, parseToolCalls, callLLM, buildRetryMessage } from './llm/llmService.js';
+import { buildLLMContext, parseToolCalls, callConversationLLM, buildRetryMessage, buildNotesContext, parseNotesBullets, callNotesLLM } from './llm/llmService.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 import { executeToolCalls } from './tools/executor.js';
 import { loadNotes, saveNotes, updateBullets } from './notesService.js';
-import { buildNotesContext, parseNotesBullets, callNotesLLM } from './llm/notesLLMService.js';
 
 // ==================== APP SETUP ====================
 
@@ -65,11 +64,8 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
   // Update llmContext with current message (initial or retry message)
   const contextWithMessage = { ...llmContext, userMessage: currentMessage };
 
-  // Call LLM API
-  const llmResponse = await callLLM(contextWithMessage);
-
-  // Parse LLM response
-  const parsed = parseToolCalls(llmResponse);
+  // Call LLM API (already returns parsed result!)
+  const parsed = await callConversationLLM(contextWithMessage);
 
   // Handle parse errors
   if (parsed.parseError) {
@@ -79,7 +75,7 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
         success: false,
         parseError: parsed.parseError,
         thinking: parsed.thinking,
-        response: llmResponse,
+        response: parsed.content,
         iterations: iteration
       })
     };
@@ -87,7 +83,7 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
 
   // If no tool calls, LLM gave up or finished without tools
   if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
-    await addAssistantMessage(llmResponse, []);
+    await addAssistantMessage(parsed.content, []);
     return {
       type: 'noTools',
       response: buildConversationResponse({
@@ -106,7 +102,7 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
   if (failures.length === 0) {
     // All tool calls succeeded!
     logIteration(iteration, 'success', { count: executionResults.length });
-    await addAssistantMessage(llmResponse, parsed.toolCalls);
+    await addAssistantMessage(parsed.content, parsed.toolCalls);
     const updatedFlow = await readFlow();
     return {
       type: 'success',
@@ -123,7 +119,7 @@ async function executeSingleIteration(currentMessage, llmContext, iteration) {
 
   // Some failures occurred
   logIteration(iteration, 'failure', { failed: failures.length, total: executionResults.length });
-  await addAssistantMessage(llmResponse, parsed.toolCalls);
+  await addAssistantMessage(parsed.content, parsed.toolCalls);
 
   return {
     type: 'retry',
@@ -349,13 +345,11 @@ app.post('/api/notes', async (req, res) => {
     // Load current notes
     const currentNotes = loadNotes();
     const currentBullets = currentNotes.bullets;
+    const conversationHistory = currentNotes.conversationHistory || [];
 
-    // Build context and call LLM
-    const notesContext = await buildNotesContext(currentBullets, message);
-    const llmResponse = await callNotesLLM(notesContext);
-
-    // Parse bullets from response
-    const parsed = parseNotesBullets(llmResponse);
+    // Build context and call LLM (now with conversation history!)
+    const notesContext = await buildNotesContext(currentBullets, message, conversationHistory);
+    const parsed = await callNotesLLM(notesContext);  // Already returns parsed result!
 
     if (parsed.parseError) {
       return res.json({
@@ -382,7 +376,7 @@ app.post('/api/notes', async (req, res) => {
       },
       {
         role: 'assistant',
-        content: llmResponse,
+        content: parsed.content,  // Use parsed.content instead of llmResponse
         timestamp
       }
     ];

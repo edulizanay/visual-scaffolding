@@ -1,5 +1,6 @@
-// ABOUTME: LLM service for building context and parsing responses
-// ABOUTME: Combines flow state, conversation history, and tools for LLM requests
+// ABOUTME: Unified LLM service for conversation and notes
+// ABOUTME: Handles Groq/Cerebras failover, prompts from YAML, and response parsing
+
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -8,9 +9,14 @@ import { getHistory } from '../conversationService.js';
 import { toolDefinitions } from './tools.js';
 import Groq from 'groq-sdk';
 import Cerebras from '@cerebras/cerebras_cloud_sdk';
+import YAML from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 // Load .env file manually
 const envPath = join(__dirname, '..', '..', '.env');
@@ -28,12 +34,16 @@ try {
   console.warn('Could not load .env file:', error.message);
 }
 
-// Initialize clients lazily
+// Load prompts from YAML
+const promptsPath = join(__dirname, 'prompts.yaml');
+const PROMPTS = YAML.parse(readFileSync(promptsPath, 'utf-8'));
+
+// Initialize clients lazily (singleton pattern)
 let groq = null;
 let cerebras = null;
 
 function getGroqClient() {
-  if (!groq) {
+  if (!groq && process.env.GROQ_API_KEY) {
     groq = new Groq({
       apiKey: process.env.GROQ_API_KEY
     });
@@ -42,7 +52,7 @@ function getGroqClient() {
 }
 
 function getCerebrasClient() {
-  if (!cerebras) {
+  if (!cerebras && process.env.CEREBRAS_API_KEY) {
     cerebras = new Cerebras({
       apiKey: process.env.CEREBRAS_API_KEY
     });
@@ -50,84 +60,66 @@ function getCerebrasClient() {
   return cerebras;
 }
 
-const SYSTEM_PROMPT = `You are a UI helper for React Flow graph structures.
-The user is building a flow diagram with nodes and edges.
+// ============================================================================
+// CORE LLM FUNCTIONS (shared by conversation + notes)
+// ============================================================================
 
-Your role:
-1. Review the conversation history to understand context
-2. Look at the current flow state (nodes and edges)
-3. Use the available tools to help the user achieve their objective
+/**
+ * Call LLM with Groq as primary and Cerebras as fallback
+ */
+async function callLLM(serviceName, messages) {
+  const config = PROMPTS[serviceName];
 
-Response format:
-- First, output your thinking process in <thinking> tags
-- Then, output your tool calls as a JSON array in <response> tags
-- Each tool call must have: type, id, name, and input
-- Follow this exact structure:
-
-<thinking>
-Your reasoning about what tools to use and why.
-</thinking>
-<response>
-[
-  {
-    "type": "tool_use",
-    "id": "toolu_01A09q90qw90lq917835lq9",
-    "name": "addNode",
-    "input": {
-      "label": "Login",
-      "description": "User authentication page"
-    }
-  },
-  {
-    "type": "tool_use",
-    "id": "toolu_01B10r01rw01mr018017mr1",
-    "name": "addNode",
-    "input": {
-      "label": "Home"
-    }
+  try {
+    return await _callLLMWithProvider('groq', messages, config.max_tokens);
+  } catch (error) {
+    console.log('Groq failed, falling back to Cerebras:', error.message);
+    return await _callLLMWithProvider('cerebras', messages, config.max_tokens);
   }
-]
-</response>
-
-Important:
-- The "id" can be any unique string (e.g., "toolu_" followed by random characters)
-- The "input" object contains the parameters for the tool
-- You can call multiple tools in a single response
-- Available tools and their schemas will be provided in each request`;
-
-/**
- * Load current flow state from database
- */
-async function loadFlow() {
-  return getFlow();
 }
 
 /**
- * Build complete LLM context
- * Combines user message, flow state, conversation history, and available tools
+ * Internal function to call LLM with a specific provider
  */
-export async function buildLLMContext(userMessage) {
-  const flowState = await loadFlow();
-  const conversationHistory = await getHistory(6); // Last 6 interactions
+async function _callLLMWithProvider(provider, messages, maxTokens) {
+  const client = provider === 'groq' ? getGroqClient() : getCerebrasClient();
+  const model = provider === 'groq' ? 'openai/gpt-oss-120b' : 'gpt-oss-120b';
 
-  return {
-    systemPrompt: SYSTEM_PROMPT,
-    userMessage,
-    flowState,
-    conversationHistory,
-    availableTools: toolDefinitions,
+  if (!client) {
+    throw new Error(`${provider} is not configured (missing API key)`);
+  }
+
+  console.log(`🌐 Calling ${provider.toUpperCase()} API with model: ${model}`);
+
+  const completionParams = {
+    model,
+    messages,
+    temperature: 1,
+    max_completion_tokens: maxTokens,
+    top_p: 1,
+    stream: true,
+    stop: null,
+    reasoning_effort: 'low'
   };
+
+  const completion = await client.chat.completions.create(completionParams);
+  console.log(`✅ ${provider.toUpperCase()} API call completed`);
+
+  // Collect the streamed response
+  let fullResponse = '';
+  for await (const chunk of completion) {
+    const content = chunk.choices[0]?.delta?.content || '';
+    fullResponse += content;
+  }
+
+  return fullResponse;
 }
 
 /**
- * Parse LLM response to extract thinking and tool calls
- * Expects Claude API format:
- * <thinking>reasoning here</thinking>
- * <response>
- * [{"type": "tool_use", "id": "...", "name": "...", "input": {...}}]
- * </response>
+ * Parse LLM response to extract <thinking> and <response> tags
+ * Shared by both conversation and notes services
  */
-export function parseToolCalls(llmResponse) {
+function parseLLMResponse(llmResponse) {
   // Extract thinking
   const thinkingMatch = llmResponse.match(/<thinking>([\s\S]*?)<\/thinking>/);
   const thinking = thinkingMatch ? thinkingMatch[1].trim() : '';
@@ -136,44 +128,112 @@ export function parseToolCalls(llmResponse) {
   const responseMatch = llmResponse.match(/<response>([\s\S]*?)<\/response>/);
   const content = responseMatch ? responseMatch[1].trim() : '';
 
-  let toolCalls = [];
+  let parsed = null;
   let parseError = null;
 
   if (content) {
     try {
       // Strip JSON comments that LLMs sometimes add
-      // Remove single-line comments (// style)
-      let cleanedContent = content.replace(/\/\/.*$/gm, '');
-      // Remove block comments (/* ... */ style, including multi-line)
-      cleanedContent = cleanedContent.replace(/\/\*[\s\S]*?\*\//g, '');
+      let cleanedContent = content.replace(/\/\/.*$/gm, '');  // Single-line comments
+      cleanedContent = cleanedContent.replace(/\/\*[\s\S]*?\*\//g, '');  // Block comments
       cleanedContent = cleanedContent.trim();
 
-      // Parse as JSON array
-      const parsed = JSON.parse(cleanedContent);
-
-      // Ensure it's an array
-      const toolUseBlocks = Array.isArray(parsed) ? parsed : [parsed];
-
-      // Convert Claude format to our internal format
-      toolCalls = toolUseBlocks.map(block => ({
-        id: block.id,
-        name: block.name,
-        params: block.input || {}
-      }));
+      // Parse as JSON
+      parsed = JSON.parse(cleanedContent);
     } catch (error) {
-      // If JSON parsing fails, capture the error
-      parseError = `Failed to parse tool calls: ${error.message}`;
+      parseError = `Failed to parse response: ${error.message}`;
       console.error(parseError);
       console.error('Content:', content);
     }
   }
 
+  return { thinking, content, parsed, parseError };
+}
+
+// ============================================================================
+// CONVERSATION SERVICE (tool-based flow manipulation)
+// ============================================================================
+
+/**
+ * Build complete LLM context for conversation
+ * Combines user message, flow state, conversation history, and available tools
+ */
+export async function buildLLMContext(userMessage) {
+  const flowState = await getFlow();
+  const conversationHistory = await getHistory(PROMPTS.conversation.history_limit);
+
   return {
-    thinking,
-    content,
-    toolCalls,
-    parseError, // Include error if parsing failed
+    systemPrompt: PROMPTS.conversation.system,
+    userMessage,
+    flowState,
+    conversationHistory,
+    availableTools: toolDefinitions,
   };
+}
+
+/**
+ * Call conversation LLM and return response with tool calls
+ */
+export async function callConversationLLM(llmContext) {
+  const { systemPrompt, userMessage, flowState, conversationHistory, availableTools } = llmContext;
+
+  // Format tools for the context message
+  const toolsText = availableTools.map(tool =>
+    `${tool.name}: ${tool.description}\nParameters: ${JSON.stringify(tool.parameters, null, 2)}`
+  ).join('\n\n');
+
+  // Build the user message with full context
+  const contextMessage = `Current Flow State:
+${JSON.stringify(flowState, null, 2)}
+
+Available Tools:
+${toolsText}
+
+User Request: ${userMessage}`;
+
+  // Convert conversation history to messages format
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    })),
+    { role: 'user', content: contextMessage }
+  ];
+
+  // Call LLM
+  const response = await callLLM('conversation', messages);
+
+  // Parse response
+  const { thinking, content, parsed, parseError } = parseLLMResponse(response);
+
+  // Convert to tool calls format
+  const toolCalls = parsed
+    ? (Array.isArray(parsed) ? parsed : [parsed]).map(block => ({
+        id: block.id,
+        name: block.name,
+        params: block.input || {}
+      }))
+    : [];
+
+  return { thinking, content, toolCalls, parseError };
+}
+
+/**
+ * Parse tool calls from LLM response (for backward compatibility)
+ */
+export function parseToolCalls(llmResponse) {
+  const { thinking, content, parsed, parseError } = parseLLMResponse(llmResponse);
+
+  const toolCalls = parsed
+    ? (Array.isArray(parsed) ? parsed : [parsed]).map(block => ({
+        id: block.id,
+        name: block.name,
+        params: block.input || {}
+      }))
+    : [];
+
+  return { thinking, content, toolCalls, parseError };
 }
 
 /**
@@ -230,77 +290,74 @@ export function buildRetryMessage(executionResults, toolCalls, currentFlow) {
   return lines.join('\n');
 }
 
+// ============================================================================
+// NOTES SERVICE (bullet extraction with conversation history)
+// ============================================================================
+
 /**
- * Call LLM API with the LLM context, with Groq as primary and Cerebras as fallback
- * Converts our context format to messages format and streams the response
+ * Build notes LLM context
+ * Combines current bullets, user message, flow state, and conversation history
  */
-export async function callLLM(llmContext) {
-  try {
-    return await _callLLMWithProvider('groq', llmContext);
-  } catch (error) {
-    console.log('Groq failed, falling back to Cerebras:', error.message);
-    return await _callLLMWithProvider('cerebras', llmContext);
-  }
+export async function buildNotesContext(bullets, userMessage, conversationHistory = []) {
+  const flowState = await getFlow();
+
+  return {
+    systemPrompt: PROMPTS.notes.system,
+    currentBullets: bullets,
+    userMessage,
+    flowState,
+    conversationHistory
+  };
 }
 
 /**
- * Internal function to call LLM with a specific provider
+ * Call notes LLM and return response with extracted bullets
  */
-async function _callLLMWithProvider(provider, llmContext) {
-  const { systemPrompt, userMessage, flowState, conversationHistory, availableTools } = llmContext;
+export async function callNotesLLM(notesContext) {
+  const { systemPrompt, currentBullets, userMessage, flowState, conversationHistory } = notesContext;
 
-  // Format tools for the context message
-  const toolsText = availableTools.map(tool =>
-    `${tool.name}: ${tool.description}\nParameters: ${JSON.stringify(tool.parameters, null, 2)}`
-  ).join('\n\n');
+  // Format current bullets
+  const bulletsText = currentBullets.length > 0
+    ? currentBullets.map((b, i) => `${i + 1}. ${b}`).join('\n')
+    : '(No notes yet)';
 
   // Build the user message with full context
-  const contextMessage = `Current Flow State:
+  const contextMessage = `Current Notes:
+${bulletsText}
+
+Current Flow State:
 ${JSON.stringify(flowState, null, 2)}
 
-Available Tools:
-${toolsText}
+User Message: ${userMessage}`;
 
-User Request: ${userMessage}`;
-
-  // Convert conversation history to messages format
+  // Build messages array with conversation history
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...conversationHistory.map(msg => ({
+    // Add conversation history (limited by PROMPTS.notes.history_limit)
+    ...conversationHistory.slice(-PROMPTS.notes.history_limit).map(msg => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
     })),
     { role: 'user', content: contextMessage }
   ];
 
-  // Get the appropriate client and model (Groq uses 'openai/' prefix, Cerebras doesn't)
-  const client = provider === 'groq' ? getGroqClient() : getCerebrasClient();
-  const model = provider === 'groq' ? 'openai/gpt-oss-120b' : 'gpt-oss-120b';
+  // Call LLM
+  const response = await callLLM('notes', messages);
 
-  console.log(`🌐 Calling ${provider.toUpperCase()} API with model: ${model}`);
+  // Parse response
+  const { thinking, content, parsed, parseError } = parseLLMResponse(response);
 
-  const completionParams = {
-    model,
-    messages,
-    temperature: 1,
-    max_completion_tokens: 8192,
-    top_p: 1,
-    stream: true,
-    stop: null,
-    reasoning_effort: 'low'
-  };
+  // Extract bullets (should be an array of strings)
+  const bullets = Array.isArray(parsed) ? parsed : [];
 
-  const completion = await client.chat.completions.create(completionParams);
-  console.log(`✅ ${provider.toUpperCase()} API call completed`);
+  return { thinking, content, bullets, parseError };
+}
 
-  // Collect the streamed response
-  let fullResponse = '';
-  for await (const chunk of completion) {
-    const content = chunk.choices[0]?.delta?.content || '';
-    fullResponse += content;
-    // Optionally log chunks for debugging
-    // process.stdout.write(content);
-  }
-
-  return fullResponse;
+/**
+ * Parse notes bullets from LLM response (for backward compatibility)
+ */
+export function parseNotesBullets(llmResponse) {
+  const { thinking, content, parsed, parseError } = parseLLMResponse(llmResponse);
+  const bullets = Array.isArray(parsed) ? parsed : [];
+  return { thinking, content, bullets, parseError };
 }

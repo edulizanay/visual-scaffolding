@@ -1,6 +1,6 @@
 // ABOUTME: Unit tests for Notes LLM service
 // ABOUTME: Tests notes context building, bullet parsing, and LLM failover
-import { parseNotesBullets, buildNotesContext, callNotesLLM } from '../../server/llm/notesLLMService.js';
+import { parseNotesBullets, buildNotesContext, callNotesLLM } from '../../server/llm/llmService.js';
 import { saveFlow, closeDb } from '../../server/db.js';
 
 describe('notesLLMService', () => {
