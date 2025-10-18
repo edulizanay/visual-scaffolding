@@ -28,6 +28,7 @@ import ChatInterface from './ChatInterface';
 import { useFlowLayout } from './hooks/useFlowLayout';
 import { useHotkeys } from './hooks/useHotkeys';
 import KeyboardUI from './KeyboardUI';
+import NotesPanel from './NotesPanel';
 import { THEME } from './constants/theme.js';
 import { GroupHaloOverlay } from './GroupHaloOverlay.jsx';
 import {
@@ -46,6 +47,7 @@ function App() {
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
+  const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
 
   const {
     applyLayoutWithAnimation,
@@ -504,6 +506,53 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+      {/* Notes Panel Toggle Button */}
+      <button
+        onClick={() => setIsNotesPanelOpen(!isNotesPanelOpen)}
+        aria-label="Toggle notes panel"
+        style={{
+          position: 'fixed',
+          top: '16px',
+          left: '16px',
+          width: '40px',
+          height: '40px',
+          borderRadius: '8px',
+          backgroundColor: isNotesPanelOpen ? 'rgba(99, 102, 241, 0.2)' : 'rgba(26, 25, 43, 0.8)',
+          color: isNotesPanelOpen ? '#6366f1' : 'rgba(255, 255, 255, 0.6)',
+          border: `1px solid ${isNotesPanelOpen ? '#6366f1' : 'rgba(255, 255, 255, 0.2)'}`,
+          fontSize: '18px',
+          cursor: 'pointer',
+          zIndex: 160,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 200ms ease',
+          boxShadow: isNotesPanelOpen ? '0 0 12px rgba(99, 102, 241, 0.3)' : 'none',
+        }}
+        onMouseEnter={(e) => {
+          if (!isNotesPanelOpen) {
+            e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.15)';
+            e.currentTarget.style.color = '#6366f1';
+            e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isNotesPanelOpen) {
+            e.currentTarget.style.backgroundColor = 'rgba(26, 25, 43, 0.8)';
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }
+        }}
+      >
+        📝
+      </button>
+
+      {/* Notes Panel */}
+      <NotesPanel
+        isOpen={isNotesPanelOpen}
+        onClose={() => setIsNotesPanelOpen(false)}
+      />
+
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edgesWithHandlers}
@@ -524,7 +573,11 @@ function App() {
       >
         <GroupHaloOverlay halos={groupHalos} onCollapse={collapseExpandedGroup} />
       </ReactFlow>
-      <ChatInterface onFlowUpdate={handleFlowUpdate} onProcessingChange={setIsBackendProcessing} />
+      <ChatInterface
+        onFlowUpdate={handleFlowUpdate}
+        onProcessingChange={setIsBackendProcessing}
+        isNotesPanelOpen={isNotesPanelOpen}
+      />
       <KeyboardUI tooltipConfig={tooltipConfig} />
     </div>
   );

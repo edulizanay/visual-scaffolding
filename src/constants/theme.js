@@ -136,6 +136,7 @@ const Z_INDEX_GROUP_HALOS = 15;    // Behind nodes, above edges
 const Z_INDEX_NODES = 20;
 const Z_INDEX_SELECTED_NODES = 30;
 const Z_INDEX_TOOLTIPS = 100;
+const Z_INDEX_NOTES_PANEL = 150;   // Above canvas, below modals
 const Z_INDEX_HOTKEYS_PANEL = 200;
 const Z_INDEX_MODALS = 300;
 
@@ -271,4 +272,14 @@ export const THEME = {
       vertical: 40,
     },
   },
+};
+
+// Export individual constants for direct import (used by NotesPanel and other components)
+export {
+  COLOR_DEEP_PURPLE,
+  COLOR_INDIGO_LIGHT,
+  TRANSITION_NORMAL,
+  EASING_DECELERATE,
+  EASING_ACCELERATE,
+  Z_INDEX_NOTES_PANEL,
 };
