@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadNotes, updateNotes } from './api';
 import { COLOR_DEEP_PURPLE, COLOR_INDIGO_LIGHT, TRANSITION_NORMAL, EASING_DECELERATE, EASING_ACCELERATE, Z_INDEX_NOTES_PANEL } from './constants/theme.js';
 
-function NotesPanel({ isOpen, onClose, externalBullets }) {
+function NotesPanel({ isOpen, externalBullets }) {
   const [notesText, setNotesText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const debounceTimerRef = useRef(null);
@@ -106,9 +106,6 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
         style={{
           padding: '20px',
           borderBottom: '1px solid rgba(99, 102, 241, 0.2)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
         }}
       >
         <h2 style={{
@@ -119,32 +116,6 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
         }}>
           Notes & Ideas
         </h2>
-        <button
-          onClick={onClose}
-          aria-label="Close notes panel"
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.6)',
-            fontSize: '24px',
-            cursor: 'pointer',
-            padding: '0',
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'color 150ms',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
-          }}
-        >
-          ×
-        </button>
       </div>
 
       {/* Notes Textarea */}
@@ -189,7 +160,6 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
               value={notesText}
               onChange={handleTextChange}
               aria-label="Notes text editor"
-              placeholder="Start typing your notes here...&#10;Each line is a separate bullet point.&#10;Press Enter to add a new line."
               style={{
                 width: '100%',
                 height: '100%',
@@ -207,18 +177,6 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
             />
           </div>
         )}
-      </div>
-
-      {/* Helper text */}
-      <div
-        style={{
-          padding: '12px 20px',
-          borderTop: '1px solid rgba(99, 102, 241, 0.1)',
-          fontSize: '11px',
-          color: 'rgba(255, 255, 255, 0.4)',
-        }}
-      >
-        Press Enter for new line • Each line is a bullet
       </div>
     </div>
   );

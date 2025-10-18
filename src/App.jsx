@@ -521,7 +521,6 @@ function App() {
           backgroundColor: isNotesPanelOpen ? 'rgba(99, 102, 241, 0.2)' : 'rgba(26, 25, 43, 0.8)',
           color: isNotesPanelOpen ? '#6366f1' : 'rgba(255, 255, 255, 0.6)',
           border: `1px solid ${isNotesPanelOpen ? '#6366f1' : 'rgba(255, 255, 255, 0.2)'}`,
-          fontSize: '18px',
           cursor: 'pointer',
           zIndex: 160,
           display: 'flex',
@@ -529,6 +528,7 @@ function App() {
           justifyContent: 'center',
           transition: 'all 200ms ease',
           boxShadow: isNotesPanelOpen ? '0 0 12px rgba(99, 102, 241, 0.3)' : 'none',
+          padding: '0',
         }}
         onMouseEnter={(e) => {
           if (!isNotesPanelOpen) {
@@ -545,13 +545,24 @@ function App() {
           }
         }}
       >
-        📝
+        {isNotesPanelOpen ? (
+          // Panel is open - show panel-right icon (can close it)
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2"/>
+            <path d="M15 3v18"/>
+          </svg>
+        ) : (
+          // Panel is closed - show panel-left icon (can open it)
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2"/>
+            <path d="M9 3v18"/>
+          </svg>
+        )}
       </button>
 
       {/* Notes Panel */}
       <NotesPanel
         isOpen={isNotesPanelOpen}
-        onClose={() => setIsNotesPanelOpen(false)}
         externalBullets={notesBullets}
       />
 

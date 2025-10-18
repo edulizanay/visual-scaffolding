@@ -59,7 +59,7 @@ describe('NotesPanel Component', () => {
   describe('T3.1: Panel renders when isOpen=true, hidden when false', () => {
     it('should not render panel content when isOpen is false', () => {
       const { container } = render(
-        <NotesPanel isOpen={false} onClose={mockOnClose} />
+        <NotesPanel isOpen={false}  />
       );
 
       // Panel should be transformed off-screen (translateX(-100%))
@@ -69,7 +69,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should render panel content when isOpen is true', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -81,7 +81,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should load notes when panel opens', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalledTimes(1);
@@ -89,7 +89,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should display loaded bullets as text (one per line)', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         const textarea = screen.getByLabelText(/notes text editor/i);
@@ -97,29 +97,28 @@ describe('NotesPanel Component', () => {
       });
     });
 
-    it('should show placeholder when no bullets exist', async () => {
+    it('should show empty textarea when no bullets exist', async () => {
       api.loadNotes.mockResolvedValue({
         bullets: [],
         conversationHistory: [],
       });
 
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true} />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      // Should show placeholder text
+      // Should show empty textarea
       const textarea = screen.getByLabelText(/notes text editor/i);
       expect(textarea.value).toBe('');
-      expect(textarea.placeholder).toBeTruthy();
     });
   });
 
   describe('T3.2: Slide animation uses TRANSITION_NORMAL and EASING_STANDARD', () => {
     it('should use TRANSITION_NORMAL (250ms) for animation duration', () => {
       const { container } = render(
-        <NotesPanel isOpen={false} onClose={mockOnClose} />
+        <NotesPanel isOpen={false}  />
       );
 
       const panel = container.querySelector('[data-testid="notes-panel"]');
@@ -128,13 +127,13 @@ describe('NotesPanel Component', () => {
 
     it('should use EASING_DECELERATE when opening', async () => {
       const { rerender, container } = render(
-        <NotesPanel isOpen={false} onClose={mockOnClose} />
+        <NotesPanel isOpen={false}  />
       );
 
       const panel = container.querySelector('[data-testid="notes-panel"]');
 
       // Rerender with isOpen=true to trigger open animation
-      rerender(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      rerender(<NotesPanel isOpen={true}  />);
 
       // When open, should use decelerate easing
       await waitFor(() => {
@@ -144,13 +143,13 @@ describe('NotesPanel Component', () => {
 
     it('should use EASING_ACCELERATE when closing', async () => {
       const { rerender, container } = render(
-        <NotesPanel isOpen={true} onClose={mockOnClose} />
+        <NotesPanel isOpen={true}  />
       );
 
       const panel = container.querySelector('[data-testid="notes-panel"]');
 
       // Rerender with isOpen=false to trigger close animation
-      rerender(<NotesPanel isOpen={false} onClose={mockOnClose} />);
+      rerender(<NotesPanel isOpen={false}  />);
 
       // When closing, should use accelerate easing
       await waitFor(() => {
@@ -160,7 +159,7 @@ describe('NotesPanel Component', () => {
 
     it('should have 320px width on desktop', async () => {
       const { container } = render(
-        <NotesPanel isOpen={true} onClose={mockOnClose} />
+        <NotesPanel isOpen={true}  />
       );
 
       await waitFor(() => {
@@ -173,7 +172,7 @@ describe('NotesPanel Component', () => {
 
     it('should have no backdrop (canvas stays interactive)', async () => {
       const { container } = render(
-        <NotesPanel isOpen={true} onClose={mockOnClose} />
+        <NotesPanel isOpen={true}  />
       );
 
       await waitFor(() => {
@@ -188,7 +187,7 @@ describe('NotesPanel Component', () => {
 
   describe('T3.3: Text is editable (simple textarea model)', () => {
     it('should display bullet markers (•) for each line', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         // Bullet markers should be rendered (2 bullets = 2 markers)
@@ -198,7 +197,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should render single textarea for all notes', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         const textareas = screen.getAllByRole('textbox');
@@ -207,7 +206,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should allow editing notes text', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -222,7 +221,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should allow adding new lines with Enter', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -237,7 +236,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should allow deleting lines', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -254,7 +253,7 @@ describe('NotesPanel Component', () => {
 
   describe('T3.4: Edit triggers updateNotes() API call', () => {
     it('should call updateNotes when text is edited (debounced)', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -272,7 +271,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should send bullets array (split by newline) to API', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -290,46 +289,33 @@ describe('NotesPanel Component', () => {
     });
   });
 
-  describe('T3.5: Close button calls onClose() prop', () => {
-    it('should render close button', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+  describe('T3.5: Panel header', () => {
+    it('should display title in header', async () => {
+      render(<NotesPanel isOpen={true} />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      const closeButton = screen.getByLabelText(/close notes panel/i);
-      expect(closeButton).toBeInTheDocument();
+      expect(screen.getByText(/notes & ideas/i)).toBeInTheDocument();
     });
 
-    it('should call onClose when close button is clicked', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+    it('should not have close button (toggle button handles this)', async () => {
+      render(<NotesPanel isOpen={true} />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      const closeButton = screen.getByLabelText(/close notes panel/i);
-      await user.click(closeButton);
-
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
-    });
-
-    it('should display close button as X in top-right', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
-
-      await waitFor(() => {
-        expect(api.loadNotes).toHaveBeenCalled();
-      });
-
-      const closeButton = screen.getByLabelText(/close notes panel/i);
-      expect(closeButton.textContent).toContain('×');
+      // Should not find close button
+      const closeButton = screen.queryByLabelText(/close notes panel/i);
+      expect(closeButton).toBeNull();
     });
   });
 
   describe('Additional UI Requirements', () => {
     it('should display header with title', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -340,7 +326,7 @@ describe('NotesPanel Component', () => {
 
     it('should use COLOR_DEEP_PURPLE background with 98% opacity', async () => {
       const { container } = render(
-        <NotesPanel isOpen={true} onClose={mockOnClose} />
+        <NotesPanel isOpen={true}  />
       );
 
       await waitFor(() => {
@@ -353,7 +339,7 @@ describe('NotesPanel Component', () => {
 
     it('should have right border with indigo color', async () => {
       const { container } = render(
-        <NotesPanel isOpen={true} onClose={mockOnClose} />
+        <NotesPanel isOpen={true}  />
       );
 
       await waitFor(() => {
@@ -365,7 +351,7 @@ describe('NotesPanel Component', () => {
     });
 
     it('should have scrollable notes area', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
@@ -382,7 +368,7 @@ describe('NotesPanel Component', () => {
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalled();
@@ -406,7 +392,7 @@ describe('NotesPanel Component', () => {
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+      render(<NotesPanel isOpen={true}  />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
