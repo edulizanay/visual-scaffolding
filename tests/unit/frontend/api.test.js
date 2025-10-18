@@ -20,6 +20,9 @@ import {
   createGroup,
   ungroup,
   toggleGroupExpansion,
+  loadNotes,
+  sendNotesMessage,
+  updateNotes,
 } from '../../../src/api.js';
 
 // Mock global fetch
@@ -872,5 +875,126 @@ describe('Response Parsing', () => {
     const result = await undoFlow();
     expect(result.flow.nodes).toBeNull();
     expect(result.flow.edges).toBeNull();
+  });
+});
+
+describe('Notes API Functions (T2.4-T2.6)', () => {
+  describe('loadNotes (T2.4)', () => {
+    it('should fetch notes from GET /api/notes', async () => {
+      const mockNotesData = {
+        bullets: ['First bullet', 'Second bullet'],
+        conversationHistory: [
+          { role: 'user', content: 'test', timestamp: '2025-01-01T00:00:00Z' }
+        ]
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockNotesData,
+      });
+
+      const { loadNotes } = await import('../../../src/api.js');
+      const result = await loadNotes();
+
+      expect(global.fetch).toHaveBeenCalledWith('/api/notes');
+      expect(result).toEqual(mockNotesData);
+    });
+
+    it('should throw error on failed fetch', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      const { loadNotes } = await import('../../../src/api.js');
+      await expect(loadNotes()).rejects.toThrow('Failed to load notes');
+      expect(console.error).toHaveBeenCalledWith(
+        'Error loading notes:',
+        expect.any(Error)
+      );
+    });
+  });
+
+  describe('sendNotesMessage (T2.5)', () => {
+    it('should post to /api/notes with message', async () => {
+      const message = 'I want to build a feature';
+      const mockResponse = {
+        success: true,
+        bullets: ['Feature idea captured'],
+        newBullets: ['Feature idea captured'],
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const { sendNotesMessage } = await import('../../../src/api.js');
+      const result = await sendNotesMessage(message);
+
+      expect(global.fetch).toHaveBeenCalledWith('/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should throw error on failed send', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      const { sendNotesMessage } = await import('../../../src/api.js');
+      await expect(sendNotesMessage('test')).rejects.toThrow('Failed to send notes message');
+      expect(console.error).toHaveBeenCalledWith(
+        'Error sending notes message:',
+        expect.any(Error)
+      );
+    });
+  });
+
+  describe('updateNotes (T2.6)', () => {
+    it('should put to /api/notes with bullets array', async () => {
+      const bullets = ['Updated bullet 1', 'Updated bullet 2'];
+      const mockResponse = {
+        success: true,
+        bullets,
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const { updateNotes } = await import('../../../src/api.js');
+      const result = await updateNotes(bullets);
+
+      expect(global.fetch).toHaveBeenCalledWith('/api/notes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bullets }),
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should throw error on failed update', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      const { updateNotes } = await import('../../../src/api.js');
+      await expect(updateNotes([])).rejects.toThrow('Failed to update notes');
+      expect(console.error).toHaveBeenCalledWith(
+        'Error updating notes:',
+        expect.any(Error)
+      );
+    });
   });
 });

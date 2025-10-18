@@ -1,7 +1,7 @@
 // ABOUTME: Chat interface for AI tool interaction
 // ABOUTME: Provides text input and sends messages to backend
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { sendMessage, clearConversation, getConversationDebug } from './api';
+import { sendMessage, clearConversation, getConversationDebug, sendNotesMessage } from './api';
 import { THEME } from './constants/theme.js';
 
 export const Kbd = ({ children, style = {} }) => (
@@ -26,7 +26,7 @@ export const Kbd = ({ children, style = {} }) => (
   </kbd>
 );
 
-function ChatInterface({ onFlowUpdate, onProcessingChange }) {
+function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = false }) {
   const [message, setMessage] = useState('');
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [draftMessage, setDraftMessage] = useState('');
@@ -80,7 +80,21 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
     setMessage('');
     setIsProcessing(true);
 
-    // Handle first message of the session
+    // Route to notes endpoint when panel is open
+    if (isNotesPanelOpen) {
+      try {
+        const response = await sendNotesMessage(messageToSend);
+        console.log('✅ Notes Response:', response);
+      } catch (error) {
+        console.error('❌ Failed to send notes message:', error);
+      } finally {
+        setIsProcessing(false);
+        submissionLockRef.current = false;
+      }
+      return;
+    }
+
+    // Handle first message of the session (conversation mode only)
     if (isFirstMessage.current) {
       isFirstMessage.current = false;
 
@@ -120,7 +134,7 @@ function ChatInterface({ onFlowUpdate, onProcessingChange }) {
       setIsProcessing(false);
       submissionLockRef.current = false;
     }
-  }, [message, isProcessing, onFlowUpdate, loadConversationHistory]);
+  }, [message, isProcessing, isNotesPanelOpen, onFlowUpdate, loadConversationHistory]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {

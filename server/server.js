@@ -7,6 +7,8 @@ import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from '.
 import { buildLLMContext, parseToolCalls, callLLM, buildRetryMessage } from './llm/llmService.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo, getHistoryStatus, initializeHistory } from './historyService.js';
 import { executeToolCalls } from './tools/executor.js';
+import { loadNotes, saveNotes, updateBullets } from './notesService.js';
+import { buildNotesContext, parseNotesBullets, callNotesLLM } from './llm/notesLLMService.js';
 
 // ==================== APP SETUP ====================
 
@@ -309,6 +311,126 @@ app.delete('/api/conversation/history', async (req, res) => {
   } catch (error) {
     logError('clearing history', error);
     res.status(500).json({ error: 'Failed to clear history' });
+  }
+});
+
+// Notes endpoints
+
+app.get('/api/notes', async (req, res) => {
+  try {
+    const notes = loadNotes();
+    res.json(notes);
+  } catch (error) {
+    logError('loading notes', error);
+    res.status(500).json({ error: 'Failed to load notes' });
+  }
+});
+
+app.post('/api/notes', async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required and must be a string'
+      });
+    }
+
+    if (!checkLLMAvailability()) {
+      return res.json({
+        success: false,
+        error: 'LLM is not configured. Provide GROQ_API_KEY or CEREBRAS_API_KEY to enable notes.',
+        bullets: [],
+        newBullets: []
+      });
+    }
+
+    // Load current notes
+    const currentNotes = loadNotes();
+    const currentBullets = currentNotes.bullets;
+
+    // Build context and call LLM
+    const notesContext = await buildNotesContext(currentBullets, message);
+    const llmResponse = await callNotesLLM(notesContext);
+
+    // Parse bullets from response
+    const parsed = parseNotesBullets(llmResponse);
+
+    if (parsed.parseError) {
+      return res.json({
+        success: false,
+        error: parsed.parseError,
+        thinking: parsed.thinking,
+        bullets: currentBullets,
+        newBullets: []
+      });
+    }
+
+    // Combine existing bullets with new ones
+    const newBullets = parsed.bullets;
+    const allBullets = [...currentBullets, ...newBullets];
+
+    // Save to conversation history
+    const timestamp = new Date().toISOString();
+    const updatedConversationHistory = [
+      ...currentNotes.conversationHistory,
+      {
+        role: 'user',
+        content: message,
+        timestamp
+      },
+      {
+        role: 'assistant',
+        content: llmResponse,
+        timestamp
+      }
+    ];
+
+    // Save notes
+    saveNotes(allBullets, updatedConversationHistory);
+
+    res.json({
+      success: true,
+      bullets: allBullets,
+      newBullets,
+      thinking: parsed.thinking
+    });
+
+  } catch (error) {
+    logError('processing notes message', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process notes message'
+    });
+  }
+});
+
+app.put('/api/notes', async (req, res) => {
+  try {
+    const { bullets } = req.body;
+
+    if (!Array.isArray(bullets)) {
+      return res.status(400).json({
+        success: false,
+        error: 'bullets array is required'
+      });
+    }
+
+    // Update bullets only
+    updateBullets(bullets);
+
+    res.json({
+      success: true,
+      bullets
+    });
+
+  } catch (error) {
+    logError('updating notes', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update notes'
+    });
   }
 });
 

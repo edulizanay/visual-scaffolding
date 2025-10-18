@@ -25,6 +25,7 @@ export default defineConfig({
             'tests/db.test.js',
             'tests/groupHelpers.test.js',
             'tests/historyService.test.js',
+            'tests/notesService.test.js',
             'tests/schema-migration.test.js',
             'tests/toolExecution*.test.js',
             'tests/undo-redo-autosave.test.js',

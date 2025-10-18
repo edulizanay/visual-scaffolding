@@ -12,6 +12,7 @@ vi.mock('../../../src/api.js', () => ({
   sendMessage: vi.fn(),
   clearConversation: vi.fn(),
   getConversationDebug: vi.fn(),
+  sendNotesMessage: vi.fn(),
 }));
 
 describe('ChatInterface Component', () => {
@@ -705,6 +706,104 @@ describe('ChatInterface Component', () => {
 
       // Should be visible (opacity 1)
       expect(hintContainer.style.opacity).toBe('1');
+    });
+  });
+
+  describe('Notes Panel Routing (T2.1-T2.3)', () => {
+    beforeEach(() => {
+      // Setup separate mock for notes API
+      api.sendNotesMessage = vi.fn().mockResolvedValue({
+        success: true,
+        bullets: ['Note captured'],
+        newBullets: ['Note captured'],
+      });
+    });
+
+    describe('T2.1: When isNotesPanelOpen=true', () => {
+      it('should call /api/notes endpoint', async () => {
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} isNotesPanelOpen={true} />);
+
+        const textarea = screen.getByPlaceholderText(/Type a command/i);
+        await user.click(textarea);
+        await user.type(textarea, 'This is a note');
+        await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+        await waitFor(() => {
+          expect(api.sendNotesMessage).toHaveBeenCalledWith('This is a note');
+        });
+
+        // Should NOT call the conversation endpoint
+        expect(api.sendMessage).not.toHaveBeenCalled();
+      });
+
+      it('should not call clearConversation when panel is open', async () => {
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} isNotesPanelOpen={true} />);
+
+        const textarea = screen.getByPlaceholderText(/Type a command/i);
+        await user.click(textarea);
+        await user.type(textarea, 'First note');
+        await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+        await waitFor(() => {
+          expect(api.sendNotesMessage).toHaveBeenCalled();
+        });
+
+        // Should NOT clear conversation when in notes mode
+        expect(api.clearConversation).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('T2.2: When isNotesPanelOpen=false', () => {
+      it('should call /api/conversation/message endpoint', async () => {
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} isNotesPanelOpen={false} />);
+
+        const textarea = screen.getByPlaceholderText(/Type a command/i);
+        await user.click(textarea);
+        await user.type(textarea, 'Create a node');
+        await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+        await waitFor(() => {
+          expect(api.sendMessage).toHaveBeenCalledWith('Create a node');
+        });
+
+        // Should NOT call the notes endpoint
+        expect(api.sendNotesMessage).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('T2.3: Prop is optional (defaults to false)', () => {
+      it('should default to conversation mode when prop is not provided', async () => {
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+
+        const textarea = screen.getByPlaceholderText(/Type a command/i);
+        await user.click(textarea);
+        await user.type(textarea, 'Default behavior');
+        await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+        await waitFor(() => {
+          expect(api.sendMessage).toHaveBeenCalledWith('Default behavior');
+        });
+
+        // Should NOT call notes endpoint by default
+        expect(api.sendNotesMessage).not.toHaveBeenCalled();
+      });
+
+      it('should maintain backward compatibility (existing behavior)', async () => {
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+
+        const textarea = screen.getByPlaceholderText(/Type a command/i);
+        await user.click(textarea);
+        await user.type(textarea, 'Test');
+        await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+        await waitFor(() => {
+          expect(api.clearConversation).toHaveBeenCalled();
+        });
+
+        await waitFor(() => {
+          expect(api.sendMessage).toHaveBeenCalled();
+        });
+      });
     });
   });
 });
