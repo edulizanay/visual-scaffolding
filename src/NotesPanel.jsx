@@ -1,14 +1,24 @@
 // ABOUTME: Notes panel component for capturing and editing thoughts
-// ABOUTME: Slides in from left, displays editable bullets, no backdrop (companion workspace)
+// ABOUTME: Slides in from left, displays editable bullets as simple text, no backdrop (companion workspace)
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadNotes, updateNotes } from './api';
 import { COLOR_DEEP_PURPLE, COLOR_INDIGO_LIGHT, TRANSITION_NORMAL, EASING_DECELERATE, EASING_ACCELERATE, Z_INDEX_NOTES_PANEL } from './constants/theme.js';
 
 function NotesPanel({ isOpen, onClose, externalBullets }) {
-  const [bullets, setBullets] = useState([]);
+  const [notesText, setNotesText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const debounceTimerRef = useRef(null);
+
+  // Convert bullets array to text (one bullet per line)
+  const bulletsToText = useCallback((bullets) => {
+    return bullets.join('\n');
+  }, []);
+
+  // Convert text to bullets array (split by newline, filter empty)
+  const textToBullets = useCallback((text) => {
+    return text.split('\n').filter(line => line.trim() !== '');
+  }, []);
 
   // Load notes when panel opens
   useEffect(() => {
@@ -16,24 +26,24 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
       const fetchNotes = async () => {
         try {
           const data = await loadNotes();
-          setBullets(data.bullets || []);
+          setNotesText(bulletsToText(data.bullets || []));
         } catch (error) {
           console.error('Failed to load notes:', error);
-          setBullets([]);
+          setNotesText('');
         } finally {
           setIsLoading(false);
         }
       };
       fetchNotes();
     }
-  }, [isOpen]);
+  }, [isOpen, bulletsToText]);
 
-  // Update bullets when external bullets change (from ChatInterface)
+  // Update text when external bullets change (from ChatInterface)
   useEffect(() => {
     if (externalBullets) {
-      setBullets(externalBullets);
+      setNotesText(bulletsToText(externalBullets));
     }
-  }, [externalBullets]);
+  }, [externalBullets, bulletsToText]);
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -44,39 +54,27 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
     };
   }, []);
 
-  // Auto-save bullets with debouncing
-  const saveBullets = useCallback((updatedBullets) => {
+  // Auto-save notes with debouncing
+  const saveNotes = useCallback((text) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        await updateNotes(updatedBullets);
+        const bullets = textToBullets(text);
+        await updateNotes(bullets);
       } catch (error) {
         console.error('Failed to update notes:', error);
       }
     }, 500);
-  }, []);
+  }, [textToBullets]);
 
-  const handleBulletChange = useCallback((index, newValue) => {
-    const updatedBullets = [...bullets];
-    updatedBullets[index] = newValue;
-    setBullets(updatedBullets);
-    saveBullets(updatedBullets);
-  }, [bullets, saveBullets]);
-
-  const handleAddBullet = useCallback(() => {
-    const updatedBullets = [...bullets, ''];
-    setBullets(updatedBullets);
-    saveBullets(updatedBullets);
-  }, [bullets, saveBullets]);
-
-  const handleDeleteBullet = useCallback((index) => {
-    const updatedBullets = bullets.filter((_, i) => i !== index);
-    setBullets(updatedBullets);
-    saveBullets(updatedBullets);
-  }, [bullets, saveBullets]);
+  const handleTextChange = useCallback((e) => {
+    const newText = e.target.value;
+    setNotesText(newText);
+    saveNotes(newText);
+  }, [saveNotes]);
 
   // Convert hex color to rgba with opacity
   const deepPurpleRgba = 'rgba(26, 25, 43, 0.98)';
@@ -149,163 +147,79 @@ function NotesPanel({ isOpen, onClose, externalBullets }) {
         </button>
       </div>
 
-      {/* Bullets Container */}
+      {/* Notes Textarea */}
       <div
-        data-testid="bullets-container"
+        data-testid="notes-container"
         style={{
           flex: 1,
-          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
           padding: '16px 20px',
+          position: 'relative',
         }}
       >
         {isLoading ? (
           <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '13px' }}>
             Loading notes...
           </div>
-        ) : bullets.length === 0 ? (
-          <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '13px' }}>
-            No notes yet. Start typing in the chat to add your first note!
-          </div>
         ) : (
-          bullets.map((bullet, index) => (
-            <BulletItem
-              key={index}
-              value={bullet}
-              onChange={(newValue) => handleBulletChange(index, newValue)}
-              onDelete={() => handleDeleteBullet(index)}
-            />
-          ))
-        )}
+          <div style={{ flex: 1, position: 'relative' }}>
+            {/* Bullet points overlay */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '20px',
+                pointerEvents: 'none',
+                color: COLOR_INDIGO_LIGHT,
+                fontSize: '13px',
+                lineHeight: '1.8',
+                userSelect: 'none',
+              }}
+            >
+              {notesText.split('\n').map((_, index) => (
+                <div key={index} style={{ height: '1.8em' }}>•</div>
+              ))}
+            </div>
 
-        {/* Add Bullet Button */}
-        {bullets.length > 0 && (
-          <button
-            onClick={handleAddBullet}
-            aria-label="Add new bullet point"
-            style={{
-              marginTop: '12px',
-              padding: '8px 12px',
-              background: 'transparent',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              borderRadius: '4px',
-              color: COLOR_INDIGO_LIGHT,
-              fontSize: '12px',
-              cursor: 'pointer',
-              transition: 'all 150ms',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
-              e.currentTarget.style.borderColor = COLOR_INDIGO_LIGHT;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-            }}
-          >
-            + Add bullet
-          </button>
+            {/* Textarea */}
+            <textarea
+              value={notesText}
+              onChange={handleTextChange}
+              aria-label="Notes text editor"
+              placeholder="Start typing your notes here...&#10;Each line is a separate bullet point.&#10;Press Enter to add a new line."
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                fontSize: '13px',
+                lineHeight: '1.8',
+                resize: 'none',
+                outline: 'none',
+                fontFamily: 'inherit',
+                padding: '0',
+                paddingLeft: '20px',
+              }}
+            />
+          </div>
         )}
       </div>
-    </div>
-  );
-}
 
-function BulletItem({ value, onChange, onDelete }) {
-  const [isFocused, setIsFocused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const textareaRef = useRef(null);
-
-  const adjustHeight = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, []);
-
-  useEffect(() => {
-    adjustHeight();
-  }, [value, adjustHeight]);
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '8px',
-        alignItems: 'flex-start',
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Bullet marker */}
-      <span
+      {/* Helper text */}
+      <div
         style={{
-          color: COLOR_INDIGO_LIGHT,
-          fontSize: '16px',
-          lineHeight: '1.5',
-          marginTop: '2px',
-          userSelect: 'none',
+          padding: '12px 20px',
+          borderTop: '1px solid rgba(99, 102, 241, 0.1)',
+          fontSize: '11px',
+          color: 'rgba(255, 255, 255, 0.4)',
         }}
       >
-        •
-      </span>
-
-      {/* Editable textarea */}
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          adjustHeight();
-        }}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        aria-label="Edit bullet point"
-        placeholder="Type your note here..."
-        style={{
-          flex: 1,
-          background: isFocused ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
-          border: 'none',
-          borderLeft: `2px solid ${isFocused ? COLOR_INDIGO_LIGHT : isHovered ? 'rgba(99, 102, 241, 0.3)' : 'transparent'}`,
-          paddingLeft: '8px',
-          paddingTop: '2px',
-          paddingBottom: '2px',
-          color: 'white',
-          fontSize: '13px',
-          lineHeight: '1.5',
-          resize: 'none',
-          outline: 'none',
-          overflow: 'hidden',
-          fontFamily: 'inherit',
-          transition: 'all 150ms',
-        }}
-        rows={1}
-      />
-
-      {/* Delete button (visible on hover) */}
-      {isHovered && (
-        <button
-          onClick={onDelete}
-          aria-label="Delete bullet"
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.4)',
-            fontSize: '14px',
-            cursor: 'pointer',
-            padding: '0 4px',
-            transition: 'color 150ms',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'rgba(239, 68, 68, 0.8)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)';
-          }}
-        >
-          ×
-        </button>
-      )}
+        Press Enter for new line • Each line is a bullet
+      </div>
     </div>
   );
 }

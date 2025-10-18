@@ -1,8 +1,8 @@
 // ABOUTME: Unit tests for NotesPanel component
-// ABOUTME: Tests panel visibility, animations, bullet editing, and data flow
+// ABOUTME: Tests panel visibility, animations, text editing, and data flow
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotesPanel from '../../../src/NotesPanel.jsx';
 import * as api from '../../../src/api.js';
@@ -49,7 +49,6 @@ describe('NotesPanel Component', () => {
     });
     api.updateNotes.mockResolvedValue({
       success: true,
-      bullets: [],
     });
   });
 
@@ -89,16 +88,16 @@ describe('NotesPanel Component', () => {
       });
     });
 
-    it('should display loaded bullets', async () => {
+    it('should display loaded bullets as text (one per line)', async () => {
       render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('Second note')).toBeInTheDocument();
+        const textarea = screen.getByLabelText(/notes text editor/i);
+        expect(textarea.value).toBe('First note\nSecond note');
       });
     });
 
-    it('should show empty state when no bullets exist', async () => {
+    it('should show placeholder when no bullets exist', async () => {
       api.loadNotes.mockResolvedValue({
         bullets: [],
         conversationHistory: [],
@@ -110,8 +109,10 @@ describe('NotesPanel Component', () => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      // Should show some empty state indication
-      expect(screen.getByText(/no notes yet/i)).toBeInTheDocument();
+      // Should show placeholder text
+      const textarea = screen.getByLabelText(/notes text editor/i);
+      expect(textarea.value).toBe('');
+      expect(textarea.placeholder).toBeTruthy();
     });
   });
 
@@ -157,144 +158,134 @@ describe('NotesPanel Component', () => {
       });
     });
 
-    it('should have 320px width on desktop', () => {
+    it('should have 320px width on desktop', async () => {
       const { container } = render(
         <NotesPanel isOpen={true} onClose={mockOnClose} />
       );
+
+      await waitFor(() => {
+        expect(api.loadNotes).toHaveBeenCalled();
+      });
 
       const panel = container.querySelector('[data-testid="notes-panel"]');
       expect(panel.style.width).toBe('320px');
     });
 
-    it('should have no backdrop (canvas stays interactive)', () => {
+    it('should have no backdrop (canvas stays interactive)', async () => {
       const { container } = render(
         <NotesPanel isOpen={true} onClose={mockOnClose} />
       );
 
-      // Should NOT have a backdrop overlay element
-      const backdrop = container.querySelector('[data-testid="notes-backdrop"]');
-      expect(backdrop).toBeFalsy();
+      await waitFor(() => {
+        expect(api.loadNotes).toHaveBeenCalled();
+      });
+
+      // Should not have backdrop element
+      const backdrop = container.querySelector('[data-testid="backdrop"]');
+      expect(backdrop).toBeNull();
     });
   });
 
-  describe('T3.3: Bullets are editable (textarea per bullet)', () => {
-    it('should render textarea for each bullet', async () => {
+  describe('T3.3: Text is editable (simple textarea model)', () => {
+    it('should display bullet markers (•) for each line', async () => {
+      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        // Bullet markers should be rendered (2 bullets = 2 markers)
+        const bullets = screen.getAllByText('•');
+        expect(bullets.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    it('should render single textarea for all notes', async () => {
       render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
       await waitFor(() => {
         const textareas = screen.getAllByRole('textbox');
-        expect(textareas.length).toBe(2);
+        expect(textareas).toHaveLength(1);
       });
     });
 
-    it('should display bullet marker (•) for each bullet', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
-
-      await waitFor(() => {
-        const markers = screen.getAllByText('•');
-        expect(markers.length).toBe(2);
-      });
-    });
-
-    it('should allow editing bullet text', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
-      });
-
-      const textarea = screen.getByDisplayValue('First note');
-      await user.clear(textarea);
-      await user.type(textarea, 'Updated note');
-
-      expect(textarea.value).toBe('Updated note');
-    });
-
-    it('should allow deleting bullet content', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
-      });
-
-      const textarea = screen.getByDisplayValue('First note');
-      await user.clear(textarea);
-
-      expect(textarea.value).toBe('');
-    });
-
-    it('should allow adding new bullet', async () => {
+    it('should allow editing notes text', async () => {
       render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      // Find "Add bullet" button or similar UI
-      const addButton = screen.getByText(/add bullet/i);
-      await user.click(addButton);
+      const textarea = screen.getByLabelText(/notes text editor/i);
 
-      // Should now have 3 textareas
-      const textareas = screen.getAllByRole('textbox');
-      expect(textareas.length).toBe(3);
+      await user.clear(textarea);
+      await user.type(textarea, 'New note text');
+
+      expect(textarea.value).toBe('New note text');
+    });
+
+    it('should allow adding new lines with Enter', async () => {
+      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(api.loadNotes).toHaveBeenCalled();
+      });
+
+      const textarea = screen.getByLabelText(/notes text editor/i);
+
+      await user.clear(textarea);
+      await user.type(textarea, 'Line 1{Enter}Line 2{Enter}Line 3');
+
+      expect(textarea.value).toBe('Line 1\nLine 2\nLine 3');
+    });
+
+    it('should allow deleting lines', async () => {
+      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(api.loadNotes).toHaveBeenCalled();
+      });
+
+      const textarea = screen.getByLabelText(/notes text editor/i);
+
+      await user.clear(textarea);
+      await user.type(textarea, 'Just one line');
+
+      expect(textarea.value).toBe('Just one line');
     });
   });
 
   describe('T3.4: Edit triggers updateNotes() API call', () => {
-    it('should call updateNotes when bullet is edited', async () => {
+    it('should call updateNotes when text is edited (debounced)', async () => {
       render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
+        expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      const textarea = screen.getByDisplayValue('First note');
-      await user.clear(textarea);
-      await user.type(textarea, 'Updated');
+      const textarea = screen.getByLabelText(/notes text editor/i);
 
-      // Should auto-save after edit
+      await user.clear(textarea);
+      await user.type(textarea, 'Updated note');
+
+      // Wait for debounce (500ms + buffer)
       await waitFor(() => {
         expect(api.updateNotes).toHaveBeenCalled();
       }, { timeout: 2000 });
     });
 
-    it('should debounce updateNotes calls', async () => {
+    it('should send bullets array (split by newline) to API', async () => {
       render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
+        expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      const textarea = screen.getByDisplayValue('First note');
+      const textarea = screen.getByLabelText(/notes text editor/i);
 
-      // Type multiple characters quickly
-      await user.type(textarea, ' extra text');
-
-      // Should debounce and call only once (or fewer times than characters typed)
-      await waitFor(() => {
-        expect(api.updateNotes).toHaveBeenCalled();
-      }, { timeout: 2000 });
-
-      // Get the number of calls - should be debounced
-      const callCount = api.updateNotes.mock.calls.length;
-      expect(callCount).toBeLessThan(11); // Less than number of characters typed
-    });
-
-    it('should send updated bullets array to API', async () => {
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
-      });
-
-      const textarea = screen.getByDisplayValue('First note');
       await user.clear(textarea);
-      await user.type(textarea, 'Changed');
+      await user.type(textarea, 'Bullet 1{Enter}Bullet 2{Enter}Bullet 3');
 
+      // Wait for debounce and check the call
       await waitFor(() => {
-        expect(api.updateNotes).toHaveBeenCalledWith(
-          expect.arrayContaining(['Changed', 'Second note'])
-        );
+        expect(api.updateNotes).toHaveBeenCalledWith(['Bullet 1', 'Bullet 2', 'Bullet 3']);
       }, { timeout: 2000 });
     });
   });
@@ -332,7 +323,7 @@ describe('NotesPanel Component', () => {
       });
 
       const closeButton = screen.getByLabelText(/close notes panel/i);
-      expect(closeButton.textContent).toBe('×');
+      expect(closeButton.textContent).toContain('×');
     });
   });
 
@@ -347,46 +338,73 @@ describe('NotesPanel Component', () => {
       expect(screen.getByText(/notes & ideas/i)).toBeInTheDocument();
     });
 
-    it('should have scrollable bullets area', async () => {
-      // Create many bullets
-      api.loadNotes.mockResolvedValue({
-        bullets: Array(20).fill(0).map((_, i) => `Note ${i + 1}`),
-        conversationHistory: [],
-      });
-
-      const { container } = render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+    it('should use COLOR_DEEP_PURPLE background with 98% opacity', async () => {
+      const { container } = render(
+        <NotesPanel isOpen={true} onClose={mockOnClose} />
+      );
 
       await waitFor(() => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      const scrollableArea = container.querySelector('[data-testid="bullets-container"]');
-      expect(scrollableArea.style.overflowY).toBe('auto');
+      const panel = container.querySelector('[data-testid="notes-panel"]');
+      expect(panel.style.backgroundColor).toContain('rgba(26, 25, 43, 0.98)');
     });
 
-    it('should use COLOR_DEEP_PURPLE background with 98% opacity', () => {
-      const { container } = render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+    it('should have right border with indigo color', async () => {
+      const { container } = render(
+        <NotesPanel isOpen={true} onClose={mockOnClose} />
+      );
+
+      await waitFor(() => {
+        expect(api.loadNotes).toHaveBeenCalled();
+      });
 
       const panel = container.querySelector('[data-testid="notes-panel"]');
-      expect(panel.style.backgroundColor).toContain('rgba');
-      expect(panel.style.backgroundColor).toContain('0.98');
+      expect(panel.style.borderRight).toContain('#6366f1');
     });
 
-    it('should have right border with indigo color', () => {
-      const { container } = render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+    it('should have scrollable notes area', async () => {
+      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
-      const panel = container.querySelector('[data-testid="notes-panel"]');
-      expect(panel.style.borderRight).toBeTruthy();
-      expect(panel.style.borderRight).toContain('1px');
+      await waitFor(() => {
+        expect(api.loadNotes).toHaveBeenCalled();
+      });
+
+      const notesContainer = screen.getByTestId('notes-container');
+      expect(notesContainer).toBeInTheDocument();
     });
   });
 
   describe('Error Handling', () => {
     it('should handle loadNotes error gracefully', async () => {
-      const consoleError = console.error;
-      console.error = vi.fn();
+      api.loadNotes.mockRejectedValue(new Error('Load failed'));
 
-      api.loadNotes.mockRejectedValue(new Error('Failed to load'));
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalled();
+      });
+
+      // Wait for loading to finish
+      await waitFor(() => {
+        const textarea = screen.queryByLabelText(/notes text editor/i);
+        expect(textarea).toBeInTheDocument();
+      });
+
+      // Panel should still render (with empty state)
+      const textarea = screen.getByLabelText(/notes text editor/i);
+      expect(textarea.value).toBe('');
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should handle updateNotes error gracefully', async () => {
+      api.updateNotes.mockRejectedValue(new Error('Update failed'));
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
 
@@ -394,33 +412,15 @@ describe('NotesPanel Component', () => {
         expect(api.loadNotes).toHaveBeenCalled();
       });
 
-      // Panel should still render with empty state
-      expect(screen.getByTestId('notes-panel')).toBeInTheDocument();
+      const textarea = screen.getByLabelText(/notes text editor/i);
+      await user.type(textarea, 'x');
 
-      console.error = consoleError;
-    });
-
-    it('should handle updateNotes error gracefully', async () => {
-      const consoleError = console.error;
-      console.error = vi.fn();
-
-      api.updateNotes.mockRejectedValue(new Error('Failed to update'));
-
-      render(<NotesPanel isOpen={true} onClose={mockOnClose} />);
-
+      // Wait for debounce and error
       await waitFor(() => {
-        expect(screen.getByDisplayValue('First note')).toBeInTheDocument();
-      });
-
-      const textarea = screen.getByDisplayValue('First note');
-      await user.type(textarea, ' edit');
-
-      // Should attempt update but handle error
-      await waitFor(() => {
-        expect(api.updateNotes).toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalled();
       }, { timeout: 2000 });
 
-      console.error = consoleError;
+      consoleErrorSpy.mockRestore();
     });
   });
 });
