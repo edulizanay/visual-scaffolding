@@ -512,6 +512,7 @@ function App() {
         isOpen={isNotesPanelOpen}
         onToggle={() => setIsNotesPanelOpen(!isNotesPanelOpen)}
         externalBullets={notesBullets}
+        onFlowUpdate={handleFlowUpdate}
       />
 
       <ReactFlow

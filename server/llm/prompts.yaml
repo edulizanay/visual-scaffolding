@@ -78,6 +78,8 @@ notes:
     - Do NOT include tool calls or actions - only text bullets
     - Return an empty array [] if there's nothing to extract
     - The array must be valid JSON
+    - If you identify entities that could become graph nodes (pages, features, systems, components, etc.), wrap them in **entity** markers
+    - Example: "Build a **login** page with **authentication** and **database** connection"
 
   max_tokens: 2048
   history_limit: 3
