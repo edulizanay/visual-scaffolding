@@ -95,14 +95,14 @@ const buildActionPrompt = (rawBullets) => {
     return null;
   }
 
-  const guidance = ' If this change has already been applied, leave the graph as-is and do not repeat it.';
+  const guidance = 'If this change has already been applied, leave the graph as-is and do not repeat it.';
 
   if (normalizedBullets.length === 1) {
-    return `Please execute this action. ${normalizedBullets[0]}${guidance}`;
+    return `Please execute this action. ${normalizedBullets[0]} ${guidance}`;
   }
 
   const bulletList = normalizedBullets.map((bullet) => `- ${bullet}`).join('\n');
-  return `Please execute these actions.\n${bulletList}${guidance}`;
+  return `Please execute these actions.\n${bulletList}\n${guidance}`;
 };
 
 function NotesPanel({ isOpen, onToggle, externalBullets, onFlowUpdate }) {
@@ -178,9 +178,7 @@ function NotesPanel({ isOpen, onToggle, externalBullets, onFlowUpdate }) {
   }, [saveNotes]);
 
   const handleEntityClick = useCallback(
-    async ({ bulletText, entityText }) => {
-      console.log('Entity clicked:', entityText);
-
+    async ({ bulletText }) => {
       if (isSending) return;
 
       const prompt = buildActionPrompt([bulletText]);
@@ -228,18 +226,14 @@ function NotesPanel({ isOpen, onToggle, externalBullets, onFlowUpdate }) {
   const handleOverlayPointerDown = useCallback((e) => {
     const target = e.target;
 
-    console.log('Overlay clicked, target:', target, 'classes:', target.className);
-
     // Check if clicked on an entity
     if (target.classList.contains('entity')) {
       // Entity click - don't delegate to textarea, just return
-      console.log('Entity detected, letting onClick handle it');
       // Don't prevent default - let the onClick event fire naturally
       return;
     }
 
     // Regular text click - find character index and set textarea cursor
-    console.log('Regular text click, delegating to textarea');
     e.preventDefault();
 
     // Use caretRangeFromPoint to find where the click landed

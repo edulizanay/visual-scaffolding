@@ -20,6 +20,7 @@ dist-ssr
 # Test data
 server/data/conversation.json
 tests/test-data/
+notes-debug.json
 
 # SQLite database files
 # *.db

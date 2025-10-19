@@ -595,33 +595,6 @@ describe('NotesPanel Component', () => {
       expect(entitySpans[1].textContent).toBe('another');
     });
 
-    it('should log to console when entity is clicked', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      api.loadNotes.mockResolvedValue({
-        bullets: ['Click on **test** entity'],
-        conversationHistory: [],
-      });
-
-      render(<NotesPanel isOpen={true} onToggle={mockOnToggle} onFlowUpdate={mockOnFlowUpdate} />);
-
-      await waitFor(() => {
-        expect(api.loadNotes).toHaveBeenCalled();
-      });
-
-      const styledOverlay = screen.getByTestId('styled-text-overlay');
-      const entitySpan = styledOverlay.querySelector('.entity');
-
-      expect(entitySpan).toBeInTheDocument();
-
-      // Click the entity
-      await user.click(entitySpan);
-
-      // Check console was called
-      expect(consoleSpy).toHaveBeenCalledWith('Entity clicked:', 'test');
-
-      consoleSpy.mockRestore();
-    });
   });
 
     it('should not call onFlowUpdate when updatedFlow is missing', async () => {
@@ -746,7 +719,7 @@ describe('NotesPanel Component', () => {
       });
 
       expect(api.sendMessage).toHaveBeenCalledWith(
-        'Please create/edit/execute this action. Build a login page If this change has already been applied, leave the graph as-is and do not repeat it.'
+        'Please execute this action. Build a login page If this change has already been applied, leave the graph as-is and do not repeat it.'
       );
       expect(mockOnFlowUpdate).toHaveBeenCalledTimes(1);
       expect(mockOnFlowUpdate).toHaveBeenCalledWith(updatedFlow);
@@ -779,7 +752,7 @@ describe('NotesPanel Component', () => {
       });
 
       expect(api.sendMessage).toHaveBeenCalledWith(
-        'Please create/edit/execute these actions.\n- Build a login page\n- Implement signup flow If this change has already been applied, leave the graph as-is and do not repeat it.'
+        'Please execute these actions.\n- Build a login page\n- Implement signup flow\nIf this change has already been applied, leave the graph as-is and do not repeat it.'
       );
       expect(mockOnFlowUpdate).toHaveBeenCalledTimes(1);
       expect(mockOnFlowUpdate).toHaveBeenCalledWith(updatedFlow);
