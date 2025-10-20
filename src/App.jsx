@@ -148,7 +148,6 @@ function App() {
           }
         });
       }
-    }
   }, [onNodesChangeRaw, featureFlags.ENABLE_BACKEND_DRAG_SAVE, setNodes]);
 
   // Load feature flags on mount
