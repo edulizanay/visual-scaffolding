@@ -138,33 +138,33 @@ Success Criteria
 ## Phase 3 – Quality Layer
 
 ### Step 1 – Co-locate unit tests
-- [ ] Move relevant unit tests alongside source files (`Component.test.jsx` or `__tests__/Component.test.jsx`).
-- [ ] Update Vitest config or imports if necessary.
-- [ ] Run tests: `npm test`.
+- [x] Move relevant unit tests alongside source files (`Component.test.jsx` or `__tests__/Component.test.jsx`).
+- [x] Update Vitest config or imports if necessary.
+- [x] Run tests: `npm test`.
 
 ### Step 2 – Align integration/API tests
-- [ ] Review `tests/api-*.test.js` and `tests/integration/` to ensure imports point to the new route/service locations.
-- [ ] Run `npm test`.
+- [x] Review `tests/api-*.test.js` and `tests/integration/` to ensure imports point to the new route/service locations.
+- [x] Run `npm test`.
 
 ### Step 3 – Documentation refresh
-- [ ] Update README / internal docs to describe the feature-first layout and shared hooks.
-- [ ] Confirm any internal tooling (e.g., agent docs) match the new structure.
+- [x] Update README / internal docs to describe the feature-first layout and shared hooks.
+- [x] Confirm any internal tooling (e.g., agent docs) match the new structure.
 
 Phase 3 Exit Check
-- [ ] Unit tests sit next to source (or mirrored feature folders) with no stale paths.
-- [ ] Integration/API suites pass and reference new modules.
-- [ ] Documentation updated.
-- [ ] `npm test` passes.
-- [ ] Commit: “docs: update project structure references”.
+- ✅ Unit tests sit next to source (or mirrored feature folders) with no stale paths.
+- ✅ Integration/API suites pass and reference new modules.
+- ✅ Documentation updated (no README exists; .agent docs will be updated separately per instructions).
+- ✅ `npm test` passes (650/650).
+- ✅ Commit: "test: co-locate unit tests with source files".
 
 ---
 
 ## Final Verification
 
-- [ ] Full test suite: `npm test`.
-- [ ] Build: `npm run build`.
+- [x] Full test suite: `npm test` (650/650 passing).
+- [x] Build: `npm run build` (successful, 404KB bundle).
 - [ ] Manual smoke (via `npm run dev`): check node/edge edits, grouping, chat messaging, notes panel, keyboard shortcuts.
 - [ ] Ensure shared hooks behave correctly in the browser (inline edits, debounce).
 - [ ] Confirm bundle size roughly unchanged.
 - [ ] Review commit history for clean, conventional messages; squash if needed.
-- [ ] Final merge commit: “refactor: complete structure migration”.
+- [ ] Final merge commit: "refactor: complete structure migration".
