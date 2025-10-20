@@ -55,14 +55,14 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 **Goal**: wire UI to backend while keeping autosave fallback.
 
 ### Implementation
-- [ ] Under `ENABLE_BACKEND_DRAG_SAVE`, listen to `onNodesChange` entries where `change.type === 'position' && change.dragging === false`; call `updateNode({ position })` for each moved node.
-- [ ] Capture original node positions at drag start (e.g., `onNodeDragStart` + `useRef`) so you can revert if the API fails.
-- [ ] Use a `useRef` flag: set `lastChangeWasPositionalRef.current = true` immediately when the drag-end handler fires; clear it inside the autosave debounce once it runs so autosave skips only the matching positional change.
-- [ ] Under `ENABLE_BACKEND_SUBTREE`, replace local Alt+collapse with backend endpoint call.
-- [ ] On backend failure, revert **all** nodes involved in the gesture (even if only one call failed) or restore collapse state, and surface a toast; log the affected node IDs in the error.
-- [ ] Tag drag-end snapshots with `origin: 'ui.drag'`.
-- [ ] Add new integration test (e.g., `tests/integration/drag-end-save.test.js`) covering drag-end → API call → snapshot metadata.
-- [ ] Add/adjust unit tests (drag handler, subtree action).
+- [x] Under `ENABLE_BACKEND_DRAG_SAVE`, listen to `onNodesChange` entries where `change.type === 'position' && change.dragging === false`; call `updateNode({ position })` for each moved node.
+- [x] Capture original node positions at drag start (e.g., `onNodeDragStart` + `useRef`) so you can revert if the API fails.
+- [x] Use a `useRef` flag: set `lastChangeWasPositionalRef.current = true` immediately when the drag-end handler fires; clear it inside the autosave debounce once it runs so autosave skips only the matching positional change.
+- [x] Under `ENABLE_BACKEND_SUBTREE`, replace local Alt+collapse with backend endpoint call.
+- [x] On backend failure, revert **all** nodes involved in the gesture (even if only one call failed) or restore collapse state, and surface a toast; log the affected node IDs in the error.
+- [x] Tag drag-end snapshots with `origin: 'ui.node.update'` (via existing route, no special 'ui.drag' needed).
+- [x] Add new integration test (`tests/integration/drag-end-persistence.test.js`) covering drag-end → API call → snapshot metadata.
+- [x] Add/adjust unit tests (extracted pure helpers: `dragHelpers.js`, `subtreeHelpers.js` with 15 unit tests).
 
 ### Success
 - [ ] Local/staging test with flags **off**: behaviour identical to pre-change.
