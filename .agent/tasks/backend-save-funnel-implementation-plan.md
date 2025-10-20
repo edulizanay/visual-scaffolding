@@ -27,7 +27,7 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 ### Success
 - [x] Manual QA: Alt+collapse behaves exactly as before (verified in Phase 4 baseline test).
 - [x] `npm test` + `npm run lint` pass on branch (lint script not configured, 685 tests pass).
-- [ ] Merge branch back to `main` (flags still `false`) - pending final merge.
+- [x] Merge branch back to `main` (flags still `false`) - merged 2025-10-20, 716 tests passing.
 
 ---
 
