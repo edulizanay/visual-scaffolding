@@ -893,7 +893,7 @@ describe('Notes API Functions (T2.4-T2.6)', () => {
         json: async () => mockNotesData,
       });
 
-      const { loadNotes } = await import('../../../src/api.js');
+      const { loadNotes } = await import('../../../src/services/api');
       const result = await loadNotes();
 
       expect(global.fetch).toHaveBeenCalledWith('/api/notes');
@@ -906,7 +906,7 @@ describe('Notes API Functions (T2.4-T2.6)', () => {
         status: 500,
       });
 
-      const { loadNotes } = await import('../../../src/api.js');
+      const { loadNotes } = await import('../../../src/services/api');
       await expect(loadNotes()).rejects.toThrow('Failed to load notes');
       expect(console.error).toHaveBeenCalledWith(
         'Error loading notes:',
@@ -929,7 +929,7 @@ describe('Notes API Functions (T2.4-T2.6)', () => {
         json: async () => mockResponse,
       });
 
-      const { sendNotesMessage } = await import('../../../src/api.js');
+      const { sendNotesMessage } = await import('../../../src/services/api');
       const result = await sendNotesMessage(message);
 
       expect(global.fetch).toHaveBeenCalledWith('/api/notes', {
@@ -948,7 +948,7 @@ describe('Notes API Functions (T2.4-T2.6)', () => {
         status: 500,
       });
 
-      const { sendNotesMessage } = await import('../../../src/api.js');
+      const { sendNotesMessage } = await import('../../../src/services/api');
       await expect(sendNotesMessage('test')).rejects.toThrow('Failed to send notes message');
       expect(console.error).toHaveBeenCalledWith(
         'Error sending notes message:',
@@ -970,7 +970,7 @@ describe('Notes API Functions (T2.4-T2.6)', () => {
         json: async () => mockResponse,
       });
 
-      const { updateNotes } = await import('../../../src/api.js');
+      const { updateNotes } = await import('../../../src/services/api');
       const result = await updateNotes(bullets);
 
       expect(global.fetch).toHaveBeenCalledWith('/api/notes', {
@@ -989,7 +989,7 @@ describe('Notes API Functions (T2.4-T2.6)', () => {
         status: 500,
       });
 
-      const { updateNotes } = await import('../../../src/api.js');
+      const { updateNotes } = await import('../../../src/services/api');
       await expect(updateNotes([])).rejects.toThrow('Failed to update notes');
       expect(console.error).toHaveBeenCalledWith(
         'Error updating notes:',

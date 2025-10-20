@@ -5,7 +5,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider, getSmoothStepPath } from '@xyflow/react';
-import CustomEdge from '../../../src/features/flow-canvas/components/Edge.jsx';
+import CustomEdge from '../Edge.jsx';
 
 // Mock React Flow components
 vi.mock('@xyflow/react', async () => {

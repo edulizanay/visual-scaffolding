@@ -62,6 +62,7 @@ export default defineConfig({
           include: [
             'tests/unit/frontend/**/*.test.jsx',
             'tests/security/**/*.test.jsx',
+            'src/**/__tests__/**/*.test.{js,jsx}',
           ],
           setupFiles: ['./tests/setup-frontend.js'],
         }

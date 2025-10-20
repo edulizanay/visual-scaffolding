@@ -4,18 +4,18 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import NotesPanel from '../../../src/features/notes/components/NotesPanel.jsx';
-import * as api from '../../../src/services/api';
+import NotesPanel from '../NotesPanel.jsx';
+import * as api from '../../../../services/api';
 
 // Mock the API module
-vi.mock('../../../src/services/api', () => ({
+vi.mock('../../../../services/api', () => ({
   loadNotes: vi.fn(),
   updateNotes: vi.fn(),
   sendMessage: vi.fn(),
 }));
 
 // Mock theme constants
-vi.mock('../../../src/constants/theme.js', () => ({
+vi.mock('../../../../constants/theme.js', () => ({
   THEME: {
     colors: {
       deepPurple: '#1a192b',

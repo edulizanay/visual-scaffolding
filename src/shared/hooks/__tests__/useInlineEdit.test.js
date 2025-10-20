@@ -38,7 +38,13 @@ describe('useInlineEdit', () => {
 
     act(() => {
       result.current.handleDoubleClick();
+    });
+
+    act(() => {
       result.current.handleChange({ target: { value: 'updated' } });
+    });
+
+    act(() => {
       result.current.handleBlur();
     });
 

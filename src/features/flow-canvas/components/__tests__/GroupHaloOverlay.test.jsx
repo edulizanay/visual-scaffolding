@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { GroupHaloOverlay } from '../../../src/features/flow-canvas/components/GroupHaloOverlay.jsx';
-import { THEME } from '../../../src/constants/theme.js';
+import { GroupHaloOverlay } from '../GroupHaloOverlay.jsx';
+import { THEME } from '../../../../constants/theme.js';
 
 vi.mock('@xyflow/react', () => {
   const React = require('react');

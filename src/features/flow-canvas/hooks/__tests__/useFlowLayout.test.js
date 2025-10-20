@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLayoutedElements } from '../../../src/features/flow-canvas/hooks/useFlowLayout.js';
+import { getLayoutedElements } from '../useFlowLayout.js';
 
 const makeNode = (id, overrides = {}) => ({
   id,

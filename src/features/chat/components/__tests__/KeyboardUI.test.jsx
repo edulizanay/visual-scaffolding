@@ -4,10 +4,10 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import KeyboardUI from '../../../src/features/chat/components/KeyboardUI';
+import KeyboardUI from '../KeyboardUI';
 
 // Mock the THEME constant
-vi.mock('../../../src/constants/theme.js', () => ({
+vi.mock('../../../../constants/theme.js', () => ({
   THEME: {
     node: {
       colors: {
