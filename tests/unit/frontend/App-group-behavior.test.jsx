@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import App from '../../../src/App.jsx';
 import { ReactFlow } from '@xyflow/react';
 import * as api from '../../../src/api.js';
-import ChatInterface from '../../../src/ChatInterface';
+import ChatInterface from '../../../src/features/chat/components/ChatInterface';
 
 vi.mock('@xyflow/react', () => {
   const React = require('react');
@@ -41,7 +41,7 @@ vi.mock('@xyflow/react', () => {
   };
 });
 
-vi.mock('../../../src/ChatInterface', () => {
+vi.mock('../../../src/features/chat/components/ChatInterface', () => {
   const React = require('react');
   const MockChatInterface = ({ onFlowUpdate, onProcessingChange }) => {
     MockChatInterface.handlers = { onFlowUpdate, onProcessingChange };
@@ -58,7 +58,7 @@ vi.mock('../../../src/ChatInterface', () => {
   };
 });
 
-vi.mock('../../../src/KeyboardUI', () => {
+vi.mock('../../../src/features/chat/components/KeyboardUI', () => {
   const React = require('react');
   return {
     __esModule: true,

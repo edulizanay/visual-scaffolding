@@ -2,9 +2,9 @@
 // ABOUTME: Slides in from left, displays editable bullets as simple text, no backdrop (companion workspace)
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { loadNotes, updateNotes, sendMessage } from './api';
-import { COLOR_DEEP_PURPLE, COLOR_INDIGO_LIGHT, TRANSITION_NORMAL, EASING_DECELERATE, EASING_ACCELERATE, Z_INDEX_NOTES_PANEL } from './constants/theme.js';
-import { useDebouncedCallback } from './shared/hooks/useDebouncedCallback.js';
+import { loadNotes, updateNotes, sendMessage } from '../../../api';
+import { COLOR_DEEP_PURPLE, COLOR_INDIGO_LIGHT, TRANSITION_NORMAL, EASING_DECELERATE, EASING_ACCELERATE, Z_INDEX_NOTES_PANEL } from '../../../constants/theme.js';
+import { useDebouncedCallback } from '../../../shared/hooks/useDebouncedCallback.js';
 
 // Render text with styled entity spans (including markers)
 // Each span gets data-start and data-end attributes for character position mapping

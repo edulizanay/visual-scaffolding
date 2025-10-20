@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ChatInterface from '../../../src/ChatInterface.jsx';
+import ChatInterface from '../../../src/features/chat/components/ChatInterface.jsx';
 import * as api from '../../../src/api.js';
 
 // Mock the API module

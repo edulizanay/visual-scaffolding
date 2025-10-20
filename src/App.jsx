@@ -24,11 +24,10 @@ import {
   ungroup as apiUngroup,
   toggleGroupExpansion as apiToggleGroupExpansion
 } from './api';
-import ChatInterface from './ChatInterface';
+import { ChatInterface, KeyboardUI } from './features/chat';
+import { NotesPanel } from './features/notes';
 
 import { useHotkeys } from './hooks/useHotkeys';
-import KeyboardUI from './KeyboardUI';
-import NotesPanel from './NotesPanel';
 import { THEME } from './constants/theme.js';
 
 function App() {

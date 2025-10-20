@@ -2,8 +2,8 @@
 // ABOUTME: Includes slide-in panel, bottom-right tooltip hints, and top-right feedback toasts
 
 import { useState, useEffect } from 'react';
-import { HOTKEYS, getCategories, formatKeys } from './hooks/useHotkeys';
-import { THEME } from './constants/theme.js';
+import { HOTKEYS, getCategories, formatKeys } from '../../../hooks/useHotkeys';
+import { THEME } from '../../../constants/theme.js';
 import { Kbd } from './ChatInterface';
 
 export default function KeyboardUI({ tooltipConfig }) {
