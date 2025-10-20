@@ -1,5 +1,5 @@
 // ABOUTME: Main application component with React Flow canvas
-// ABOUTME: Loads flow from backend and auto-saves changes
+// ABOUTME: Persistence via backend APIs (flags ON) or autosave fallback (flags OFF)
 import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
@@ -112,11 +112,13 @@ function App() {
       nodesRef.current
     );
 
+    // Backend save funnel: When ENABLE_BACKEND_DRAG_SAVE is true, persist via updateNode API.
+    // When false, autosave handles persistence (legacy fallback).
     if (shouldUseBackendDragSave(featureFlags.ENABLE_BACKEND_DRAG_SAVE, movedNodes)) {
         // Set flag immediately to prevent autosave race condition
         lastChangeWasPositionalRef.current = true;
 
-        // Call backend API for each moved node
+        // Call backend API for each moved node (creates snapshot with origin: 'ui.node.update')
         const updatePromises = movedNodes.map(async ({ id, position, originalPosition }) => {
           try {
             const result = await updateNode(id, { position });
@@ -181,6 +183,8 @@ function App() {
     fetchFlow();
   }, [setNodes, setEdges, normalizeFlow]);
 
+  // Autosave: Legacy persistence mechanism, now serves as fallback when backend flags are OFF.
+  // Skips positional changes when ENABLE_BACKEND_DRAG_SAVE is true (handled by backend).
   const { debouncedFn: debouncedAutoSave, flush: flushAutoSave } = useDebouncedCallback(async (nodes, edges) => {
     // Skip autosave if last change was positional (already handled by backend)
     if (lastChangeWasPositionalRef.current) {

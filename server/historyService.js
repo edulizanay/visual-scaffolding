@@ -13,7 +13,9 @@ import {
  * Push a new snapshot to the undo history.
  *
  * @param {Object} flowState - Flow state {nodes, edges}
- * @param {string} origin - Optional origin metadata (e.g., 'ui.drag', 'ui.subtree', 'llm.tool')
+ * @param {string} origin - Optional origin metadata for observability
+ *                          Backend save funnel: 'ui.node.update' (drag), 'ui.subtree' (collapse)
+ *                          LLM tools: 'llm.tool'
  */
 export async function pushSnapshot(flowState, origin = null) {
   // Embed origin metadata inside the snapshot JSON if provided
