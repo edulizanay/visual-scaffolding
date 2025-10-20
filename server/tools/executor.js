@@ -3,6 +3,8 @@ import {
   saveFlow as dbSaveFlow,
 } from '../db.js';
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from '../historyService.js';
+import { applyDagreLayout } from '../../shared/layout/applyDagreLayout.js';
+import { NODE_WIDTH, NODE_HEIGHT } from '../../shared/constants/nodeDimensions.js';
 
 async function readFlow() {
   return dbGetFlow();
@@ -40,6 +42,8 @@ export async function executeTool(toolName, params, flow) {
         return await executeUngroup(params, flow);
       case 'toggleGroupExpansion':
         return await executeToggleGroupExpansion(params, flow);
+      case 'autoLayout':
+        return await executeAutoLayout(params, flow);
       default:
         return { success: false, error: `Unknown tool: ${toolName}` };
     }
@@ -444,4 +448,45 @@ async function executeToggleGroupExpansion(params, flow) {
 
   // Synthetic edges and their visibility are handled by frontend applyGroupVisibility
   return { success: true, updatedFlow: { nodes: updatedNodes, edges: flow.edges } };
+}
+
+async function executeAutoLayout(params, flow) {
+  // Apply Dagre layout to the flow
+  const { nodes: layoutedNodes, edges: layoutedEdges } = applyDagreLayout({
+    nodes: flow.nodes,
+    edges: flow.edges,
+    direction: 'LR',
+    nodeDimensions: { width: NODE_WIDTH, height: NODE_HEIGHT },
+  });
+
+  // Compare positions to check if anything changed
+  const positionsChanged = flow.nodes.some((node, index) => {
+    const layoutedNode = layoutedNodes.find(n => n.id === node.id);
+    if (!layoutedNode) return false;
+
+    return (
+      Math.abs(node.position.x - layoutedNode.position.x) > 0.01 ||
+      Math.abs(node.position.y - layoutedNode.position.y) > 0.01
+    );
+  });
+
+  if (!positionsChanged) {
+    // No changes, skip write
+    return {
+      tool: 'autoLayout',
+      success: true,
+      updatedFlow: flow,
+      didChange: false,
+    };
+  }
+
+  // Positions changed, write to database
+  const updatedFlow = { nodes: layoutedNodes, edges: layoutedEdges };
+  await writeFlow(updatedFlow);
+
+  return {
+    tool: 'autoLayout',
+    success: true,
+    updatedFlow,
+  };
 }

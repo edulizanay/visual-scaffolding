@@ -218,6 +218,33 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
     action: 'toggling group expansion',
     extractParams: (req) => ({ groupId: req.params.id, ...req.body })
   }, writeFlow));
+
+  // Auto-layout endpoint
+  router.post('/auto-layout', async (req, res) => {
+    try {
+      const result = await executeSingleTool('autoLayout', {});
+
+      if (result.success) {
+        res.json({
+          success: true,
+          flow: result.updatedFlow,
+          tool: result.tool,
+          didChange: result.didChange
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: result.error
+        });
+      }
+    } catch (error) {
+      logError('applying auto-layout', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to apply auto-layout'
+      });
+    }
+  });
 }
 
 export default router;
