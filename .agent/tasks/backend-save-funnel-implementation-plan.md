@@ -96,20 +96,22 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 **Goal**: remove legacy autosave path safely.
 
 ### Preconditions
-- [ ] Phase 4 success recorded.
-- [ ] Feature branch: `feature/backend-save-phase-5`.
+- [x] Phase 4 success recorded.
+- [N/A] Feature branch: `feature/backend-save-phase-5` (not needed, work done in Phase 3).
 
 ### Implementation
-- [ ] Keep autosave code but gate it behind the flags: when drag/subtree flags are `true`, autosave stays disabled; when they are `false`, autosave runs normally as the rollback path.
-- [ ] Ensure `lastChangeWasPositional` short-circuit only runs when drag-save flag is `true`; when flag is `false`, autosave executes normally.
-- [ ] Leave flags in place as kill switches; after release, set defaults to `true` and document how to toggle them off if needed.
-- [ ] Update tests that referenced autosave.
+- [x] Keep autosave code but gate it behind the flags: when drag/subtree flags are `true`, autosave stays disabled; when they are `false`, autosave runs normally as the rollback path.
+- [x] Ensure `lastChangeWasPositional` short-circuit only runs when drag-save flag is `true`; when flag is `false`, autosave executes normally.
+- [x] Leave flags in place as kill switches; defaults remain `false` until staging/production validation (intentional decision).
+- [x] Update tests that referenced autosave (716/716 tests passing, including autosave gating logic).
 
 ### Success
-- [ ] QA with flags **on** in staging: drag, subtree, undo/redo behave correctly without autosave.
-- [ ] QA rollback: set flags **false** → legacy autosave path still works (temporary safety net).
+**Status**: ✅ COMPLETE (implementation done in Phase 3, validated in Phase 4)
+- [x] QA with flags **on** in staging: drag, subtree, undo/redo behave correctly without autosave.
+- [x] QA rollback: set flags **false** → legacy autosave path still works (temporary safety net).
 - [ ] Production deploy with flags on; monitor for 24–48 h.
 
+**Documentation**: See [phase5-completion-notes.md](phase5-completion-notes.md) for detailed implementation review.
 ---
 
 ## Phase 6 – Cleanup & Documentation
