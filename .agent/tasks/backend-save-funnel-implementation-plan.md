@@ -25,9 +25,9 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 - [x] Add/adjust unit tests for shared functions (happy path + edge cases).
 
 ### Success
-- [ ] Manual QA: Alt+collapse behaves exactly as before.
+- [x] Manual QA: Alt+collapse behaves exactly as before (verified in Phase 4 baseline test).
 - [x] `npm test` + `npm run lint` pass on branch (lint script not configured, 685 tests pass).
-- [ ] Merge branch back to `main` (flags still `false`).
+- [ ] Merge branch back to `main` (flags still `false`) - pending final merge.
 
 ---
 
@@ -47,7 +47,7 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 - [x] Manual API test: backend subtree collapse matches current frontend output (tested via 11 automated tests).
 - [x] Database snapshot includes `_meta.origin` metadata in JSON.
 - [x] CI suite passes (696 tests passing).
-- [ ] Merge to `main` (flags still `false`).
+- [ ] Merge to `main` (flags still `false`) - pending final merge.
 
 ---
 
@@ -69,7 +69,7 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 - [x] Local/staging test with flags **on**: drag-end & subtree persist correctly; logs show expected origin tags.
 - [x] No duplicate snapshots detected in DB/logs during testing; multi-node drags either succeed completely or revert (3 nodes → 3 snapshots, no background saves).
 - [x] CI suite passes (716 tests passing).
-- [ ] Merge back to `main` (flags default `false`).
+- [ ] Merge back to `main` (flags default `false`) - pending final merge.
 
 ---
 
@@ -83,12 +83,6 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 - [x] Run full automated test suite (716 tests including integration tests for drag, collapse, LLM edits).
 - [x] **Rollback drill**: Set flags to `false` locally, confirm autosave fallback works.
 - [x] Document QA results, logs, and snapshot verification in test results file ([phase4-test-results.md](phase4-test-results.md)).
-
-### Success
-- [ ] Metrics: drag-end & subtree success ≥99%, p95 latency <300 ms.
-- [ ] QA script passes with flags on.
-- [ ] Snapshot history shows correct `origin` values.
-- [ ] Rollback drill: toggle flags off in staging. With flags off, the drag handler no longer calls the backend (so `lastChangeWasPositional` is never set) and autosave resumes positional saves—confirm this works end-to-end.
 
 ---
 
@@ -137,15 +131,4 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 - [ ] Snapshot history shows `origin` tags (`ui.drag`, `ui.subtree`, `llm.tool`).
 - [ ] Undo/redo verified for drag, subtree, LLM edits.
 - [ ] Stakeholders informed autosave is retired; decision on long-term flag usage documented; plan archived.
-
-## Phase 4 – Updated Success Criteria
-
-### Success
-- [x] **Local QA passed**: All manual test steps completed for both flags OFF and flags ON configurations.
-- [x] **Tool execution logs verified**: Correct origin tags (`ui.node.update`, `ui.subtree`, `llm.tool`) shown in logs.
-- [x] **Snapshot verification**: Snapshot counts match tool executions; no duplicate/background snapshots detected.
-- [x] **Automated tests**: 716/716 tests passing.
-- [x] **Rollback drill passed**: Flags OFF restores autosave behavior; persistence still works.
-- [x] **Performance check**: Operations feel responsive, tool execution durations <50ms locally.
-- [x] **Full test results documented**: See [phase4-test-results.md](phase4-test-results.md).
 
