@@ -192,3 +192,23 @@ export const deleteEdge = async (edgeId) => {
     throw error;
   }
 };
+
+export const toggleSubtreeCollapse = async (nodeId, collapsed) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subtree/${nodeId}/collapse`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ collapsed }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to toggle subtree collapse');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error toggling subtree collapse:', error);
+    throw error;
+  }
+};

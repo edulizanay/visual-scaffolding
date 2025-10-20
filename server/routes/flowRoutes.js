@@ -2,7 +2,8 @@
 // ABOUTME: Manages all operations related to the visual flow canvas
 import { Router } from 'express';
 import { undo as historyUndo, redo as historyRedo, getHistoryStatus } from '../historyService.js';
-import { executeToolCalls } from '../tools/executor.js';
+import { executeToolCalls, executeTool, logToolExecution } from '../tools/executor.js';
+import { config } from '../config.js';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ async function executeHistoryOperation(operationFn, operationName, writeFlow) {
   return { success: true, flow: state };
 }
 
-function toolEndpoint(config, writeFlow) {
+function toolEndpoint(config, readFlow, writeFlow) {
   return async (req, res) => {
     try {
       const params = config.extractParams(req);
@@ -54,12 +55,21 @@ function toolEndpoint(config, writeFlow) {
         }
       }
 
-      const executionResult = await executeSingleTool(config.toolName, params);
+      // Execute tool directly (without executeToolCalls) to avoid double-writes
+      const flow = await readFlow();
+      const startTime = Date.now();
+      const executionResult = await executeTool(config.toolName, params, flow);
+      const duration = Date.now() - startTime;
+
+      // Log execution with route's origin
+      const origin = config.origin ?? 'ui.unknown';
+      logToolExecution(config.toolName, origin, duration, executionResult);
 
       if (executionResult.success) {
         await writeFlow(
           executionResult.updatedFlow,
-          config.skipSnapshot ?? false
+          config.skipSnapshot ?? false,
+          config.origin ?? null
         );
 
         const response = {
@@ -86,6 +96,14 @@ function toolEndpoint(config, writeFlow) {
 }
 
 export function registerFlowRoutes(router, { readFlow, writeFlow }) {
+  // Config endpoint for feature flags
+  router.get('/config', (req, res) => {
+    res.json({
+      ENABLE_BACKEND_DRAG_SAVE: config.ENABLE_BACKEND_DRAG_SAVE,
+      ENABLE_BACKEND_SUBTREE: config.ENABLE_BACKEND_SUBTREE,
+    });
+  });
+
   // Flow CRUD endpoints
   router.get('/', async (req, res) => {
     try {
@@ -150,21 +168,23 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
     toolName: 'addNode',
     action: 'creating node',
     extractParams: (req) => req.body,
-    extraFields: (result) => ({ nodeId: result.nodeId })
-  }, writeFlow));
+    extraFields: (result) => ({ nodeId: result.nodeId }),
+    origin: 'ui.node.create'
+  }, readFlow, writeFlow));
 
   router.put('/node/:id', toolEndpoint({
     toolName: 'updateNode',
     action: 'updating node',
     extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
-    skipSnapshot: true
-  }, writeFlow));
+    origin: 'ui.node.update'
+  }, readFlow, writeFlow));
 
   router.delete('/node/:id', toolEndpoint({
     toolName: 'deleteNode',
     action: 'deleting node',
-    extractParams: (req) => ({ nodeId: req.params.id })
-  }, writeFlow));
+    extractParams: (req) => ({ nodeId: req.params.id }),
+    origin: 'ui.node.delete'
+  }, readFlow, writeFlow));
 
   // Edge operations
   router.post('/edge', toolEndpoint({
@@ -177,21 +197,23 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
       }
       return null;
     },
-    extraFields: (result) => ({ edgeId: result.edgeId })
-  }, writeFlow));
+    extraFields: (result) => ({ edgeId: result.edgeId }),
+    origin: 'ui.edge.create'
+  }, readFlow, writeFlow));
 
   router.put('/edge/:id', toolEndpoint({
     toolName: 'updateEdge',
     action: 'updating edge',
     extractParams: (req) => ({ edgeId: req.params.id, ...req.body }),
-    skipSnapshot: true
-  }, writeFlow));
+    origin: 'ui.edge.update'
+  }, readFlow, writeFlow));
 
   router.delete('/edge/:id', toolEndpoint({
     toolName: 'deleteEdge',
     action: 'deleting edge',
-    extractParams: (req) => ({ edgeId: req.params.id })
-  }, writeFlow));
+    extractParams: (req) => ({ edgeId: req.params.id }),
+    origin: 'ui.edge.delete'
+  }, readFlow, writeFlow));
 
   // Group operations
   router.post('/group', toolEndpoint({
@@ -204,20 +226,37 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
       }
       return null;
     },
-    extraFields: (result) => ({ groupId: result.groupId })
-  }, writeFlow));
+    extraFields: (result) => ({ groupId: result.groupId }),
+    origin: 'ui.group.create'
+  }, readFlow, writeFlow));
 
   router.delete('/group/:id', toolEndpoint({
     toolName: 'ungroup',
     action: 'ungrouping',
-    extractParams: (req) => ({ groupId: req.params.id })
-  }, writeFlow));
+    extractParams: (req) => ({ groupId: req.params.id }),
+    origin: 'ui.group.ungroup'
+  }, readFlow, writeFlow));
 
   router.put('/group/:id/expand', toolEndpoint({
     toolName: 'toggleGroupExpansion',
     action: 'toggling group expansion',
-    extractParams: (req) => ({ groupId: req.params.id, ...req.body })
-  }, writeFlow));
+    extractParams: (req) => ({ groupId: req.params.id, ...req.body }),
+    origin: 'ui.group.expand'
+  }, readFlow, writeFlow));
+
+  // Subtree collapse operations
+  router.put('/subtree/:id/collapse', toolEndpoint({
+    toolName: 'toggleSubtreeCollapse',
+    action: 'toggling subtree collapse',
+    extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
+    validate: (params) => {
+      if (typeof params.collapsed !== 'boolean') {
+        return 'collapsed must be a boolean';
+      }
+      return null;
+    },
+    origin: 'ui.subtree'
+  }, readFlow, writeFlow));
 
   // Auto-layout endpoint
   router.post('/auto-layout', async (req, res) => {

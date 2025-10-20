@@ -2,24 +2,12 @@
 // ABOUTME: Handles graph layout calculation, animation, and viewport fitting
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { timer } from 'd3-timer';
-import { getOutgoers } from '@xyflow/react';
 import { THEME } from '../../../constants/theme.js';
 import { applyDagreLayout } from '../../../../shared/layout/applyDagreLayout.js';
+import { getAllDescendants } from '../../../../shared/flowUtils/subtreeHelpers.js';
 
-// Traverse descendants by edges (for Alt+Click collapse)
-export const getAllDescendants = (nodeId, nodes, edges) => {
-  const node = nodes.find(n => n.id === nodeId);
-  if (!node) return [];
-
-  const children = getOutgoers(node, nodes, edges);
-  const descendants = [...children];
-
-  children.forEach(child => {
-    descendants.push(...getAllDescendants(child.id, nodes, edges));
-  });
-
-  return descendants;
-};
+// Re-export for backwards compatibility
+export { getAllDescendants };
 
 export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   return applyDagreLayout({

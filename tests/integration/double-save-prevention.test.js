@@ -77,6 +77,7 @@ describe('Double-save prevention', () => {
     const finalCount = await getSnapshotCount();
     const snapshotsCreated = finalCount - initialCount;
 
+    // Should create exactly 1 snapshot (no double-write)
     expect(snapshotsCreated).toBe(1);
   });
 

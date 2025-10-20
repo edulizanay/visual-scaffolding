@@ -2,6 +2,7 @@
 // ABOUTME: Manages GROUP collapse (isCollapsed) only; subtree collapse (data.collapsed) lives in App.jsx
 
 import { THEME } from '../../../constants/theme.js';
+import { collapseSubtreeByHandles as collapseSubtreeCore } from '../../../../shared/flowUtils/subtreeHelpers.js';
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
 
@@ -387,39 +388,9 @@ export const ungroup = (flow, groupId) => {
 };
 
 export const collapseSubtreeByHandles = (flow, nodeId, collapsed, getDescendantsFn = null) => {
-  const { nodes, edges } = flow;
-  const target = nodes.find((node) => node.id === nodeId);
-  if (!target) return flow;
-
-  const descendants = getDescendantsFn
-    ? getDescendantsFn(nodeId, nodes, edges).map((entry) => (typeof entry === 'string' ? entry : entry.id))
-    : getGroupDescendants(nodeId, nodes);
-  const descendantSet = new Set(descendants);
-
-  const updatedNodes = nodes.map((node) => {
-    if (node.id === nodeId) {
-      return { ...node, data: { ...node.data, collapsed } };
-    }
-    if (descendantSet.has(node.id)) {
-      const next = { ...node, hidden: collapsed };
-      if (collapsed) {
-        next.subtreeHidden = true;
-      } else if ('subtreeHidden' in next) {
-        delete next.subtreeHidden;
-      }
-      return next;
-    }
-    return node;
-  });
-
-  const updatedEdges = edges.map((edge) =>
-    descendantSet.has(edge.source) || descendantSet.has(edge.target)
-      ? { ...edge, hidden: collapsed }
-      : edge
-  );
-
-  // Reapply group visibility rules to respect collapsed groups
-  return applyGroupVisibility(updatedNodes, updatedEdges);
+  // Use shared core function, then reapply group visibility rules
+  const result = collapseSubtreeCore(flow, nodeId, collapsed, getDescendantsFn);
+  return applyGroupVisibility(result.nodes, result.edges);
 };
 
 export const addChildNode = (flow, parentId, factory) => {
