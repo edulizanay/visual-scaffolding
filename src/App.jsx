@@ -31,13 +31,6 @@ import KeyboardUI from './KeyboardUI';
 import NotesPanel from './NotesPanel';
 import { THEME } from './constants/theme.js';
 
-import {
-  validateGroupMembership,
-  collapseSubtreeByHandles,
-  getExpandedGroupHalos,
-  applyGroupVisibility,
-} from './utils/groupUtils.js';
-
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
