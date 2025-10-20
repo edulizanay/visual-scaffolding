@@ -113,6 +113,9 @@ function App() {
     );
 
     if (shouldUseBackendDragSave(featureFlags.ENABLE_BACKEND_DRAG_SAVE, movedNodes)) {
+        // Set flag immediately to prevent autosave race condition
+        lastChangeWasPositionalRef.current = true;
+
         // Call backend API for each moved node
         const updatePromises = movedNodes.map(async ({ id, position, originalPosition }) => {
           try {
@@ -142,10 +145,11 @@ function App() {
             const failedNodeIds = failures.map(f => f.nodeId).join(', ');
             console.error(`Failed to save position for nodes: ${failedNodeIds}`);
             alert(`Failed to save position for ${failures.length} node(s): ${failedNodeIds}. Positions have been reverted.`);
-          } else {
-            // Mark as positional change to skip autosave
-            lastChangeWasPositionalRef.current = true;
+            // Clear flag on failure so autosave can handle it
+            lastChangeWasPositionalRef.current = false;
           }
+          // Clear drag state after gesture completes
+          dragStartPositionsRef.current = null;
         });
       }
   }, [onNodesChangeRaw, featureFlags.ENABLE_BACKEND_DRAG_SAVE, setNodes]);
