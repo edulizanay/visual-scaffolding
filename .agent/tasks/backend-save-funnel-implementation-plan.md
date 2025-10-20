@@ -8,7 +8,7 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 ---
 
 ## 0. Working Agreements
-- [ ] Create feature branch `feature/backend-save-phase-1` from `main`.
+- [x] Create feature branch `feature/backend-save-phase-1` from `main`.
 - [ ] Confirm `ENABLE_BACKEND_DRAG_SAVE` and `ENABLE_BACKEND_SUBTREE` default to `false`.
 - [ ] Define rollback: set flags to `false` and redeploy.
 - [ ] Ensure CI commands (`npm test`, `npm run lint`, integration suites) run green before each merge.
@@ -19,14 +19,14 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 **Goal**: make subtree helpers reusable.
 
 ### Implementation
-- [ ] Move the edge-based `getAllDescendants` (from `useFlowLayout`) into `shared/flowUtils/` (pure function, JSdoc); leave the parentGroupId variant in `groupUtils`.
-- [ ] Move `collapseSubtreeByHandles` into `shared/flowUtils/`, returning `{ nodes, edges }` (no React state); keep frontend wrapper calling `commitFlow(result)`.
-- [ ] Update frontend imports to use shared helpers.
-- [ ] Add/adjust unit tests for shared functions (happy path + edge cases).
+- [x] Move the edge-based `getAllDescendants` (from `useFlowLayout`) into `shared/flowUtils/` (pure function, JSdoc); leave the parentGroupId variant in `groupUtils`.
+- [x] Move `collapseSubtreeByHandles` into `shared/flowUtils/`, returning `{ nodes, edges }` (no React state); keep frontend wrapper calling `commitFlow(result)`.
+- [x] Update frontend imports to use shared helpers.
+- [x] Add/adjust unit tests for shared functions (happy path + edge cases).
 
 ### Success
 - [ ] Manual QA: Alt+collapse behaves exactly as before.
-- [ ] `npm test` + `npm run lint` pass on branch.
+- [x] `npm test` + `npm run lint` pass on branch (lint script not configured, 685 tests pass).
 - [ ] Merge branch back to `main` (flags still `false`).
 
 ---
