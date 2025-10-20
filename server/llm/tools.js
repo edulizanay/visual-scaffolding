@@ -223,6 +223,14 @@ export const toolDefinitions = [
       required: ['groupId', 'expand'],
     },
   },
+  {
+    name: 'autoLayout',
+    description: 'Applies automatic Dagre layout to position all nodes in the flow. Use this after building or significantly editing a portion of the graph, or when the human explicitly requests layout. The layout computation happens on the backend and positions are persisted. The frontend will animate the transition.',
+    parameters: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 /**
