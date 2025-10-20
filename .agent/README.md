@@ -5,11 +5,11 @@ This directory contains all project documentation. Use this index to quickly fin
 ## 📁 Documentation Structure
 
 ```
-.agent/ (3113 lines)
-├── README.md          # This file - documentation index (126 lines)
+.agent/ (3842 lines)
+├── README.md          # This file - documentation index (131 lines)
 ├── system/            # Current state of the system (1237 lines)
-├── tasks/             # Feature PRDs & implementation plans (807 lines)
-└── SOP/               # Standard operating procedures (802 lines)
+├── tasks/             # Feature PRDs & implementation plans (1041 lines)
+└── SOP/               # Standard operating procedures (1292 lines)
 ```
 
 **Documentation Guidelines**: Try to keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. The lines count is updated automatically.
@@ -31,6 +31,7 @@ Feature-specific PRDs and implementation plans:
 
 | Task | Status | Description |
 |------|--------|-------------|
+| **[backend-save-funnel-implementation-plan.md](./tasks/backend-save-funnel-implementation-plan.md)** | ✅ Complete | Backend persistence for drag/subtree with feature flags, autosave fallback |
 | **[hotkeys-visual-and-logic-centralization.md](./Tasks/hotkeys-visual-and-logic-centralization.md)** | Planning | Centralize keyboard shortcuts in single registry, improve UX hints |
 
 ## 🛠️ Standard Operating Procedures (SOPs)
@@ -42,6 +43,7 @@ Step-by-step guides for common development tasks:
 | **[unified-flow-commands.md](./SOP/unified-flow-commands.md)** | How to add flow mutations (nodes, groups, edges) - unified backend pattern |
 | **[hotkeys-management.md](./SOP/hotkeys-management.md)** | How to add or modify keyboard shortcuts in the centralized registry |
 | **[theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)** | How to work with design tokens and semantic theme system |
+| **[adding-persistence-actions.md](./SOP/adding-persistence-actions.md)** | How to add new backend persistence actions (feature-flagged, origin-tagged) |
 | **[writing-tests.md](./SOP/writing-tests.md)** | How to write tests with Vitest - unit, integration, frontend, API tests, layout algorithm testing |
 | *(To be added)* | How to add a database migration |
 | *(To be added)* | How to add a new LLM tool |
@@ -62,10 +64,12 @@ Keyboard shortcuts registry | [project_architecture.md](./system/project_archite
 Design token system | [project_architecture.md](./system/project_architecture.md) → Structured Design Token System
 Development commands, setup | [project_architecture.md](./system/project_architecture.md) → Development Workflow
 API endpoints | [project_architecture.md](./system/project_architecture.md) → Integration Points
+Backend save funnel & feature flags | [backend-save-funnel-implementation-plan.md](./tasks/backend-save-funnel-implementation-plan.md)
 Feature requirements | `Tasks/` folder
 How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-commands.md)
 How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
 How to work with design tokens/theme | [theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)
+How to add backend persistence actions | [adding-persistence-actions.md](./SOP/adding-persistence-actions.md)
 How to write tests | [writing-tests.md](./SOP/writing-tests.md)
 How to test layout algorithms (TDD) | [writing-tests.md](./SOP/writing-tests.md) → Testing Layout Algorithms
 How to do X (migrations, LLM tools, etc.) | `SOP/` folder
@@ -116,6 +120,7 @@ How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 **Last Updated**: October 14, 2025
 
 **Recent Major Changes**:
+- **Backend save funnel** - Feature-flagged persistence via backend APIs (drag, subtree) with autosave fallback; 716 tests passing
 - **Server.js refactoring** - Extracted helper functions, organized into sections, reduced conversation endpoint from 90→13 lines
 - **Layout algorithm** - Simplified to pure Dagre (removed compression causing diagonal bugs), TDD approach, 542 tests passing
 - **Frontend refactoring** - Extracted node visibility helpers, JSDoc documentation, 2-line ABOUTME headers
