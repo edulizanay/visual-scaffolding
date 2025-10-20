@@ -21,17 +21,17 @@ Exit Check:
 ## Phase 1 – Backend Foundations
 
 ### Step 1 – Extract `server/app.js`
-- [ ] Read `server/server.js` and copy the Express app creation + middleware into a new `server/app.js`.
-- [ ] Export the configured app from `server/app.js`.
-- [ ] Update `server/server.js` to import the app and keep only startup concerns (`listen`, logging, shutdown hooks).
-- [ ] Run tests: `npm test`.
-- [ ] Manual smoke: `npm start` to ensure the server boots.
+- [x] Read `server/server.js` and copy the Express app creation + middleware into a new `server/app.js`.
+- [x] Export the configured app from `server/app.js`.
+- [x] Update `server/server.js` to import the app and keep only startup concerns (`listen`, logging, shutdown hooks).
+- [x] Run tests: `npm test`.
+- [x] Manual smoke: `npm start` to ensure the server boots.
 
 Success Criteria
-- `server/app.js` exists and configures middleware, JSON parsing, CORS, etc.
-- `server/server.js` < 100 LOC and only handles lifecycle.
-- `npm test` is green.
-- Server starts without errors.
+- ✅ `server/app.js` exists and configures middleware, JSON parsing, CORS, etc.
+- ✅ `server/server.js` 31 LOC (< 100) and only handles lifecycle.
+- ✅ `npm test` is green (327 tests passing).
+- ✅ Server starts without errors.
 
 ### Step 2 – Introduce `server/routes/index.js`
 - [ ] Move all route registrations from `server/server.js` (or wherever they now live) into `server/routes/index.js`.
