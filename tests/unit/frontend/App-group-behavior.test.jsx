@@ -72,7 +72,7 @@ vi.mock('../../../src/KeyboardUI', () => {
   };
 });
 
-vi.mock('../../../src/Node', () => {
+vi.mock('../../../src/features/flow-canvas/components/Node', () => {
   const React = require('react');
   return {
     __esModule: true,
@@ -80,7 +80,7 @@ vi.mock('../../../src/Node', () => {
   };
 });
 
-vi.mock('../../../src/Edge', () => {
+vi.mock('../../../src/features/flow-canvas/components/Edge', () => {
   const React = require('react');
   return {
     __esModule: true,
@@ -88,13 +88,14 @@ vi.mock('../../../src/Edge', () => {
   };
 });
 
-vi.mock('../../../src/hooks/useFlowLayout', () => ({
+vi.mock('../../../src/features/flow-canvas/hooks/useFlowLayout', () => ({
   useFlowLayout: vi.fn(() => ({
     applyLayoutWithAnimation: vi.fn(),
     isAnimating: false,
     fitViewPadding: 0,
     getAllDescendants: vi.fn(() => []),
   })),
+  getAllDescendants: vi.fn(() => []),
 }));
 
 vi.mock('../../../src/hooks/useHotkeys', () => ({
