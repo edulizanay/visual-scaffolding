@@ -17,6 +17,7 @@ export default defineConfig({
           globals: true,
           include: [
             'tests/unit/backend/**/*.test.js',
+            'tests/unit/shared/**/*.test.js',
             'tests/integration/**/*.test.js',
             'tests/e2e/**/*.test.js',
             'tests/llm/**/*.test.js',
