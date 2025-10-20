@@ -5,16 +5,40 @@ import {
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from '../historyService.js';
 import { applyDagreLayout } from '../../shared/layout/applyDagreLayout.js';
 import { NODE_WIDTH, NODE_HEIGHT } from '../../shared/constants/nodeDimensions.js';
+import { collapseSubtreeByHandles, getAllDescendants } from '../../shared/flowUtils/subtreeHelpers.js';
 
 async function readFlow() {
   return dbGetFlow();
 }
 
-async function writeFlow(flowData, skipSnapshot = false) {
+async function writeFlow(flowData, skipSnapshot = false, origin = null) {
   dbSaveFlow(flowData);
   if (!skipSnapshot) {
-    await pushSnapshot(flowData);
+    await pushSnapshot(flowData, origin);
   }
+}
+
+/**
+ * Log structured tool execution metrics
+ * @param {string} tool - Tool name
+ * @param {string} origin - Origin metadata (ui.drag, ui.subtree, llm.tool, etc.)
+ * @param {number} duration - Execution duration in ms
+ * @param {Object} result - Tool execution result
+ */
+function logToolExecution(tool, origin, duration, result) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    tool,
+    origin,
+    duration: `${duration}ms`,
+    success: result.success,
+  };
+
+  if (!result.success) {
+    logEntry.error = result.error;
+  }
+
+  console.log('[TOOL_EXECUTION]', JSON.stringify(logEntry));
 }
 
 export async function executeTool(toolName, params, flow) {
@@ -44,6 +68,8 @@ export async function executeTool(toolName, params, flow) {
         return await executeToggleGroupExpansion(params, flow);
       case 'autoLayout':
         return await executeAutoLayout(params, flow);
+      case 'toggleSubtreeCollapse':
+        return await executeToggleSubtreeCollapse(params, flow);
       default:
         return { success: false, error: `Unknown tool: ${toolName}` };
     }
@@ -58,7 +84,11 @@ export async function executeToolCalls(toolCalls) {
   let flowChanged = false;
 
   for (const { name, params } of toolCalls) {
+    const startTime = Date.now();
     const result = await executeTool(name, params, flow);
+    const duration = Date.now() - startTime;
+
+    logToolExecution(name, 'llm.tool', duration, result);
     results.push(result);
 
     if (result.success && result.updatedFlow) {
@@ -68,7 +98,7 @@ export async function executeToolCalls(toolCalls) {
   }
 
   if (flowChanged) {
-    await writeFlow(flow);
+    await writeFlow(flow, false, 'llm.tool');
   }
 
   return results;
@@ -487,5 +517,36 @@ async function executeAutoLayout(params, flow) {
     tool: 'autoLayout',
     success: true,
     updatedFlow,
+  };
+}
+
+/**
+ * Toggle subtree collapse/expand
+ *
+ * Sets data.collapsed on the parent node and toggles hidden/subtreeHidden
+ * on all descendants based on edge-based traversal.
+ */
+async function executeToggleSubtreeCollapse(params, flow) {
+  const { nodeId, collapsed } = params;
+
+  if (!nodeId) {
+    return { success: false, error: 'nodeId is required' };
+  }
+
+  if (typeof collapsed !== 'boolean') {
+    return { success: false, error: 'collapsed must be a boolean' };
+  }
+
+  const node = flow.nodes.find(n => n.id === nodeId);
+  if (!node) {
+    return { success: false, error: `Node ${nodeId} not found` };
+  }
+
+  // Use shared collapse logic with edge-based descendant traversal
+  const result = collapseSubtreeByHandles(flow, nodeId, collapsed, getAllDescendants);
+
+  return {
+    success: true,
+    updatedFlow: result,
   };
 }

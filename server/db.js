@@ -177,9 +177,18 @@ export function pushUndoSnapshot(flowData) {
     lastSnapshot = lastRow ? lastRow.snapshot : null;
   }
 
-  // Skip if identical to last snapshot
-  if (lastSnapshot && lastSnapshot === cleanState) {
-    return;
+  // Skip if identical to last snapshot (compare flow state, not metadata)
+  if (lastSnapshot) {
+    const lastData = JSON.parse(lastSnapshot);
+    const currentData = flowData;
+
+    // Remove metadata for comparison
+    const { _meta: lastMeta, ...lastFlow } = lastData;
+    const { _meta: currentMeta, ...currentFlow } = currentData;
+
+    if (JSON.stringify(lastFlow) === JSON.stringify(currentFlow)) {
+      return;
+    }
   }
 
   // If we're not at the end, truncate future states

@@ -9,16 +9,39 @@ import {
   initializeUndoHistory
 } from './db.js';
 
-export async function pushSnapshot(flowState) {
-  pushUndoSnapshot(flowState);
+/**
+ * Push a new snapshot to the undo history.
+ *
+ * @param {Object} flowState - Flow state {nodes, edges}
+ * @param {string} origin - Optional origin metadata (e.g., 'ui.drag', 'ui.subtree', 'llm.tool')
+ */
+export async function pushSnapshot(flowState, origin = null) {
+  // Embed origin metadata inside the snapshot JSON if provided
+  const snapshotData = origin
+    ? { ...flowState, _meta: { origin, timestamp: new Date().toISOString() } }
+    : flowState;
+
+  pushUndoSnapshot(snapshotData);
+}
+
+/**
+ * Strip internal metadata from snapshot before returning to client.
+ * Preserves backward compatibility with existing snapshots.
+ */
+function stripMetadata(snapshot) {
+  if (!snapshot) return snapshot;
+  const { _meta, ...flowState } = snapshot;
+  return flowState;
 }
 
 export async function undo() {
-  return dbUndo();
+  const snapshot = dbUndo();
+  return stripMetadata(snapshot);
 }
 
 export async function redo() {
-  return dbRedo();
+  const snapshot = dbRedo();
+  return stripMetadata(snapshot);
 }
 
 export async function canUndo() {

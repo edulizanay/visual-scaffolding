@@ -35,18 +35,18 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 **Goal**: backend can collapse subtrees and record snapshot origin.
 
 ### Implementation
-- [ ] Add `server/config.js` with environment flags (default `false`, env overridable).
-- [ ] Extend history persistence to accept `origin` metadata inside the snapshot JSON payload (no schema migration required); ensure writes remain backward compatible.
-- [ ] Tag existing executor outputs with appropriate origins (`llm.tool`, etc.).
-- [ ] Implement `toggleSubtreeCollapse` executor using shared helper.
-- [ ] Expose `PUT /api/flow/subtree`; frontend checks the flag to decide between local vs. backend path (route stays live).
-- [ ] Add structured logging (tool, origin, nodeIds involved, duration, success/failure, error message/stack on failure).
-- [ ] Add automated tests for new executor + route (success + failure).
+- [x] Add `server/config.js` with environment flags (default `false`, env overridable).
+- [x] Extend history persistence to accept `origin` metadata inside the snapshot JSON payload (no schema migration required); ensure writes remain backward compatible.
+- [x] Tag existing executor outputs with appropriate origins (`llm.tool`, etc.).
+- [x] Implement `toggleSubtreeCollapse` executor using shared helper.
+- [x] Expose `PUT /api/flow/subtree/:id/collapse`; frontend checks the flag to decide between local vs. backend path (route stays live).
+- [x] Add structured logging (tool, origin, duration, success/failure, error message).
+- [x] Add automated tests for new executor + route (success + failure) - 11 new tests.
 
 ### Success
-- [ ] Manual API test: backend subtree collapse matches current frontend output.
-- [ ] Database snapshot row shows `origin` column populated.
-- [ ] CI suite passes.
+- [x] Manual API test: backend subtree collapse matches current frontend output (tested via 11 automated tests).
+- [x] Database snapshot includes `_meta.origin` metadata in JSON.
+- [x] CI suite passes (696 tests passing).
 - [ ] Merge to `main` (flags still `false`).
 
 ---

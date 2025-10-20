@@ -219,6 +219,19 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
     extractParams: (req) => ({ groupId: req.params.id, ...req.body })
   }, writeFlow));
 
+  // Subtree collapse operations
+  router.put('/subtree/:id/collapse', toolEndpoint({
+    toolName: 'toggleSubtreeCollapse',
+    action: 'toggling subtree collapse',
+    extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
+    validate: (params) => {
+      if (typeof params.collapsed !== 'boolean') {
+        return 'collapsed must be a boolean';
+      }
+      return null;
+    }
+  }, writeFlow));
+
   // Auto-layout endpoint
   router.post('/auto-layout', async (req, res) => {
     try {
