@@ -47,22 +47,26 @@ Success Criteria
 
 ### Step 3 – Split domain routers (can run in parallel)
 Assign engineers by domain (`flow`, `notes`, `conversation`):
-- [ ] Create `server/routes/<domain>Routes.js` per domain and move matching endpoints.
-- [ ] Add lightweight service modules when logic exceeds ~100 LOC (e.g., `server/services/<domain>Service.js`).
-- [ ] Ensure `server/routes/index.js` mounts the new router (`app.use('/api/flow', flowRoutes)` etc.).
-- [ ] Run tests: `npm test` after each domain refactor.
+- [x] Create `server/routes/<domain>Routes.js` per domain and move matching endpoints.
+- [x] Add lightweight service modules when logic exceeds ~100 LOC (e.g., `server/services/<domain>Service.js`).
+- [x] Ensure `server/routes/index.js` mounts the new router (`app.use('/api/flow', flowRoutes)` etc.).
+- [x] Run tests: `npm test` after each domain refactor.
 
 Success Criteria
-- Domain routers live under `server/routes/`.
-- Business logic remains isolated to the same file hierarchy (no leaks back to `server/server.js`).
-- `npm test` passes after each domain move.
+- ✅ Domain routers live under `server/routes/`:
+  - flowRoutes.js (223 LOC)
+  - conversationRoutes.js (230 LOC)
+  - notesRoutes.js (137 LOC)
+  - index.js (28 LOC - orchestration only)
+- ✅ Business logic remains isolated to the same file hierarchy.
+- ✅ `npm test` passes (636 tests).
 
 ### Phase 1 Exit Check
-- [ ] `server/app.js` + `server/routes/index.js` exist and are in use.
-- [ ] All domain routes live under `server/routes/<domain>Routes.js`.
-- [ ] `server/server.js` contains only startup/shutdown code.
-- [ ] `npm test` passes.
-- [ ] Commit: “refactor: reorganize express app and routes”.
+- [x] `server/app.js` + `server/routes/index.js` exist and are in use.
+- [x] All domain routes live under `server/routes/<domain>Routes.js`.
+- [x] `server/server.js` contains only startup/shutdown code.
+- [x] `npm test` passes.
+- [x] Commit: "refactor: reorganize express app and routes".
 
 ---
 
