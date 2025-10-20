@@ -1,7 +1,7 @@
 // ABOUTME: Chat interface for AI tool interaction
 // ABOUTME: Provides text input and sends messages to backend
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { sendMessage, clearConversation, getConversationDebug, sendNotesMessage } from '../../../api';
+import { sendMessage, clearConversation, getConversationDebug, sendNotesMessage } from '../../../services/api';
 import { THEME } from '../../../constants/theme.js';
 
 export const Kbd = ({ children, style = {} }) => (

@@ -1,5 +1,5 @@
-// ABOUTME: API client for backend flow operations
-// ABOUTME: Handles loading and saving flow data to/from the backend
+// ABOUTME: Flow API client for backend flow operations
+// ABOUTME: Handles flow CRUD, history, nodes, and edges
 const API_BASE_URL = '/api';
 
 export const loadFlow = async () => {
@@ -34,53 +34,6 @@ export const saveFlow = async (nodes, edges, skipSnapshot = false) => {
     return await response.json();
   } catch (error) {
     console.error('Error saving flow:', error);
-    throw error;
-  }
-};
-
-export const sendMessage = async (message) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/conversation/message`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to send message');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error sending message:', error);
-    throw error;
-  }
-};
-
-export const getConversationDebug = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/conversation/debug`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch conversation');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching conversation:', error);
-    throw error;
-  }
-};
-
-export const clearConversation = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/conversation/history`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to clear conversation');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error clearing conversation:', error);
     throw error;
   }
 };
@@ -128,10 +81,6 @@ export const getHistoryStatus = async () => {
   }
 };
 
-// Unified Flow Command API Helpers
-// These functions provide consistent API access to all flow operations
-
-// Node operations
 export const createNode = async (params) => {
   try {
     const response = await fetch(`${API_BASE_URL}/node`, {
@@ -188,7 +137,6 @@ export const deleteNode = async (nodeId) => {
   }
 };
 
-// Edge operations
 export const createEdge = async (params) => {
   try {
     const response = await fetch(`${API_BASE_URL}/edge`, {
@@ -241,114 +189,6 @@ export const deleteEdge = async (edgeId) => {
     return await response.json();
   } catch (error) {
     console.error('Error deleting edge:', error);
-    throw error;
-  }
-};
-
-// Group operations
-export const createGroup = async (params) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/group`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create group');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating group:', error);
-    throw error;
-  }
-};
-
-export const ungroup = async (groupId) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/group/${groupId}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to ungroup');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error ungrouping:', error);
-    throw error;
-  }
-};
-
-export const toggleGroupExpansion = async (groupId, expand) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/group/${groupId}/expand`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ expand }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to toggle group expansion');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error toggling group expansion:', error);
-    throw error;
-  }
-};
-
-export const loadNotes = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notes`);
-    if (!response.ok) {
-      throw new Error('Failed to load notes');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error loading notes:', error);
-    throw error;
-  }
-};
-
-export const sendNotesMessage = async (message) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notes`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to send notes message');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error sending notes message:', error);
-    throw error;
-  }
-};
-
-export const updateNotes = async (bullets) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notes`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ bullets }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to update notes');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating notes:', error);
     throw error;
   }
 };

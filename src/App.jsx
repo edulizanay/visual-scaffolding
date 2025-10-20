@@ -23,7 +23,7 @@ import {
   createGroup as apiCreateGroup,
   ungroup as apiUngroup,
   toggleGroupExpansion as apiToggleGroupExpansion
-} from './api';
+} from './services/api';
 import { ChatInterface, KeyboardUI } from './features/chat';
 import { NotesPanel } from './features/notes';
 

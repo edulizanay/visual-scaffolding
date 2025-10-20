@@ -2,10 +2,10 @@
 // ABOUTME: Tests keyboard handler logic in isolation without rendering full App component
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as api from '../../../src/api.js';
+import * as api from '../../../src/services/api';
 
 // Mock the API module
-vi.mock('../../../src/api.js', () => ({
+vi.mock('../../../src/services/api', () => ({
   undoFlow: vi.fn(),
   redoFlow: vi.fn(),
   createGroup: vi.fn(),

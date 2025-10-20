@@ -3,7 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import App from '../../../src/App.jsx';
 import { ReactFlow } from '@xyflow/react';
-import * as api from '../../../src/api.js';
+import * as api from '../../../src/services/api';
 import ChatInterface from '../../../src/features/chat/components/ChatInterface';
 
 vi.mock('@xyflow/react', () => {
@@ -102,7 +102,7 @@ vi.mock('../../../src/hooks/useHotkeys', () => ({
   useHotkeys: vi.fn(),
 }));
 
-vi.mock('../../../src/api.js', () => ({
+vi.mock('../../../src/services/api', () => ({
   loadFlow: vi.fn(),
   saveFlow: vi.fn(),
   undoFlow: vi.fn(),

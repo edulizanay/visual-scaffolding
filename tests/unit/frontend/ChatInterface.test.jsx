@@ -5,10 +5,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatInterface from '../../../src/features/chat/components/ChatInterface.jsx';
-import * as api from '../../../src/api.js';
+import * as api from '../../../src/services/api';
 
 // Mock the API module
-vi.mock('../../../src/api.js', () => ({
+vi.mock('../../../src/services/api', () => ({
   sendMessage: vi.fn(),
   clearConversation: vi.fn(),
   getConversationDebug: vi.fn(),

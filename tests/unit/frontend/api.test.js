@@ -23,7 +23,7 @@ import {
   loadNotes,
   sendNotesMessage,
   updateNotes,
-} from '../../../src/api.js';
+} from '../../../src/services/api';
 
 // Mock global fetch
 global.fetch = vi.fn();

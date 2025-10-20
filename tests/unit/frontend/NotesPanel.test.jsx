@@ -5,10 +5,10 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotesPanel from '../../../src/features/notes/components/NotesPanel.jsx';
-import * as api from '../../../src/api.js';
+import * as api from '../../../src/services/api';
 
 // Mock the API module
-vi.mock('../../../src/api.js', () => ({
+vi.mock('../../../src/services/api', () => ({
   loadNotes: vi.fn(),
   updateNotes: vi.fn(),
   sendMessage: vi.fn(),
