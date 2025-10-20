@@ -22,38 +22,36 @@ describe('executeAutoLayout', () => {
 
   describe('position change detection', () => {
     it('should write flow when positions change', async () => {
-      // Create a flow with default (0,0) positions that will change after layout
-      const initialFlow = {
-        nodes: [
-          { id: 'a', position: { x: 0, y: 0 }, data: { label: 'A' } },
-          { id: 'b', position: { x: 0, y: 0 }, data: { label: 'B' } },
-        ],
-        edges: [
-          { id: 'e1', source: 'a', target: 'b' },
-        ],
-      };
+      // Create nodes first, then call autoLayout via executeToolCalls
+      const results = await executeToolCalls([
+        { name: 'addNode', params: { label: 'A' } },
+        { name: 'addNode', params: { label: 'B', parentNodeId: 'a' } },
+        { name: 'autoLayout', params: {} },
+      ]);
 
-      const result = await executeTool('autoLayout', {}, initialFlow);
+      const autoLayoutResult = results[2];
 
-      expect(result.success).toBe(true);
-      expect(result.tool).toBe('autoLayout');
-      expect(result.updatedFlow).toBeDefined();
+      expect(autoLayoutResult.success).toBe(true);
+      expect(autoLayoutResult.tool).toBe('autoLayout');
+      expect(autoLayoutResult.updatedFlow).toBeDefined();
 
       // Verify positions are set (Dagre positions nodes, even if centered at x=0)
-      const nodeA = result.updatedFlow.nodes.find(n => n.id === 'a');
-      const nodeB = result.updatedFlow.nodes.find(n => n.id === 'b');
+      const nodeA = autoLayoutResult.updatedFlow.nodes.find(n => n.id === 'a');
+      const nodeB = autoLayoutResult.updatedFlow.nodes.find(n => n.id === 'b');
 
       expect(nodeA.position).toBeDefined();
       expect(nodeB.position).toBeDefined();
       expect(typeof nodeA.position.x).toBe('number');
       expect(typeof nodeB.position.x).toBe('number');
 
-      // Verify flow was written to database
+      // Verify flow was written to database (by executeToolCalls)
       const savedFlow = await getFlow();
-      expect(savedFlow.nodes.find(n => n.id === 'a').position.x).toBe(nodeA.position.x);
+      const savedA = savedFlow.nodes.find(n => n.id === 'a');
+      expect(savedA).toBeDefined();
+      expect(savedA.position.x).toBe(nodeA.position.x);
 
       // didChange should not be present (only set when no change)
-      expect(result.didChange).toBeUndefined();
+      expect(autoLayoutResult.didChange).toBeUndefined();
     });
 
     it('should skip write when positions unchanged', async () => {

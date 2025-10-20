@@ -147,7 +147,7 @@ function NotesPanel({ isOpen, onToggle, externalBullets, onFlowUpdate }) {
   }, [externalBullets, bulletsToText]);
 
   // Auto-save notes with debouncing
-  const saveNotes = useDebouncedCallback(async (text) => {
+  const { debouncedFn: saveNotes } = useDebouncedCallback(async (text) => {
     try {
       const bullets = textToBullets(text);
       await updateNotes(bullets);

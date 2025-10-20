@@ -93,7 +93,7 @@ function App() {
     fetchFlow();
   }, [setNodes, setEdges, normalizeFlow]);
 
-  const debouncedAutoSave = useDebouncedCallback(async (nodes, edges) => {
+  const { debouncedFn: debouncedAutoSave, flush: flushAutoSave } = useDebouncedCallback(async (nodes, edges) => {
     try {
       await saveFlow(nodes, edges);
     } catch (error) {
@@ -533,6 +533,7 @@ function App() {
       <ChatInterface
         onFlowUpdate={handleFlowUpdate}
         onProcessingChange={setIsBackendProcessing}
+        onFlushPendingSave={flushAutoSave}
         isNotesPanelOpen={isNotesPanelOpen}
         onNotesUpdate={setNotesBullets}
       />

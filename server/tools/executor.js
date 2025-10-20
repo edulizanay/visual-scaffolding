@@ -460,7 +460,7 @@ async function executeAutoLayout(params, flow) {
   });
 
   // Compare positions to check if anything changed
-  const positionsChanged = flow.nodes.some((node, index) => {
+  const positionsChanged = flow.nodes.some((node) => {
     const layoutedNode = layoutedNodes.find(n => n.id === node.id);
     if (!layoutedNode) return false;
 
@@ -471,7 +471,7 @@ async function executeAutoLayout(params, flow) {
   });
 
   if (!positionsChanged) {
-    // No changes, skip write
+    // No changes - return original flow to avoid unnecessary write
     return {
       tool: 'autoLayout',
       success: true,
@@ -480,9 +480,8 @@ async function executeAutoLayout(params, flow) {
     };
   }
 
-  // Positions changed, write to database
+  // Positions changed - return updated flow (executeToolCalls will write it)
   const updatedFlow = { nodes: layoutedNodes, edges: layoutedEdges };
-  await writeFlow(updatedFlow);
 
   return {
     tool: 'autoLayout',

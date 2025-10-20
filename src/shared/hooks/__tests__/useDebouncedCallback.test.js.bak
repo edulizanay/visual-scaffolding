@@ -38,7 +38,7 @@ describe('useDebouncedCallback', () => {
     const { result } = renderHook(() => useDebouncedCallback(callback, 500));
 
     act(() => {
-      result.current.debouncedFn('first');
+      result.current('first');
     });
 
     act(() => {
@@ -48,7 +48,7 @@ describe('useDebouncedCallback', () => {
     expect(callback).not.toHaveBeenCalled();
 
     act(() => {
-      result.current.debouncedFn('second');
+      result.current('second');
     });
 
     act(() => {
@@ -70,7 +70,7 @@ describe('useDebouncedCallback', () => {
     const { result } = renderHook(() => useDebouncedCallback(callback, 1000));
 
     act(() => {
-      result.current.debouncedFn();
+      result.current();
     });
 
     act(() => {
@@ -91,7 +91,7 @@ describe('useDebouncedCallback', () => {
     const { result, unmount } = renderHook(() => useDebouncedCallback(callback, 500));
 
     act(() => {
-      result.current.debouncedFn();
+      result.current();
     });
 
     unmount();
@@ -108,7 +108,7 @@ describe('useDebouncedCallback', () => {
     const { result } = renderHook(() => useDebouncedCallback(callback, 500));
 
     act(() => {
-      result.current.debouncedFn('arg1', 'arg2', 'arg3');
+      result.current('arg1', 'arg2', 'arg3');
     });
 
     act(() => {
@@ -128,7 +128,7 @@ describe('useDebouncedCallback', () => {
     );
 
     act(() => {
-      result.current.debouncedFn('test');
+      result.current('test');
     });
 
     rerender({ cb: callback2 });

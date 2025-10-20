@@ -3,14 +3,15 @@
 import { useRef, useCallback, useEffect } from 'react';
 
 /**
- * Hook that creates a debounced version of a callback
+ * Hook that creates a debounced version of a callback with flush and cancel utilities
  * @param {Function} callback - The function to debounce
  * @param {number} delay - Delay in milliseconds (default: 500)
- * @returns {Function} Debounced version of the callback
+ * @returns {Object} Object with debounced function, flush, and cancel methods
  */
 export function useDebouncedCallback(callback, delay = 500) {
   const timeoutRef = useRef(null);
   const callbackRef = useRef(callback);
+  const pendingArgsRef = useRef(null);
 
   // Update callback ref when callback changes
   useEffect(() => {
@@ -26,13 +27,38 @@ export function useDebouncedCallback(callback, delay = 500) {
     };
   }, []);
 
-  return useCallback((...args) => {
+  const cancel = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    pendingArgsRef.current = null;
+  }, []);
+
+  const flush = useCallback(async () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (pendingArgsRef.current) {
+      const args = pendingArgsRef.current;
+      pendingArgsRef.current = null;
+      return await callbackRef.current(...args);
+    }
+  }, []);
+
+  const debouncedFn = useCallback((...args) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
+    pendingArgsRef.current = args;
+
     timeoutRef.current = setTimeout(() => {
       callbackRef.current(...args);
+      pendingArgsRef.current = null;
     }, delay);
   }, [delay]);
+
+  return { debouncedFn, flush, cancel };
 }

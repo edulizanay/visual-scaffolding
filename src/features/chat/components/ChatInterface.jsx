@@ -26,7 +26,7 @@ export const Kbd = ({ children, style = {} }) => (
   </kbd>
 );
 
-function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = false, onNotesUpdate }) {
+function ChatInterface({ onFlowUpdate, onProcessingChange, onFlushPendingSave, isNotesPanelOpen = false, onNotesUpdate }) {
   const [message, setMessage] = useState('');
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [draftMessage, setDraftMessage] = useState('');
@@ -120,6 +120,11 @@ function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = fa
     }
 
     try {
+      // Flush any pending autosave before sending to LLM to ensure DB is up-to-date
+      if (onFlushPendingSave) {
+        await onFlushPendingSave();
+      }
+
       const response = await sendMessage(messageToSend);
       console.log('✅ AI Response:', response);
 
