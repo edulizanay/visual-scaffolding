@@ -1,7 +1,7 @@
 // ABOUTME: Group node operations (create, ungroup, collapse, halos, synthetic edges)
 // ABOUTME: Manages GROUP collapse (isCollapsed) only; subtree collapse (data.collapsed) lives in App.jsx
 
-import { THEME } from '../constants/theme.js';
+import { THEME } from '../../../constants/theme.js';
 
 const GROUP_EDGE_PREFIX = 'group-edge-';
 

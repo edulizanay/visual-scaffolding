@@ -13,7 +13,7 @@ import {
   getExpandedGroupHalos,
   collapseSubtreeByHandles,
   computeNodeBounds,
-} from '../src/utils/groupUtils.js';
+} from '../src/features/flow-canvas/utils/groupUtils.js';
 import { THEME } from '../src/constants/theme.js';
 
 describe('getGroupDescendants', () => {

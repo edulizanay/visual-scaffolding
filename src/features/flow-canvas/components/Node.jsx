@@ -2,7 +2,7 @@
 // ABOUTME: Displays node data with styling for visual hierarchy
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { useInlineEdit } from './shared/hooks/useInlineEdit.js';
+import { useInlineEdit } from '../../../shared/hooks/useInlineEdit.js';
 
 const CustomNode = ({ data, id }) => {
   const textColor = data.textColor || 'white';

@@ -2,8 +2,9 @@
 // ABOUTME: Allows double-click editing of edge labels directly on the canvas
 import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react';
-import { THEME } from './constants/theme.js';
-import { useInlineEdit } from './shared/hooks/useInlineEdit.js';
+
+import { THEME } from '../../../constants/theme.js';
+import { useInlineEdit } from '../../../shared/hooks/useInlineEdit.js';
 
 const CustomEdge = ({
   id,

@@ -5,8 +5,8 @@ import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
-import CustomNode from '../../src/Node.jsx';
-import CustomEdge from '../../src/Edge.jsx';
+import CustomNode from '../../src/features/flow-canvas/components/Node.jsx';
+import CustomEdge from '../../src/features/flow-canvas/components/Edge.jsx';
 
 // Mock React Flow's Handle component
 vi.mock('@xyflow/react', async () => {

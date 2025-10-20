@@ -9,8 +9,8 @@ import {
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
-import Node from './Node';
-import Edge from './Edge';
+import { Node, Edge, GroupHaloOverlay, useFlowLayout, validateGroupMembership, collapseSubtreeByHandles, getExpandedGroupHalos, applyGroupVisibility } from './features/flow-canvas';
+
 import {
   loadFlow,
   saveFlow,
@@ -25,12 +25,12 @@ import {
   toggleGroupExpansion as apiToggleGroupExpansion
 } from './api';
 import ChatInterface from './ChatInterface';
-import { useFlowLayout } from './hooks/useFlowLayout';
+
 import { useHotkeys } from './hooks/useHotkeys';
 import KeyboardUI from './KeyboardUI';
 import NotesPanel from './NotesPanel';
 import { THEME } from './constants/theme.js';
-import { GroupHaloOverlay } from './GroupHaloOverlay.jsx';
+
 import {
   validateGroupMembership,
   collapseSubtreeByHandles,

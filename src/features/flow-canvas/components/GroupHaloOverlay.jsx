@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useViewport } from '@xyflow/react';
-import { THEME } from './constants/theme.js';
+import { THEME } from '../../../constants/theme.js';
 
 export const GroupHaloOverlay = ({ halos, onCollapse }) => {
   const [hoveredId, setHoveredId] = useState(null);
