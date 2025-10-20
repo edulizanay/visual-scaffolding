@@ -106,18 +106,21 @@ function App() {
     debouncedAutoSave(nodes, edges);
   }, [nodes, edges, isLoading, isAnimating, isBackendProcessing, debouncedAutoSave]);
 
-  const handleFlowUpdate = useCallback((updatedFlow) => {
+  const handleFlowUpdate = useCallback((updatedFlow, options = {}) => {
     if (!updatedFlow) return;
 
+    const { animateLayout = false } = options;
     const normalizedFlow = normalizeFlow(updatedFlow);
 
     setNodes(normalizedFlow.nodes);
     setEdges(normalizedFlow.edges);
 
-    // Auto-layout when LLM adds nodes
-    setTimeout(() => {
-      applyLayoutWithAnimation(normalizedFlow.nodes, normalizedFlow.edges);
-    }, 100);
+    // Only animate layout when explicitly requested (e.g., autoLayout tool)
+    if (animateLayout) {
+      setTimeout(() => {
+        applyLayoutWithAnimation(normalizedFlow.nodes, normalizedFlow.edges);
+      }, 100);
+    }
   }, [setNodes, setEdges, applyLayoutWithAnimation, normalizeFlow]);
 
   const handleMutation = useCallback(async (apiCall, {

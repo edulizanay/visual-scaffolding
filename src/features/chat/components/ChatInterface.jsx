@@ -125,8 +125,16 @@ function ChatInterface({ onFlowUpdate, onProcessingChange, isNotesPanelOpen = fa
 
       // Update the flow visualization if the AI made changes
       if (response.updatedFlow) {
-        onFlowUpdate(response.updatedFlow);
-        console.log('🔄 Flow updated with AI changes');
+        // Check if autoLayout tool was called - if so, trigger animation
+        const hasAutoLayout = response.execution?.some(result => result.tool === 'autoLayout' && result.success);
+
+        if (hasAutoLayout) {
+          onFlowUpdate(response.updatedFlow, { animateLayout: true });
+          console.log('🔄 Flow updated with auto-layout animation');
+        } else {
+          onFlowUpdate(response.updatedFlow);
+          console.log('🔄 Flow updated with AI changes');
+        }
       }
 
       setHistoryPosition(-1);
