@@ -22,7 +22,8 @@ import {
   updateEdge,
   createGroup as apiCreateGroup,
   ungroup as apiUngroup,
-  toggleGroupExpansion as apiToggleGroupExpansion
+  toggleGroupExpansion as apiToggleGroupExpansion,
+  toggleSubtreeCollapse as apiToggleSubtreeCollapse
 } from './services/api';
 import { ChatInterface, KeyboardShortcutsPanel } from './features/chat';
 import { NotesPanel } from './features/notes';
@@ -30,9 +31,10 @@ import { NotesPanel } from './features/notes';
 import { useHotkeys } from './hooks/useHotkeys';
 import { useDebouncedCallback } from './shared/hooks/useDebouncedCallback.js';
 import { THEME } from './constants/theme.js';
+import { getFeatureFlags } from './utils/featureFlags.js';
 
 function App() {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [nodes, setNodes, onNodesChangeRaw] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBackendProcessing, setIsBackendProcessing] = useState(false);
@@ -42,6 +44,11 @@ function App() {
   const [selectedNodeIds, setSelectedNodeIds] = useState([]); // Multi-select state
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
   const [notesBullets, setNotesBullets] = useState(null);
+
+  // Phase 3: Backend save funnel dual-run state
+  const [featureFlags, setFeatureFlags] = useState({ ENABLE_BACKEND_DRAG_SAVE: false, ENABLE_BACKEND_SUBTREE: false });
+  const dragStartPositionsRef = useRef(null);
+  const lastChangeWasPositionalRef = useRef(false);
 
   const {
     applyLayoutWithAnimation,
@@ -75,6 +82,95 @@ function App() {
     return applyGroupVisibility(nodesWithPosition, flow.edges);
   }, []);
 
+  // Phase 3: Drag start handler - capture original positions
+  const onNodeDragStart = useCallback(() => {
+    const positionMap = {};
+    nodesRef.current.forEach(node => {
+      positionMap[node.id] = { ...node.position };
+    });
+    dragStartPositionsRef.current = positionMap;
+  }, []);
+
+  // Phase 3: Wrapped onNodesChange to detect drag-end and call backend
+  const onNodesChange = useCallback((changes) => {
+    // Pass through to React Flow's handler first
+    onNodesChangeRaw(changes);
+
+    // Check if this is a drag-end event
+    const dragEndChanges = changes.filter(
+      change => change.type === 'position' && change.dragging === false
+    );
+
+    if (dragEndChanges.length > 0 && featureFlags.ENABLE_BACKEND_DRAG_SAVE) {
+      // Collect all moved nodes
+      const movedNodes = dragEndChanges
+        .map(change => {
+          const node = nodesRef.current.find(n => n.id === change.id);
+          const originalPos = dragStartPositionsRef.current?.[change.id];
+          if (!node || !originalPos) return null;
+
+          // Check if position actually changed
+          if (
+            Math.abs(node.position.x - originalPos.x) < 0.1 &&
+            Math.abs(node.position.y - originalPos.y) < 0.1
+          ) {
+            return null;
+          }
+
+          return {
+            id: node.id,
+            position: { ...node.position },
+            originalPosition: originalPos
+          };
+        })
+        .filter(Boolean);
+
+      if (movedNodes.length > 0) {
+        // Call backend API for each moved node
+        const updatePromises = movedNodes.map(async ({ id, position, originalPosition }) => {
+          try {
+            const result = await updateNode(id, { position });
+            if (!result.success) {
+              console.error(`Failed to update node ${id} position:`, result.error);
+              // Revert this node's position
+              setNodes(prev => prev.map(n =>
+                n.id === id ? { ...n, position: originalPosition } : n
+              ));
+              return { success: false, nodeId: id, error: result.error };
+            }
+            return { success: true, nodeId: id };
+          } catch (error) {
+            console.error(`Error updating node ${id} position:`, error);
+            // Revert this node's position
+            setNodes(prev => prev.map(n =>
+              n.id === id ? { ...n, position: originalPosition } : n
+            ));
+            return { success: false, nodeId: id, error: error.message };
+          }
+        });
+
+        Promise.all(updatePromises).then(results => {
+          const failures = results.filter(r => !r.success);
+          if (failures.length > 0) {
+            alert(`Failed to save position for ${failures.length} node(s). Positions have been reverted.`);
+          } else {
+            // Mark as positional change to skip autosave
+            lastChangeWasPositionalRef.current = true;
+          }
+        });
+      }
+    }
+  }, [onNodesChangeRaw, featureFlags.ENABLE_BACKEND_DRAG_SAVE, setNodes]);
+
+  // Load feature flags on mount
+  useEffect(() => {
+    const loadFlags = async () => {
+      const flags = await getFeatureFlags();
+      setFeatureFlags(flags);
+    };
+    loadFlags();
+  }, []);
+
   useEffect(() => {
     const fetchFlow = async () => {
       try {
@@ -94,6 +190,11 @@ function App() {
   }, [setNodes, setEdges, normalizeFlow]);
 
   const { debouncedFn: debouncedAutoSave, flush: flushAutoSave } = useDebouncedCallback(async (nodes, edges) => {
+    // Skip autosave if last change was positional (already handled by backend)
+    if (lastChangeWasPositionalRef.current) {
+      lastChangeWasPositionalRef.current = false;
+      return;
+    }
     try {
       await saveFlow(nodes, edges);
     } catch (error) {
@@ -359,23 +460,41 @@ function App() {
   );
 
   const onNodeClick = useCallback(
-    (event, node) => {
+    async (event, node) => {
       // Alt+Click: Collapse/expand subtree
       // NOTE: This is SUBTREE COLLAPSE, separate from GROUP COLLAPSE
-      // - Frontend-only (no backend API call)
       // - Uses data.collapsed property
       // - Affects edge-based hierarchy via getAllDescendants
       // - No synthetic edges generated
+      // - Phase 3: Calls backend when ENABLE_BACKEND_SUBTREE flag is enabled
       if (event.altKey) {
         const isCurrentlyCollapsed = node.data?.collapsed || false;
-        const nextFlow = collapseSubtreeByHandles(
-          { nodes: nodesRef.current, edges: edgesRef.current },
-          node.id,
-          !isCurrentlyCollapsed,
-          getAllDescendants
-        );
+        const targetCollapsedState = !isCurrentlyCollapsed;
 
-        commitFlow(nextFlow);
+        if (featureFlags.ENABLE_BACKEND_SUBTREE) {
+          // Backend path: call API
+          try {
+            const result = await apiToggleSubtreeCollapse(node.id, targetCollapsedState);
+            if (result.success && result.flow) {
+              handleFlowUpdate(result.flow);
+            } else {
+              console.error('Failed to toggle subtree collapse:', result.error);
+              alert(`Failed to ${targetCollapsedState ? 'collapse' : 'expand'} subtree: ${result.error}`);
+            }
+          } catch (error) {
+            console.error('Error toggling subtree collapse:', error);
+            alert(`Error ${targetCollapsedState ? 'collapsing' : 'expanding'} subtree: ${error.message}`);
+          }
+        } else {
+          // Legacy frontend-only path
+          const nextFlow = collapseSubtreeByHandles(
+            { nodes: nodesRef.current, edges: edgesRef.current },
+            node.id,
+            targetCollapsedState,
+            getAllDescendants
+          );
+          commitFlow(nextFlow);
+        }
       }
       // Cmd+Click: Toggle selection
       else if (event.metaKey || event.ctrlKey) {
@@ -394,7 +513,7 @@ function App() {
         setSelectedNodeIds([]);
       }
     },
-    [commitFlow, setSelectedNodeIds, getAllDescendants]
+    [commitFlow, setSelectedNodeIds, getAllDescendants, featureFlags.ENABLE_BACKEND_SUBTREE, handleFlowUpdate]
   );
 
   const handleUndo = useCallback(async () => {
@@ -518,6 +637,7 @@ function App() {
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeClick={onNodeClick}
+        onNodeDragStart={onNodeDragStart}
         onPaneClick={onPaneClick}
         onInit={onInit}
         nodeTypes={nodeTypes}
