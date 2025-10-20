@@ -32,6 +32,8 @@ import { useHotkeys } from './hooks/useHotkeys';
 import { useDebouncedCallback } from './shared/hooks/useDebouncedCallback.js';
 import { THEME } from './constants/theme.js';
 import { getFeatureFlags } from './utils/featureFlags.js';
+import { getMovedNodes, shouldUseBackendDragSave } from './utils/dragHelpers.js';
+import { shouldUseBackendSubtree, getTargetCollapseState } from './utils/subtreeHelpers.js';
 
 function App() {
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState([]);
@@ -101,31 +103,16 @@ function App() {
       change => change.type === 'position' && change.dragging === false
     );
 
-    if (dragEndChanges.length > 0 && featureFlags.ENABLE_BACKEND_DRAG_SAVE) {
-      // Collect all moved nodes
-      const movedNodes = dragEndChanges
-        .map(change => {
-          const node = nodesRef.current.find(n => n.id === change.id);
-          const originalPos = dragStartPositionsRef.current?.[change.id];
-          if (!node || !originalPos) return null;
+    if (dragEndChanges.length === 0) return;
 
-          // Check if position actually changed
-          if (
-            Math.abs(node.position.x - originalPos.x) < 0.1 &&
-            Math.abs(node.position.y - originalPos.y) < 0.1
-          ) {
-            return null;
-          }
+    // Use helper to determine moved nodes
+    const movedNodes = getMovedNodes(
+      dragEndChanges,
+      dragStartPositionsRef.current,
+      nodesRef.current
+    );
 
-          return {
-            id: node.id,
-            position: { ...node.position },
-            originalPosition: originalPos
-          };
-        })
-        .filter(Boolean);
-
-      if (movedNodes.length > 0) {
+    if (shouldUseBackendDragSave(featureFlags.ENABLE_BACKEND_DRAG_SAVE, movedNodes)) {
         // Call backend API for each moved node
         const updatePromises = movedNodes.map(async ({ id, position, originalPosition }) => {
           try {
@@ -152,7 +139,9 @@ function App() {
         Promise.all(updatePromises).then(results => {
           const failures = results.filter(r => !r.success);
           if (failures.length > 0) {
-            alert(`Failed to save position for ${failures.length} node(s). Positions have been reverted.`);
+            const failedNodeIds = failures.map(f => f.nodeId).join(', ');
+            console.error(`Failed to save position for nodes: ${failedNodeIds}`);
+            alert(`Failed to save position for ${failures.length} node(s): ${failedNodeIds}. Positions have been reverted.`);
           } else {
             // Mark as positional change to skip autosave
             lastChangeWasPositionalRef.current = true;
@@ -468,10 +457,9 @@ function App() {
       // - No synthetic edges generated
       // - Phase 3: Calls backend when ENABLE_BACKEND_SUBTREE flag is enabled
       if (event.altKey) {
-        const isCurrentlyCollapsed = node.data?.collapsed || false;
-        const targetCollapsedState = !isCurrentlyCollapsed;
+        const targetCollapsedState = getTargetCollapseState(node);
 
-        if (featureFlags.ENABLE_BACKEND_SUBTREE) {
+        if (shouldUseBackendSubtree(featureFlags.ENABLE_BACKEND_SUBTREE)) {
           // Backend path: call API
           try {
             const result = await apiToggleSubtreeCollapse(node.id, targetCollapsedState);
