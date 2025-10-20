@@ -34,16 +34,16 @@ Success Criteria
 - ✅ Server starts without errors.
 
 ### Step 2 – Introduce `server/routes/index.js`
-- [ ] Move all route registrations from `server/server.js` (or wherever they now live) into `server/routes/index.js`.
-- [ ] Import and register that router from `server/app.js`.
-- [ ] Verify there are no remaining `app.get/post/...` definitions in `server/server.js`.
-- [ ] Run tests: `npm test`.
+- [x] Move all route registrations from `server/server.js` (or wherever they now live) into `server/routes/index.js`.
+- [x] Import and register that router from `server/app.js`.
+- [x] Verify there are no remaining `app.get/post/...` definitions in `server/server.js`.
+- [x] Run tests: `npm test`.
 
 Success Criteria
-- `server/routes/index.js` mounts every REST endpoint.
-- `server/app.js` wires `routes/index.js`.
-- `server/server.js` contains no routes or middleware.
-- `npm test` is green.
+- ✅ `server/routes/index.js` mounts every REST endpoint (577 LOC).
+- ✅ `server/app.js` wires `routes/index.js` (34 LOC).
+- ✅ `server/server.js` contains no routes or middleware (34 LOC).
+- ✅ `npm test` is green (636 tests passing).
 
 ### Step 3 – Split domain routers (can run in parallel)
 Assign engineers by domain (`flow`, `notes`, `conversation`):
