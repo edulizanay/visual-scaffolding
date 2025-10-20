@@ -25,7 +25,7 @@ async function writeFlow(flowData, skipSnapshot = false, origin = null) {
  * @param {number} duration - Execution duration in ms
  * @param {Object} result - Tool execution result
  */
-function logToolExecution(tool, origin, duration, result) {
+export function logToolExecution(tool, origin, duration, result) {
   const logEntry = {
     timestamp: new Date().toISOString(),
     tool,

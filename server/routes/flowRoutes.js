@@ -2,7 +2,7 @@
 // ABOUTME: Manages all operations related to the visual flow canvas
 import { Router } from 'express';
 import { undo as historyUndo, redo as historyRedo, getHistoryStatus } from '../historyService.js';
-import { executeToolCalls, executeTool } from '../tools/executor.js';
+import { executeToolCalls, executeTool, logToolExecution } from '../tools/executor.js';
 
 const router = Router();
 
@@ -56,7 +56,13 @@ function toolEndpoint(config, readFlow, writeFlow) {
 
       // Execute tool directly (without executeToolCalls) to avoid double-writes
       const flow = await readFlow();
+      const startTime = Date.now();
       const executionResult = await executeTool(config.toolName, params, flow);
+      const duration = Date.now() - startTime;
+
+      // Log execution with route's origin
+      const origin = config.origin ?? 'ui.unknown';
+      logToolExecution(config.toolName, origin, duration, executionResult);
 
       if (executionResult.success) {
         await writeFlow(
@@ -153,20 +159,22 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
     toolName: 'addNode',
     action: 'creating node',
     extractParams: (req) => req.body,
-    extraFields: (result) => ({ nodeId: result.nodeId })
+    extraFields: (result) => ({ nodeId: result.nodeId }),
+    origin: 'ui.node.create'
   }, readFlow, writeFlow));
 
   router.put('/node/:id', toolEndpoint({
     toolName: 'updateNode',
     action: 'updating node',
     extractParams: (req) => ({ nodeId: req.params.id, ...req.body }),
-    skipSnapshot: true
+    origin: 'ui.node.update'
   }, readFlow, writeFlow));
 
   router.delete('/node/:id', toolEndpoint({
     toolName: 'deleteNode',
     action: 'deleting node',
-    extractParams: (req) => ({ nodeId: req.params.id })
+    extractParams: (req) => ({ nodeId: req.params.id }),
+    origin: 'ui.node.delete'
   }, readFlow, writeFlow));
 
   // Edge operations
@@ -180,20 +188,22 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
       }
       return null;
     },
-    extraFields: (result) => ({ edgeId: result.edgeId })
+    extraFields: (result) => ({ edgeId: result.edgeId }),
+    origin: 'ui.edge.create'
   }, readFlow, writeFlow));
 
   router.put('/edge/:id', toolEndpoint({
     toolName: 'updateEdge',
     action: 'updating edge',
     extractParams: (req) => ({ edgeId: req.params.id, ...req.body }),
-    skipSnapshot: true
+    origin: 'ui.edge.update'
   }, readFlow, writeFlow));
 
   router.delete('/edge/:id', toolEndpoint({
     toolName: 'deleteEdge',
     action: 'deleting edge',
-    extractParams: (req) => ({ edgeId: req.params.id })
+    extractParams: (req) => ({ edgeId: req.params.id }),
+    origin: 'ui.edge.delete'
   }, readFlow, writeFlow));
 
   // Group operations
@@ -207,19 +217,22 @@ export function registerFlowRoutes(router, { readFlow, writeFlow }) {
       }
       return null;
     },
-    extraFields: (result) => ({ groupId: result.groupId })
+    extraFields: (result) => ({ groupId: result.groupId }),
+    origin: 'ui.group.create'
   }, readFlow, writeFlow));
 
   router.delete('/group/:id', toolEndpoint({
     toolName: 'ungroup',
     action: 'ungrouping',
-    extractParams: (req) => ({ groupId: req.params.id })
+    extractParams: (req) => ({ groupId: req.params.id }),
+    origin: 'ui.group.ungroup'
   }, readFlow, writeFlow));
 
   router.put('/group/:id/expand', toolEndpoint({
     toolName: 'toggleGroupExpansion',
     action: 'toggling group expansion',
-    extractParams: (req) => ({ groupId: req.params.id, ...req.body })
+    extractParams: (req) => ({ groupId: req.params.id, ...req.body }),
+    origin: 'ui.group.expand'
   }, readFlow, writeFlow));
 
   // Subtree collapse operations
