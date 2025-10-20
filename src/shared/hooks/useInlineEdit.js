@@ -1,6 +1,6 @@
 // ABOUTME: Reusable hook for inline editing functionality
 // ABOUTME: Provides state and handlers for double-click-to-edit UI pattern
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Hook for inline editing with double-click activation
@@ -14,6 +14,11 @@ import { useState, useCallback } from 'react';
 export function useInlineEdit(initialValue, onSave, id, currentValue, alwaysSave = false) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(initialValue);
+
+  // Sync editValue when initialValue changes (e.g., from undo/redo)
+  useEffect(() => {
+    setEditValue(initialValue);
+  }, [initialValue]);
 
   const handleDoubleClick = useCallback(() => {
     setIsEditing(true);

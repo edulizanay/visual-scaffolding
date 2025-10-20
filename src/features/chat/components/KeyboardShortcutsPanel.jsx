@@ -6,7 +6,7 @@ import { HOTKEYS, getCategories, formatKeys } from '../../../hooks/useHotkeys';
 import { THEME } from '../../../constants/theme.js';
 import { Kbd } from './ChatInterface';
 
-export default function KeyboardUI({ tooltipConfig }) {
+export default function KeyboardShortcutsPanel({ tooltipConfig }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showContent, setShowContent] = useState(false);
 

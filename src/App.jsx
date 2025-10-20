@@ -24,10 +24,11 @@ import {
   ungroup as apiUngroup,
   toggleGroupExpansion as apiToggleGroupExpansion
 } from './services/api';
-import { ChatInterface, KeyboardUI } from './features/chat';
+import { ChatInterface, KeyboardShortcutsPanel } from './features/chat';
 import { NotesPanel } from './features/notes';
 
 import { useHotkeys } from './hooks/useHotkeys';
+import { useDebouncedCallback } from './shared/hooks/useDebouncedCallback.js';
 import { THEME } from './constants/theme.js';
 
 function App() {
@@ -92,19 +93,18 @@ function App() {
     fetchFlow();
   }, [setNodes, setEdges, normalizeFlow]);
 
+  const debouncedAutoSave = useDebouncedCallback(async (nodes, edges) => {
+    try {
+      await saveFlow(nodes, edges);
+    } catch (error) {
+      console.error('Failed to save flow:', error);
+    }
+  }, 500);
+
   useEffect(() => {
     if (isLoading || isAnimating || isBackendProcessing) return;
-
-    const timeoutId = setTimeout(async () => {
-      try {
-        await saveFlow(nodes, edges);
-      } catch (error) {
-        console.error('Failed to save flow:', error);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [nodes, edges, isLoading, isAnimating, isBackendProcessing]);
+    debouncedAutoSave(nodes, edges);
+  }, [nodes, edges, isLoading, isAnimating, isBackendProcessing, debouncedAutoSave]);
 
   const handleFlowUpdate = useCallback((updatedFlow) => {
     if (!updatedFlow) return;
@@ -533,7 +533,7 @@ function App() {
         isNotesPanelOpen={isNotesPanelOpen}
         onNotesUpdate={setNotesBullets}
       />
-      <KeyboardUI tooltipConfig={tooltipConfig} />
+      <KeyboardShortcutsPanel tooltipConfig={tooltipConfig} />
     </div>
   );
 }

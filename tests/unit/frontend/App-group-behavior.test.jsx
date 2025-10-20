@@ -58,7 +58,7 @@ vi.mock('../../../src/features/chat/components/ChatInterface', () => {
   };
 });
 
-vi.mock('../../../src/features/chat/components/KeyboardUI', () => {
+vi.mock('../../../src/features/chat/components/KeyboardShortcutsPanel', () => {
   const React = require('react');
   return {
     __esModule: true,

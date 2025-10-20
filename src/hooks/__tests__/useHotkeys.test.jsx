@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useHotkeys } from '../../../src/hooks/useHotkeys.jsx';
+import { useHotkeys } from '../useHotkeys.jsx';
 
 describe('useHotkeys Hook', () => {
   let mockHandler1;

@@ -1,10 +1,10 @@
-// ABOUTME: Tests for KeyboardUI component
+// ABOUTME: Tests for KeyboardShortcutsPanel component
 // ABOUTME: Validates rendering, toggle behavior, and hotkey display
 
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import KeyboardUI from '../KeyboardUI';
+import KeyboardShortcutsPanel from '../KeyboardShortcutsPanel';
 
 // Mock the THEME constant
 vi.mock('../../../../constants/theme.js', () => ({
@@ -29,10 +29,10 @@ vi.mock('../../../../constants/theme.js', () => ({
   },
 }));
 
-describe('KeyboardUI Component', () => {
+describe('KeyboardShortcutsPanel Component', () => {
   describe('Toggle Button', () => {
     it('should render toggle button', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       expect(button).toBeInTheDocument();
       expect(button.textContent).toBe('?');
@@ -45,7 +45,7 @@ describe('KeyboardUI Component', () => {
 
   describe('Panel Content', () => {
     it('should display panel title', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -53,7 +53,7 @@ describe('KeyboardUI Component', () => {
     });
 
     it('should display all categories', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -63,7 +63,7 @@ describe('KeyboardUI Component', () => {
     });
 
     it('should display hotkey labels', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -74,7 +74,7 @@ describe('KeyboardUI Component', () => {
     });
 
     it('should display hotkey labels without descriptions', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -84,7 +84,7 @@ describe('KeyboardUI Component', () => {
     });
 
     it('should display formatted key combinations', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
@@ -97,7 +97,7 @@ describe('KeyboardUI Component', () => {
 
   describe('Overlay', () => {
     it('should show overlay when panel is open', () => {
-      const { container } = render(<KeyboardUI />);
+      const { container } = render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
 
       // Overlay should not exist when closed
@@ -116,7 +116,7 @@ describe('KeyboardUI Component', () => {
     // Component now uses transform: translateX() for animations
 
     it('should hide overlay when panel is closed', () => {
-      const { container } = render(<KeyboardUI />);
+      const { container } = render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
 
       // Open panel
@@ -133,7 +133,7 @@ describe('KeyboardUI Component', () => {
 
   describe('Accessibility', () => {
     it('should have aria-label on toggle button', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       expect(button).toHaveAttribute('aria-label');
     });
@@ -141,7 +141,7 @@ describe('KeyboardUI Component', () => {
 
   describe('All Hotkeys Display', () => {
     it('should display all hotkeys from registry', () => {
-      render(<KeyboardUI />);
+      render(<KeyboardShortcutsPanel />);
       const button = screen.getByLabelText('Toggle keyboard shortcuts panel');
       fireEvent.click(button);
 
