@@ -1,8 +1,9 @@
 // ABOUTME: Custom edge component with inline editable labels
 // ABOUTME: Allows double-click editing of edge labels directly on the canvas
-import { memo, useState, useCallback } from 'react';
+import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react';
 import { THEME } from './constants/theme.js';
+import { useInlineEdit } from './shared/hooks/useInlineEdit.js';
 
 const CustomEdge = ({
   id,
@@ -14,8 +15,7 @@ const CustomEdge = ({
   targetPosition,
   data,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(data?.label || '');
+  const labelEdit = useInlineEdit(data?.label || '', data?.onLabelChange, id, data?.label);
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -25,27 +25,6 @@ const CustomEdge = ({
     targetY,
     targetPosition,
   });
-
-  const handleDoubleClick = useCallback(() => {
-    setIsEditing(true);
-  }, []);
-
-  const handleChange = useCallback((evt) => {
-    setEditValue(evt.target.value);
-  }, []);
-
-  const handleBlur = useCallback(() => {
-    setIsEditing(false);
-    if (data?.onLabelChange) {
-      data.onLabelChange(id, editValue);
-    }
-  }, [data, id, editValue]);
-
-  const handleKeyDown = useCallback((evt) => {
-    if (evt.key === 'Enter') {
-      evt.target.blur();
-    }
-  }, []);
 
   return (
     <>
@@ -57,15 +36,15 @@ const CustomEdge = ({
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
           }}
-          onDoubleClick={handleDoubleClick}
+          onDoubleClick={labelEdit.handleDoubleClick}
         >
-          {isEditing ? (
+          {labelEdit.isEditing ? (
             <input
               className="nodrag nopan"
-              value={editValue}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
+              value={labelEdit.editValue}
+              onChange={labelEdit.handleChange}
+              onBlur={labelEdit.handleBlur}
+              onKeyDown={labelEdit.handleKeyDown}
               autoFocus
               style={{
                 background: THEME.colors.deepPurple,

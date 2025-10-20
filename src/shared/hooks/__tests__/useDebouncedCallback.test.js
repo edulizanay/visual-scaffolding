@@ -1,0 +1,143 @@
+// ABOUTME: Tests for useDebouncedCallback hook
+// ABOUTME: Validates debouncing behavior and cleanup
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useDebouncedCallback } from '../useDebouncedCallback.js';
+
+describe('useDebouncedCallback', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should debounce callback execution', () => {
+    const callback = vi.fn();
+    const { result } = renderHook(() => useDebouncedCallback(callback, 500));
+
+    act(() => {
+      result.current('arg1');
+      result.current('arg2');
+      result.current('arg3');
+    });
+
+    expect(callback).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('arg3');
+  });
+
+  it('should cancel previous timeout when called again', () => {
+    const callback = vi.fn();
+    const { result } = renderHook(() => useDebouncedCallback(callback, 500));
+
+    act(() => {
+      result.current('first');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(callback).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current('second');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(callback).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('second');
+  });
+
+  it('should use custom delay', () => {
+    const callback = vi.fn();
+    const { result } = renderHook(() => useDebouncedCallback(callback, 1000));
+
+    act(() => {
+      result.current();
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(callback).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('should cleanup timeout on unmount', () => {
+    const callback = vi.fn();
+    const { result, unmount } = renderHook(() => useDebouncedCallback(callback, 500));
+
+    act(() => {
+      result.current();
+    });
+
+    unmount();
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('should pass all arguments to callback', () => {
+    const callback = vi.fn();
+    const { result } = renderHook(() => useDebouncedCallback(callback, 500));
+
+    act(() => {
+      result.current('arg1', 'arg2', 'arg3');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(callback).toHaveBeenCalledWith('arg1', 'arg2', 'arg3');
+  });
+
+  it('should use latest callback when callback changes', () => {
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ cb }) => useDebouncedCallback(cb, 500),
+      { initialProps: { cb: callback1 } }
+    );
+
+    act(() => {
+      result.current('test');
+    });
+
+    rerender({ cb: callback2 });
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(callback1).not.toHaveBeenCalled();
+    expect(callback2).toHaveBeenCalledWith('test');
+  });
+});

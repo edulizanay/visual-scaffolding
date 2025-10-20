@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadNotes, updateNotes, sendMessage } from './api';
 import { COLOR_DEEP_PURPLE, COLOR_INDIGO_LIGHT, TRANSITION_NORMAL, EASING_DECELERATE, EASING_ACCELERATE, Z_INDEX_NOTES_PANEL } from './constants/theme.js';
+import { useDebouncedCallback } from './shared/hooks/useDebouncedCallback.js';
 
 // Render text with styled entity spans (including markers)
 // Each span gets data-start and data-end attributes for character position mapping
@@ -109,7 +110,6 @@ function NotesPanel({ isOpen, onToggle, externalBullets, onFlowUpdate }) {
   const [notesText, setNotesText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const debounceTimerRef = useRef(null);
 
   // Convert bullets array to text (one bullet per line)
   const bulletsToText = useCallback((bullets) => {
@@ -146,30 +146,15 @@ function NotesPanel({ isOpen, onToggle, externalBullets, onFlowUpdate }) {
     }
   }, [externalBullets, bulletsToText]);
 
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-
   // Auto-save notes with debouncing
-  const saveNotes = useCallback((text) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+  const saveNotes = useDebouncedCallback(async (text) => {
+    try {
+      const bullets = textToBullets(text);
+      await updateNotes(bullets);
+    } catch (error) {
+      console.error('Failed to update notes:', error);
     }
-
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        const bullets = textToBullets(text);
-        await updateNotes(bullets);
-      } catch (error) {
-        console.error('Failed to update notes:', error);
-      }
-    }, 500);
-  }, [textToBullets]);
+  }, 500);
 
   const handleTextChange = useCallback((e) => {
     const newText = e.target.value;
