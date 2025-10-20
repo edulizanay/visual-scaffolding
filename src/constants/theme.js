@@ -1,6 +1,14 @@
 // ABOUTME: Design system tokens and theme configuration
 // ABOUTME: Defines all visual styling constants and semantic theme for the application
 
+// Import shared node dimensions (single source of truth for frontend + backend)
+import {
+  NODE_WIDTH,
+  NODE_HEIGHT,
+  NODE_BORDER_RADIUS,
+  DAGRE_SPACING,
+} from '../../shared/constants/nodeDimensions.js';
+
 // ============================================================================
 // DESIGN TOKENS - PRIMITIVES
 // ============================================================================
@@ -189,9 +197,9 @@ export const THEME = {
       text: COLOR_WHITE,
     },
     dimensions: {
-      width: 172,
-      height: 70,
-      borderRadius: BORDER_RADIUS_SM,
+      width: NODE_WIDTH,
+      height: NODE_HEIGHT,
+      borderRadius: NODE_BORDER_RADIUS,
     },
 
     // Interactive states
@@ -267,10 +275,7 @@ export const THEME = {
   // Dagre Layout
   // --------------------------------------------------------------------------
   dagre: {
-    spacing: {
-      horizontal: 50,
-      vertical: 40,
-    },
+    spacing: DAGRE_SPACING,
   },
 };
 
@@ -282,4 +287,8 @@ export {
   EASING_DECELERATE,
   EASING_ACCELERATE,
   Z_INDEX_NOTES_PANEL,
+  NODE_WIDTH,
+  NODE_HEIGHT,
+  NODE_BORDER_RADIUS,
+  DAGRE_SPACING,
 };

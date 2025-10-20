@@ -3,8 +3,8 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { timer } from 'd3-timer';
 import { getOutgoers } from '@xyflow/react';
-import dagre from '@dagrejs/dagre';
 import { THEME } from '../../../constants/theme.js';
+import { applyDagreLayout } from '../../../../shared/layout/applyDagreLayout.js';
 
 // Traverse descendants by edges (for Alt+Click collapse)
 export const getAllDescendants = (nodeId, nodes, edges) => {
@@ -22,89 +22,15 @@ export const getAllDescendants = (nodeId, nodes, edges) => {
 };
 
 export const getLayoutedElements = (nodes, edges, direction = 'LR') => {
-  const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-  const isHorizontal = direction === 'LR';
-
-  dagreGraph.setGraph({
-    rankdir: direction,
-    ranksep: THEME.dagre.spacing.horizontal,
-    nodesep: THEME.dagre.spacing.vertical,
-  });
-
-  const visibleNodes = nodes
-    .map((node, index) => ({ node, index }))
-    .filter(({ node }) => !node.hidden)
-    .sort((a, b) => {
-      const groupA = a.node.parentGroupId ?? '';
-      const groupB = b.node.parentGroupId ?? '';
-      return groupA.localeCompare(groupB) || a.index - b.index;
-    })
-    .map(({ node }) => node);
-
-  const visibleNodeMap = new Map(visibleNodes.map(node => [node.id, node]));
-
-  visibleNodes.forEach((node) => {
-    dagreGraph.setNode(node.id, {
+  return applyDagreLayout({
+    nodes,
+    edges,
+    direction,
+    nodeDimensions: {
       width: THEME.node.dimensions.width,
-      height: THEME.node.dimensions.height
-    });
+      height: THEME.node.dimensions.height,
+    },
   });
-
-  const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
-
-  const edgesBySource = new Map();
-  edges.forEach((edge, index) => {
-    if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) {
-      return;
-    }
-
-    const bucket = edgesBySource.get(edge.source);
-    const entry = { edge, index };
-    if (bucket) {
-      bucket.push(entry);
-    } else {
-      edgesBySource.set(edge.source, [entry]);
-    }
-  });
-
-  const compareTargets = (left, right) => {
-    const nodeA = visibleNodeMap.get(left.edge.target);
-    const nodeB = visibleNodeMap.get(right.edge.target);
-    const groupA = nodeA?.parentGroupId ?? '';
-    const groupB = nodeB?.parentGroupId ?? '';
-    const groupedA = groupA ? 0 : 1;
-    const groupedB = groupB ? 0 : 1;
-
-    return groupedA - groupedB
-      || groupA.localeCompare(groupB)
-      || left.index - right.index;
-  };
-
-  edgesBySource.forEach((bucket) => {
-    // Emit grouped children first so Dagre keeps them contiguous, then reuse creation order.
-    bucket.sort(compareTargets).forEach(({ edge }) => {
-      dagreGraph.setEdge(edge.source, edge.target);
-    });
-  });
-
-  dagre.layout(dagreGraph);
-
-  const newNodes = nodes.map((node) => {
-    const nodeWithPosition = !node.hidden && dagreGraph.node(node.id);
-    if (!nodeWithPosition) return node;
-
-    return {
-      ...node,
-      targetPosition: isHorizontal ? 'left' : 'top',
-      sourcePosition: isHorizontal ? 'right' : 'bottom',
-      position: {
-        x: nodeWithPosition.x - THEME.node.dimensions.width / 2,
-        y: nodeWithPosition.y - THEME.node.dimensions.height / 2,
-      },
-    };
-  });
-
-  return { nodes: newNodes, edges };
 };
 
 export function useFlowLayout(setNodes, setEdges, reactFlowInstance) {
