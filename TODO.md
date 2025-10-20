@@ -112,26 +112,26 @@ Success Criteria
 - ✅ Tests pass (636/636).
 
 ### Step 3 – Clean up API modules
-- [ ] Finish extracting domain-specific API clients (`flowApi.js`, `groupApi.js`, `notesApi.js`, etc.).
-- [ ] Create `src/services/api/index.js` for shared exports if needed.
-- [ ] Replace all remaining imports from `src/api.js`.
-- [ ] Delete `src/api.js`.
-- [ ] Run tests: `npm test`.
+- [x] Finish extracting domain-specific API clients (`flowApi.js`, `groupApi.js`, `notesApi.js`, etc.).
+- [x] Create `src/services/api/index.js` for shared exports if needed.
+- [x] Replace all remaining imports from `src/api.js`.
+- [x] Delete `src/api.js`.
+- [x] Run tests: `npm test`.
 
 Success Criteria
-- `src/api.js` removed.
-- All API imports reference domain-specific modules.
-- Tests pass.
+- ✅ `src/api.js` removed.
+- ✅ All API imports reference domain-specific modules (src/services/api/).
+- ✅ Tests pass (636/636).
 
 ### Phase 2 Exit Check
-- [ ] Flow/chat/notes features reside under `src/features/<domain>/`.
-- [ ] Shared hooks sourced from `src/shared/hooks/`.
-- [ ] Legacy imports (`./api`, root-level component paths) removed.
-- [ ] `npm test` passes.
-- [ ] Commit(s):
-  - “refactor: extract shared frontend hooks”
-  - “refactor: relocate flow/chat/notes features”
-  - “refactor: split API clients by domain”
+- ✅ Flow/chat/notes features reside under `src/features/<domain>/`.
+- ✅ Shared hooks sourced from `src/shared/hooks/`.
+- ✅ Legacy imports (`./api`, root-level component paths) removed.
+- ✅ `npm test` passes (636/636).
+- ✅ Commit(s):
+  - ✅ "refactor: extract shared frontend hooks"
+  - ✅ "refactor: relocate flow/chat/notes features"
+  - ✅ "refactor: split API clients by domain"
 
 ---
 
