@@ -100,16 +100,16 @@ Success Criteria
 - ✅ Tests pass (635/636, 1 pre-existing flaky test).
 
 ### Step 2 – Move chat and notes features (parallelizable)
-- [ ] Create `src/features/chat/` and move ChatInterface, Keyboard UI, chat-specific hooks/services.
-- [ ] Create `src/features/notes/` and move NotesPanel + related helpers.
+- [x] Create `src/features/chat/` and move ChatInterface, Keyboard UI, chat-specific hooks/services.
+- [x] Create `src/features/notes/` and move NotesPanel + related helpers.
 - [ ] Split `src/api.js` calls as you move features: `chatApi`, `notesApi`, etc., under `src/services/api/` (or under each feature if preferred).
-- [ ] Provide temporary barrels to keep import paths stable while migrating.
-- [ ] Update tests/imports; run `npm test`.
+- [x] Provide temporary barrels to keep import paths stable while migrating.
+- [x] Update tests/imports; run `npm test`.
 
 Success Criteria
-- Chat and notes modules live under `src/features/chat/` and `src/features/notes/`.
-- Legacy `src/api.js` is only referenced via temporary re-exports.
-- Tests pass.
+- ✅ Chat and notes modules live under `src/features/chat/` and `src/features/notes/`.
+- ⏳ Legacy `src/api.js` is only referenced via temporary re-exports (deferred to Step 3).
+- ✅ Tests pass (636/636).
 
 ### Step 3 – Clean up API modules
 - [ ] Finish extracting domain-specific API clients (`flowApi.js`, `groupApi.js`, `notesApi.js`, etc.).
