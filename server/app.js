@@ -19,11 +19,11 @@ export async function readFlow() {
   return dbGetFlow();
 }
 
-export async function writeFlow(flowData, skipSnapshot = false) {
+export async function writeFlow(flowData, skipSnapshot = false, origin = null) {
   dbSaveFlow(flowData);
 
   if (!skipSnapshot) {
-    await pushSnapshot(flowData);
+    await pushSnapshot(flowData, origin);
   }
 }
 

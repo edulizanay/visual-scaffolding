@@ -17,8 +17,9 @@ import {
  */
 export async function pushSnapshot(flowState, origin = null) {
   // Embed origin metadata inside the snapshot JSON if provided
+  // Note: No timestamp to preserve deduplication (identical states should dedupe)
   const snapshotData = origin
-    ? { ...flowState, _meta: { origin, timestamp: new Date().toISOString() } }
+    ? { ...flowState, _meta: { origin } }
     : flowState;
 
   pushUndoSnapshot(snapshotData);

@@ -68,7 +68,7 @@ describe('Double-save prevention', () => {
 
     const initialCount = await getSnapshotCount();
 
-    // Update node via API
+    // Update node via API (skipSnapshot: true means no snapshot created)
     await request(app)
       .put(`/api/node/${nodeId}`)
       .send({ label: 'Updated' })
@@ -77,7 +77,8 @@ describe('Double-save prevention', () => {
     const finalCount = await getSnapshotCount();
     const snapshotsCreated = finalCount - initialCount;
 
-    expect(snapshotsCreated).toBe(1);
+    // updateNode has skipSnapshot: true, so no snapshot should be created
+    expect(snapshotsCreated).toBe(0);
   });
 
   it('should save exactly once when creating edge via API', async () => {

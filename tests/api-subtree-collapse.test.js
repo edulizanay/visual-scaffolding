@@ -227,4 +227,22 @@ describe('PUT /api/flow/subtree/:id/collapse endpoint', () => {
     const afterCount = db.prepare('SELECT COUNT(*) as count FROM undo_history').get().count;
     expect(afterCount).toBe(beforeCount + 1);
   });
+
+  it('should tag snapshot with ui.subtree origin', async () => {
+    const db = getDb();
+
+    // Collapse subtree
+    await request(app)
+      .put('/api/flow/subtree/a/collapse')
+      .send({ collapsed: true })
+      .expect(200);
+
+    // Get the latest snapshot
+    const latestSnapshot = db.prepare('SELECT snapshot FROM undo_history ORDER BY id DESC LIMIT 1').get();
+    const snapshotData = JSON.parse(latestSnapshot.snapshot);
+
+    // Verify origin metadata
+    expect(snapshotData._meta).toBeDefined();
+    expect(snapshotData._meta.origin).toBe('ui.subtree');
+  });
 });
