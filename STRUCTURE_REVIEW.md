@@ -64,20 +64,18 @@ This document captures a structural audit of the repository with recommendations
 
 ## Backend Restructuring Suggestions
 1. **Create explicit entrypoint, routes, and services layers**
-   - Split `server/server.js` into:
-     - `server/app.js` (Express app definition, middleware, health checks).
-     - `server/routes/flowRoutes.js`, `server/routes/conversationRoutes.js`, `server/routes/notesRoutes.js`.
-     - `server/index.js` (starts HTTP server, handles env config).
-   - Move business logic currently embedded in routes into service modules such as `services/flowService.js`, `services/groupService.js`, `services/notesService.js`. //why is this necessary or good? what could be a middleground that doesnt explode in # of files?
+   - First pass (minimal churn): extract `server/app.js` (Express app + middleware) and `server/routes/index.js` (all route registrations). Keep business logic in place while confirming everything still works.
+   - Second pass: break `routes/index.js` into feature-specific routers (`routes/flowRoutes.js`, `routes/notesRoutes.js`, `routes/conversationRoutes.js`) and introduce matching services (`services/flowService.js`, etc.) as each file grows beyond ~200 LOC.
+   - Long-term structure can expand to `controllers/`, `repositories/`, etc., only when a domain truly needs the extra separation.
 
 2. **Separate data access from services**
    - Keep `db.js` focused on database initialization; move SQL query helpers into `repositories/` (e.g., `repositories/flowRepository.js`, `repositories/notesRepository.js`) for better encapsulation and testability.
    - Wrap `historyService`/`conversationService` logic into classes or factory functions if they share dependencies (e.g., database, snapshot store).
 
 ## Testing Strategy Adjustments
-- Mirror the feature layout under `tests/`, e.g., `tests/features/flow-canvas/FlowCanvasContainer.test.jsx`, `tests/features/notes/NotesPanel.test.jsx`.
-- Co-locate unit tests with source files once the structure stabilizes (`__tests__` folders or `*.test.tsx` siblings) to reduce path gymnastics and ensure changes stay in sync. //what does this mean? can you elaborate please?
-- Introduce integration tests for backend routes alongside the route modules, using supertest or a similar tool. //I believe we do, can you check?
+- **Unit tests (temporary):** During migration, mirror the feature layout under `tests/features/` (e.g., `tests/features/flow-canvas/Node.test.jsx`) to avoid breaking imports while files move.
+- **Unit tests (goal):** Once a feature stabilizes in `src/features/`, co-locate its unit tests next to source files (`Component.test.jsx` or `__tests__/Component.test.jsx`). IDEs let you collapse `__tests__/` folders to reduce noise.
+- **Integration & E2E tests:** Keep under `tests/integration/` and `tests/api-*/` as they span multiple modules and need shared test harnesses. Update imports to reference new route/service locations as backend refactors.
 
 ## Incremental Refactor Plan
 1. **Lay groundwork**
@@ -92,9 +90,71 @@ This document captures a structural audit of the repository with recommendations
    - Once files live under their target folders, perform the renames (`KeyboardUI` → `KeyboardShortcutsPanel`, etc.) and update imports.
    - Adjust documentation/readme to match the new structure.
 
-## Additional Opportunities
-- Consider TypeScript adoption for the frontend to make large modules (layout utils, API clients) safer to refactor. //can you explain why?
-- Generate Storybook entries (or a simple component gallery) for core UI components once they are modularized. // can you explain this pls?
+## Parallel Migration Plan
+
+### Safety Practices
+- Keep PRs focused on a single domain/feature so two engineers rarely touch the same files.
+- Require unit + integration test runs (CI + local) for every refactor PR.
+- Hold a weekly sync to rebalance assignments if conflicts emerge.
+- Because each step is production-ready, rollback is as simple as reverting the last merged PR if an issue slips through.
+
+### Phase 0 – Prep (1–2 days, single engineer)
+- Finalize this document, confirm naming/layout guidelines, and share the branch workflow.
+- Optionally add CI reminders (e.g., lint rule for missing unit tests) so new code follows the structure automatically.
+
+### Phase 1 – Backend Foundations (routes/services)  
+_Engineers can own individual route families._
+1. **Shared scaffolding**
+   - Create `server/app.js`: build the Express app instance, apply middleware (JSON body parsing, CORS, static assets), and export it.
+   - Create `server/routes/index.js`: import existing route handlers and register them with the app (`app.use('/api/flow', flowRoutes)`).
+   - Update `server/server.js`: import the app from `app.js`, move the `listen` logic here, and remove route/middleware definitions.
+   - Run the full test suite, merge.
+2. **Domain route extraction**
+   - Assign owners for `flow`, `notes`, and `conversation`.
+   - Each owner moves their endpoints into `routes/<domain>Routes.js`, leaving logic in place.
+   - Where logic exceeds ~100 LOC or crosses concerns, create `services/<domain>Service.js`.
+   - Ensure Supertest suites still pass before merging.
+3. **Repository extraction (as needed)**
+   - When a service has multiple SQL calls or repeated queries, introduce `repositories/<domain>Repository.js`.
+   - Update the corresponding service to depend on the repository; extend tests to cover the new boundary.
+
+**Phase 1 Exit Criteria**
+- All API endpoints live under `server/routes/<domain>Routes.js`.
+- `server/server.js` only wires up `app.listen` and related startup concerns (ideally <100 LOC).
+- Integration tests (`tests/api-*.test.js`, `tests/integration/`) pass without modification.
+- No business logic remains inside `server/server.js`.
+
+### Phase 2 – Frontend Feature Modules  
+_Workstreams can proceed concurrently with Phase 1._
+0. **Shared helper extraction**
+   - Before relocating features, extract shared hooks (`useInlineEdit`, `useDebouncedCallback`, etc.) to `src/shared/hooks/`.
+   - Update existing modules to import from `src/shared/hooks/` so each feature references the canonical helper during its move.
+1. **Flow canvas relocation**
+   - Move flow-specific components/hooks/utils into `src/features/flow-canvas/` with a temporary barrel export to keep imports stable.
+   - Adjust unit tests to match new paths.
+2. **Chat and notes relocation**
+   - Engineers handle `src/features/chat/` and `src/features/notes/` simultaneously, mirroring the flow pattern.
+   - `api.js` functions split into `services/<domain>Api.js`, with a short-lived `apiLegacy.js` that re-exports both to prevent breakage mid-migration.
+
+**Phase 2 Exit Criteria**
+- Flow, chat, and notes code reside under `src/features/<domain>/`.
+- Legacy `src/api.js` is replaced by domain-specific API modules (legacy re-export removed).
+- Unit tests referencing moved modules run against the new locations without warnings.
+- Shared helpers (inline edit, debounce, etc.) are sourced from `src/shared/hooks/` with no duplicated logic.
+
+### Phase 3 – Quality Layer (tests & documentation)
+1. **Test relocation**
+   - As files move, place unit tests next to their modules (`Component.test.jsx` or `__tests__/Component.test.jsx`).  
+   - Encourage teammates to collapse the test folder in their IDE to reduce noise.
+2. **Integration alignment**
+   - Update supertest suites to import from the new route/service locations.
+   - Capture lightweight documentation (screenshots, short notes) for complex UI states so QA can verify them quickly.
+
+**Phase 3 Exit Criteria**
+- Unit tests are co-located with their source modules (or mirrored by feature folders) with no stale references.
+- Integration tests import the relocated routes/services and pass.
+- QA/reference notes for key UI states are documented and accessible.
+- Legacy test paths or imports pointing to old locations have been removed.
 
 
 These notes should provide a roadmap for restructuring the project without altering current functionality until you are ready to make the changes.
