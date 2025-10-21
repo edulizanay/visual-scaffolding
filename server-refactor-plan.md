@@ -218,14 +218,14 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **3.1: Create flowService.js**
+- [x] **3.1: Create flowService.js**
   - [ ] Create `server/services/flowService.js`
   - [ ] Implement `readFlow(userId, name)` calling `flowRepository.getFlow()`
   - [ ] Implement `writeFlow(flowData, skipSnapshot, origin, userId, name)` calling `flowRepository.saveFlow()` + `historyService.pushSnapshot()`
   - [ ] Add ABOUTME comments
   - [ ] Verify ~20 lines total
 
-- [ ] **3.2: Update app.js**
+- [x] **3.2: Update app.js**
   - [ ] Remove `getFlow as dbGetFlow, saveFlow as dbSaveFlow` import
   - [ ] Remove `pushSnapshot` import
   - [ ] Remove `readFlow()` function (lines 18-20)
@@ -234,7 +234,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Re-export: `export { readFlow, writeFlow };`
   - [ ] Lines saved: 12 net reduction
 
-- [ ] **3.3: Update executor.js**
+- [x] **3.3: Update executor.js**
   - [ ] Remove `getFlow as dbGetFlow, saveFlow as dbSaveFlow` import
   - [ ] Remove `pushSnapshot` import
   - [ ] Remove `readFlow()` function (lines 10-12)
@@ -242,7 +242,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Add import: `import { readFlow, writeFlow } from '../services/flowService.js';`
   - [ ] Lines saved: 13 net reduction
 
-- [ ] **3.4: Verify no regressions**
+- [x] **3.4: Verify no regressions**
   - [ ] Run full test suite: `npm test`
   - [ ] Verify 542 tests still passing
   - [ ] Check that flow operations work correctly
