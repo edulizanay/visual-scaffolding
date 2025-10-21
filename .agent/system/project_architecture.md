@@ -14,9 +14,8 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 
 ### Backend
 - **Express.js** - REST API server
-- **Supabase** - Primary database (PostgreSQL 15+ hosted, async operations)
+- **Supabase** - Database (PostgreSQL 15+ hosted, async operations)
 - **@supabase/supabase-js** - Supabase client SDK
-- **Better-SQLite3** - Legacy database adapter (SQLite, local development only)
 - **Groq SDK** - Primary LLM provider (gpt-oss-120b)
 - **Cerebras SDK** - Fallback LLM provider
 - **CORS** - Cross-origin support
@@ -53,10 +52,8 @@ visual-scaffolding/
 │
 ├── server/                       # Backend Express server
 │   ├── server.js                 # Main server & API routes
-│   ├── db.js                     # Database abstraction layer (Supabase/SQLite)
-│   ├── db-adapters/
-│   │   ├── supabase.js           # Supabase PostgreSQL adapter (primary)
-│   │   └── sqlite.js             # SQLite adapter (legacy/local dev)
+│   ├── db.js                     # Database abstraction layer (Supabase)
+│   ├── supabase-client.js        # Supabase PostgreSQL client configuration
 │   ├── conversationService.js    # Conversation history management
 │   ├── historyService.js         # Undo/redo state management (timestamp-based)
 │   ├── routes/
@@ -65,14 +62,8 @@ visual-scaffolding/
 │   ├── llm/
 │   │   ├── llmService.js         # LLM context building & parsing
 │   │   └── tools.js              # Tool definitions for AI
-│   ├── tools/
-│   │   └── executor.js           # Tool execution logic
-│   ├── migrations/
-│   │   ├── 001_initial.sql       # Initial SQLite schema
-│   │   ├── 002_remove_visual_settings.sql
-│   │   └── 003_timestamp_based_undo.sql  # Timestamp-based undo migration
-│   └── data/
-│       └── flow.db               # Legacy SQLite database file
+│   └── tools/
+│       └── executor.js           # Tool execution logic
 │
 ├── tests/                        # Comprehensive test suite (542 tests)
 │   ├── test-db-setup.js         # Supabase test helpers (setupTestDb/cleanupTestDb)
@@ -301,7 +292,7 @@ Layout calculation uses Dagre algorithm without custom post-processing:
 - **Integration tests**: Message retry logic, API contracts, workflow state sync
 - **Security tests**: XSS prevention
 - **Frontend tests**: React component tests with happy-dom
-- **All tests use in-memory SQLite** (`DB_PATH=:memory:`)
+- **All tests use isolated Supabase test environment** (`setupTestDb()/cleanupTestDb()`)
 - **Test Execution**: ~7 seconds for 542 tests (2.95x faster than Jest)
 - **Coverage**: 86.38% overall (v8 provider)
 - **See**: [test_suite.md](./test_suite.md) for detailed test documentation

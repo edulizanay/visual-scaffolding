@@ -33,18 +33,17 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 ```javascript
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initDb, closeDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 describe('Feature Name', () => {
   beforeEach(async () => {
-    // Use in-memory database for isolation
-    process.env.DB_PATH = ':memory:';
-    await initDb();
+    // Setup clean Supabase test environment
+    await setupTestDb();
   });
 
   afterEach(async () => {
-    // Always clean up
-    await closeDb();
+    // Clean up test data
+    await cleanupTestDb();
   });
 
   it('should do something', async () => {
@@ -239,8 +238,8 @@ it.skip('should test something later', () => {
 
 ## Best Practices
 
-1. **Always use in-memory database** for isolation
-2. **Clean up after each test** (closeDb, clearAllMocks)
+1. **Always use setupTestDb/cleanupTestDb** for test isolation with Supabase
+2. **Clean up after each test** (cleanupTestDb, clearAllMocks)
 3. **Write ABOUTME comments** at the top of every test file
 4. **Test behavior, not implementation** - Focus on what the code does, not how
 5. **Keep tests fast** - Use mocks for external APIs and slow operations
