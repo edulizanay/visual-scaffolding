@@ -1,22 +1,8 @@
-import {
-  getFlow as dbGetFlow,
-  saveFlow as dbSaveFlow,
-} from '../db.js';
-import { pushSnapshot, undo as historyUndo, redo as historyRedo } from '../historyService.js';
+import { readFlow, writeFlow } from '../services/flowService.js';
+import { undo as historyUndo, redo as historyRedo } from '../historyService.js';
 import { applyDagreLayout } from '../../shared/layout/applyDagreLayout.js';
 import { NODE_WIDTH, NODE_HEIGHT } from '../../shared/constants/nodeDimensions.js';
 import { collapseSubtreeByHandles, getAllDescendants } from '../../shared/flowUtils/subtreeHelpers.js';
-
-async function readFlow() {
-  return await dbGetFlow();
-}
-
-async function writeFlow(flowData, skipSnapshot = false, origin = null) {
-  await dbSaveFlow(flowData);
-  if (!skipSnapshot) {
-    await pushSnapshot(flowData, origin);
-  }
-}
 
 /**
  * Log structured tool execution metrics
