@@ -13,15 +13,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "migrate": "node server/migrate-to-sqlite.js"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@cerebras/cerebras_cloud_sdk": "^1.50.0",
     "@dagrejs/dagre": "^1.1.5",
     "@supabase/supabase-js": "^2.76.0",
     "@xyflow/react": "^12.0.0",
-    "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",
     "d3-timer": "^3.0.1",
     "dotenv": "^17.2.3",
