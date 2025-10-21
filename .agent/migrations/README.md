@@ -5,8 +5,8 @@ This directory documents the Supabase migrations applied via MCP.
 ## Applied Migrations
 
 ### 20251021070648 - create_flows_table
-- Created `flows` table with BIGSERIAL id, JSONB data/visual_settings
-- Added indexes: idx_flows_user_name, idx_flows_data (GIN), idx_flows_visual_settings (GIN)
+- Created `flows` table with BIGSERIAL id, JSONB data column
+- Added index: idx_flows_user_name
 - UNIQUE constraint on (user_id, name)
 
 ### 20251021070701 - create_undo_history_table

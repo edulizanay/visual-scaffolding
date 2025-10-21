@@ -37,42 +37,13 @@ User Action → Frontend Handler → Backend API Call → Snapshot with Origin T
 
 **File**: `server/tools/executor.js`
 
-```javascript
-case 'yourAction': {
-  // Extract and validate parameters
-  const { param1, param2 } = params;
-
-  if (!param1) {
-    return {
-      success: false,
-      error: 'param1 is required'
-    };
-  }
-
-  // Load current flow
-  const currentFlow = dbGetFlow();
-
-  // Execute your action logic
-  const updatedFlow = performYourAction(
-    currentFlow,
-    param1,
-    param2
-  );
-
-  // Save to DB and create snapshot
-  dbSaveFlow(updatedFlow);
-  await pushSnapshot(updatedFlow, 'ui.your_action');
-
-  return { success: true, flow: updatedFlow };
-}
-```
+Add case with: validation → load flow → perform action → save + snapshot → return result.
 
 **Checklist:**
 - [ ] Input validation
 - [ ] Load current flow state via `dbGetFlow()`
 - [ ] Execute action logic
-- [ ] Save via `dbSaveFlow(updatedFlow)`
-- [ ] Create snapshot with origin tag
+- [ ] Save via `dbSaveFlow(updatedFlow)` and create snapshot with origin tag
 - [ ] Return `{ success, flow }` or `{ success: false, error }`
 
 ---
@@ -81,149 +52,38 @@ case 'yourAction': {
 
 **File**: `server/routes/flowRoutes.js`
 
-Use the `toolEndpoint` helper for consistency:
-
-```javascript
-// PUT /api/your-resource/:id
-router.put('/your-resource/:id', toolEndpoint({
-  toolName: 'yourAction',
-  action: 'your action description',
-  extractParams: (req) => ({
-    resourceId: req.params.id,
-    ...req.body
-  }),
-  origin: 'ui.your_action'
-}, readFlow, writeFlow));
-```
+Use `toolEndpoint` helper: specify toolName, action, extractParams, and origin tag.
 
 **Checklist:**
-- [ ] Route follows RESTful conventions
-- [ ] Uses `toolEndpoint` helper
-- [ ] Specifies correct `origin` tag
-- [ ] Returns standardized response
+- [ ] Route follows RESTful conventions, uses `toolEndpoint`, includes origin tag
 
 ---
 
 ### 3. Create Frontend API Client
 
-**File**: `src/services/api/flowApi.js` (or appropriate domain file)
+**File**: `src/services/api/flowApi.js`
 
-```javascript
-/**
- * Execute your action via backend API
- * @param {string} param1 - Description
- * @param {any} param2 - Description
- * @returns {Promise<{success: boolean, flow?: object, error?: string}>}
- */
-export async function yourAction(param1, param2) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/your-resource/${param1}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ param2 }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to execute action');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error executing action:', error);
-    throw error;
-  }
-}
-```
+Create async function with fetch, error handling, and JSDoc. Export from `src/services/api/index.js`.
 
 **Checklist:**
-- [ ] JSDoc documentation
-- [ ] Proper HTTP method
-- [ ] Error handling with meaningful messages
-- [ ] Exported from `src/services/api/index.js`
+- [ ] JSDoc, proper HTTP method, error handling, exported
 
 ---
 
 ### 4. Wire Frontend Handler
 
-**File**: `src/App.jsx` (or relevant component)
+**File**: `src/App.jsx`
 
-Use the `handleMutation` pattern for consistency:
-
-```javascript
-const handleYourAction = useCallback(
-  (param1, param2) => handleMutation(
-    () => yourAction(param1, param2),
-    {
-      errorContext: 'execute your action',
-      onSuccess: () => {
-        // Optional success callback
-      },
-      onError: (msg) => {
-        // Optional error handling beyond default alert
-      }
-    }
-  ),
-  [handleMutation]
-);
-```
-
-**Or for React Flow callbacks with state management:**
-
-```javascript
-const onYourEvent = useCallback(async (eventData) => {
-  // Capture original state for revert on error
-  const originalState = captureCurrentState();
-
-  try {
-    const result = await yourAction(eventData.id, eventData.value);
-
-    if (result.success && result.flow) {
-      handleFlowUpdate(result.flow);
-    } else {
-      console.error('Failed:', result.error);
-      alert(`Failed: ${result.error}`);
-      revertToState(originalState);
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert(`Error: ${error.message}`);
-    revertToState(originalState);
-  }
-}, [handleFlowUpdate]);
-```
+Use `handleMutation` pattern or React Flow callback. Pattern: capture original state → call API → update UI on success → revert on error.
 
 **Checklist:**
-- [ ] Captures original state if needed for revert
-- [ ] Calls backend API
-- [ ] Updates UI on success via `handleFlowUpdate`
-- [ ] Reverts UI on failure
-- [ ] Shows user-friendly error messages
-- [ ] Registered with React Flow component (if applicable)
+- [ ] Captures state, calls API, updates UI on success, reverts on failure, shows errors
 
 ---
 
-### 5. Add Origin Tag to Logs
+### 5. Verify Origin Tag in Logs
 
-**File**: `server/tools/executor.js`
-
-The `logToolExecution` function already handles this, but verify your origin tag appears in logs:
-
-**Expected log format:**
-```json
-{
-  "timestamp": "2025-10-21T05:00:00.000Z",
-  "tool": "yourAction",
-  "origin": "ui.your_action",
-  "duration": "2ms",
-  "success": true
-}
-```
-
-**Checklist:**
-- [ ] Origin tag is descriptive and follows pattern `ui.[resource].[action]`
-- [ ] Logged for both success and failure
-- [ ] Includes execution duration
+`logToolExecution` handles this automatically. Verify origin follows pattern `ui.[resource].[action]`.
 
 ---
 
@@ -231,141 +91,31 @@ The `logToolExecution` function already handles this, but verify your origin tag
 
 **File**: `tests/integration/your-action.test.js`
 
-```javascript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import request from 'supertest';
-import { setupTestDb, cleanupTestDb } from '../../tests/test-db-setup.js';
-import { initializeUndoHistory } from '../../server/db.js';
-
-let app;
-
-beforeEach(async () => {
-  await setupTestDb();
-  const serverModule = await import('../../server/server.js');
-  app = serverModule.default || serverModule.app;
-  await initializeUndoHistory({ nodes: [], edges: [] });
-});
-
-afterEach(async () => {
-  await cleanupTestDb();
-});
-
-describe('PUT /api/your-resource/:id', () => {
-  it('should execute action successfully', async () => {
-    // Setup test data
-    const setupResponse = await request(app)
-      .post('/api/node')
-      .send({ label: 'Test', description: '' });
-
-    const nodeId = setupResponse.body.nodeId;
-
-    // Execute action
-    const response = await request(app)
-      .put(`/api/your-resource/${nodeId}`)
-      .send({ param2: 'value' });
-
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.flow).toBeDefined();
-  });
-
-  it('should return error for invalid input', async () => {
-    const response = await request(app)
-      .put('/api/your-resource/invalid-id')
-      .send({ param2: 'value' });
-
-    expect(response.status).toBe(400);
-    expect(response.body.success).toBe(false);
-    expect(response.body.error).toBeDefined();
-  });
-
-  it('should create snapshot with correct origin tag', async () => {
-    // Test implementation
-  });
-});
-```
+Use supertest with `setupTestDb/cleanupTestDb`. Test: success case, error cases, snapshot origin tag, response format.
 
 **Checklist:**
-- [ ] Success case tested
-- [ ] Error cases tested (validation, invalid IDs, etc.)
-- [ ] Snapshot origin tag verified
-- [ ] Response format validated
-- [ ] Uses Supabase test environment via setupTestDb/cleanupTestDb
+- [ ] Success + error cases tested, snapshot origin verified, uses Supabase test environment
 
 ---
 
 ### 7. Write Unit Tests (if needed)
 
-For complex helper functions, add unit tests:
-
-**File**: `tests/unit/shared/yourActionHelpers.test.js`
-
-```javascript
-import { describe, it, expect } from 'vitest';
-import { yourHelper } from '../../../src/utils/yourActionHelpers.js';
-
-describe('yourHelper', () => {
-  it('should handle valid input', () => {
-    expect(yourHelper('input')).toBe('expected');
-  });
-
-  it('should handle edge cases', () => {
-    expect(yourHelper(null)).toBe(null);
-    expect(yourHelper([])).toEqual([]);
-  });
-});
-```
-
-**Checklist:**
-- [ ] All helper functions covered
-- [ ] Edge cases tested (null, undefined, empty arrays, etc.)
-- [ ] Pure functions (no side effects)
+For complex helpers: test valid input, edge cases (null, undefined, empty), pure functions.
 
 ---
 
 ### 8. Run QA Validation
 
 **Manual QA:**
-- [ ] Action works correctly in UI
-- [ ] Backend API called (check server logs for `[TOOL_EXECUTION]`)
-- [ ] Tool execution log shows correct origin
-- [ ] Snapshot created in database
-- [ ] Error handling works (test with invalid data)
-- [ ] Undo/redo works for this action
-- [ ] Refresh preserves state
+- [ ] Action works, API called (check logs), snapshot created, error handling works, undo/redo works
 
-**Database verification:**
-Check Supabase dashboard or use the Supabase MCP tool to verify snapshots:
-```sql
-SELECT id, created_at, snapshot->'_meta'->>'origin' as origin
-FROM undo_history
-ORDER BY created_at DESC
-LIMIT 5;
-```
-
-**Checklist:**
-- [ ] All manual QA steps passed
-- [ ] Snapshot origin tag verified in Supabase
-- [ ] Automated tests passing
-- [ ] No duplicate snapshots created
+**Database verification:** Check Supabase for snapshot origin tags in `undo_history` table.
 
 ---
 
 ### 9. Document Your Changes
 
-**Update these files:**
-
-1. **Add code comments**:
-   ```javascript
-   // Persist action via backend API (creates snapshot with origin: 'ui.your_action')
-   ```
-
-2. **Update this SOP** if you discovered improvements to the process
-
-**Checklist:**
-- [ ] Code comments added explaining backend call
-- [ ] Origin tag documented if new pattern
-- [ ] README updated if major user-facing feature
+Add code comments explaining backend call and origin tag. Update this SOP if process improved.
 
 ---
 

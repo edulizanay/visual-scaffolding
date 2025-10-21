@@ -14,14 +14,14 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 
 ### Backend
 - **Express.js** - REST API server
-- **Supabase** - Database (PostgreSQL 15+ hosted, async operations)
+- **Supabase (PostgreSQL 15+)** - Cloud-hosted database with async operations
 - **@supabase/supabase-js** - Supabase client SDK
 - **Groq SDK** - Primary LLM provider (gpt-oss-120b)
 - **Cerebras SDK** - Fallback LLM provider
 - **CORS** - Cross-origin support
 
 ### Testing
-- **Vitest 3.2.4** - Test framework with native ESM support
+- **Vitest 3.2.4** - Test framework with native ESM support (542 tests passing)
 - **React Testing Library** - Frontend component testing
 - **@testing-library/jest-dom** - DOM assertion matchers (via `/vitest` entry point)
 - **@testing-library/user-event** - User interaction simulation
@@ -198,23 +198,7 @@ XML format with `<thinking>` and `<response>` tags containing JSON tool calls. S
 
 ## Available Tools
 
-The AI can execute the following operations on flows (11 tools total):
-
-1. **addNode** - Create node (optionally with parent connection or group membership)
-2. **updateNode** - Modify node properties (label, description, position)
-3. **deleteNode** - Remove node and connected edges
-4. **addEdge** - Create connection between nodes
-5. **updateEdge** - Modify edge label
-6. **deleteEdge** - Remove connection
-7. **createGroup** - Create group from multiple nodes (starts collapsed by default)
-8. **ungroup** - Remove group and restore member nodes to root level
-9. **toggleGroupExpansion** - Toggle group between collapsed and expanded states
-10. **undo** - Revert last change
-11. **redo** - Reapply undone change
-
-## Error Recovery System
-
-Automatic retry mechanism for failed tool executions (max 3 iterations). Failed operations trigger detailed retry messages with current flow state. See [llm_integration.md](./llm_integration.md) for details.
+The AI can execute 11 flow operations: node CRUD (3 tools), edge CRUD (3 tools), group operations (3 tools), and history operations (2 tools). Includes automatic retry mechanism for failed executions (max 3 iterations). See [llm_integration.md](./llm_integration.md) for detailed tool definitions and error recovery.
 
 ## Key Design Patterns
 
@@ -263,21 +247,10 @@ Tools executed sequentially with state passed between them. All changes batched 
 ### 6. Undo/Redo State Management
 Snapshots stored in `undo_history` table with deduplication. Current position tracked in `undo_state` table. 50 snapshot limit with automatic truncation. Unified implementation via `executeHistoryOperation()` helper.
 
-### 7. Autosave with Debouncing
-Frontend debounces saves by 500ms to avoid excessive writes during canvas manipulation.
-
-### 8. LLM Context Building
+### 7. LLM Context Building
 Each request includes: system prompt, last 6 conversation turns, current flow state, available tools, and user message. See [llm_integration.md](./llm_integration.md).
 
-### 9. Code Organization (server.js)
-Server code organized into clear sections with consistent patterns:
-- **Section headers** clearly delineate functionality (APP SETUP, CONSTANTS, HELPER FUNCTIONS, etc.)
-- **Helper extraction** for reusable logic (logError, logIteration, executeSingleIteration)
-- **Factory pattern** for REST endpoints via `toolEndpoint()` configuration
-- **Consistent validation** with early returns and descriptive error messages
-- **Single responsibility** - each function does one thing well
-
-### 10. Pure Dagre Layout Algorithm
+### 8. Pure Dagre Layout Algorithm
 Layout calculation uses Dagre algorithm without custom post-processing:
 - **Pure Dagre output** - removed custom compression logic that caused diagonal positioning bugs
 - **TDD approach** - regression tests ensure horizontal parent-child alignment
@@ -292,8 +265,8 @@ Layout calculation uses Dagre algorithm without custom post-processing:
 - **Integration tests**: Message retry logic, API contracts, workflow state sync
 - **Security tests**: XSS prevention
 - **Frontend tests**: React component tests with happy-dom
-- **All tests use isolated Supabase test environment** (`setupTestDb()/cleanupTestDb()`)
-- **Test Execution**: ~7 seconds for 542 tests (2.95x faster than Jest)
+- **All tests use isolated Supabase test environment** (`setupTestDb()/cleanupTestDb()` from `tests/test-db-setup.js`)
+- **Test Execution**: 542 tests passing
 - **Coverage**: 86.38% overall (v8 provider)
 - **See**: [test_suite.md](./test_suite.md) for detailed test documentation
 

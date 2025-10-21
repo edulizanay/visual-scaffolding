@@ -5,14 +5,14 @@ This directory contains all project documentation. Use this index to quickly fin
 ## 📁 Documentation Structure
 
 ```
-.agent/ (2484 lines)
-├── README.md          # This file - documentation index (129 lines)
-├── system/            # Current state of the system (1311 lines)
+.agent/ (2013 lines)
+├── README.md          # This file - documentation index (126 lines)
+├── system/            # Current state of the system (1093 lines)
 ├── tasks/             # Feature PRDs & implementation plans (0 lines)
-└── SOP/               # Standard operating procedures (1016 lines)
+└── SOP/               # Standard operating procedures (766 lines)
 ```
 
-**Documentation Guidelines**: Try to keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. The lines count is updated automatically.
+**Documentation Guidelines**: Keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. The lines count is updated automatically.
 
 ## 📚 System Documentation
 
@@ -29,9 +29,7 @@ Current state of the codebase - architecture, schema, and core systems:
 
 Feature-specific PRDs and implementation plans:
 
-| Task | Status | Description |
-|------|--------|-------------|
-| **[database-migration.md](./tasks/database-migration.md)** | Planning | Future migration from SQLite to Supabase PostgreSQL (614 lines) |
+*No active tasks at this time. This directory will be used for future feature planning.*
 
 ## 🛠️ Standard Operating Procedures (SOPs)
 
@@ -44,7 +42,7 @@ Step-by-step guides for common development tasks:
 | **[theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)** | How to work with design tokens and semantic theme system |
 | **[adding-persistence-actions.md](./SOP/adding-persistence-actions.md)** | How to add new backend persistence actions (feature-flagged, origin-tagged) |
 | **[writing-tests.md](./SOP/writing-tests.md)** | How to write tests with Vitest - unit, integration, frontend, API tests, layout algorithm testing |
-| *(To be added)* | How to add a database migration |
+| *(To be added)* | How to add a Supabase migration via MCP |
 | *(To be added)* | How to add a new LLM tool |
 
 ## 🧭 Quick Navigation
@@ -64,7 +62,6 @@ Design token system | [project_architecture.md](./system/project_architecture.md
 Development commands, setup | [project_architecture.md](./system/project_architecture.md) → Development Workflow
 API endpoints | [project_architecture.md](./system/project_architecture.md) → Integration Points
 Backend persistence architecture | [adding-persistence-actions.md](./SOP/adding-persistence-actions.md)
-Future database migration plan | [database-migration.md](./tasks/database-migration.md)
 How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-commands.md)
 How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
 How to work with design tokens/theme | [theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)
@@ -119,9 +116,8 @@ How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 **Last Updated**: October 21, 2025
 
 **Recent Major Changes**:
-- **Backend-only persistence** - Completed migration: all saves via explicit API calls, autosave removed; 703 tests passing
-- **Node/edge deletion** - Connected to backend APIs with proper undo/redo support
-- **Undo/redo for drag** - Restored support for position changes via backend persistence
+- **Supabase migration** - Complete migration from SQLite to PostgreSQL; all 542 tests passing with Supabase test database
+- **Backend-only persistence** - All saves via explicit API calls, autosave removed
 - **Vitest migration** - 2.95x faster, 170+ hidden tests fixed, native ESM, 86.38% coverage
 - **Design tokens** - Two-tier system (primitives + semantic theme) in single theme.js file
 - **Group nodes** - Nested groups, depth-based halo padding, dual collapse systems

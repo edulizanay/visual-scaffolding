@@ -1,21 +1,14 @@
 # Database Schema
 
-Visual Scaffolding uses **Supabase (PostgreSQL)** for cloud-hosted database operations. Legacy SQLite support remains for local development.
+Visual Scaffolding uses **Supabase (PostgreSQL)** for all database operations.
 
 ## Database Configuration
 
-### Supabase (Production)
 - **Database**: PostgreSQL 15+ via Supabase
 - **Client**: `@supabase/supabase-js` SDK (async)
 - **Connection**: Configured via environment variables (see `.env`)
-- **Migrations**: Applied via Supabase MCP tools
-- **Test Mode**: Uses dedicated Supabase project with `setupTestDb()/cleanupTestDb()` helpers
-
-### SQLite (Legacy/Local)
-- **Mode**: WAL (Write-Ahead Logging) for better concurrency
-- **Foreign Keys**: Enabled
-- **Migrations**: Located in `server/migrations/`
-- **Adapter**: `server/db-adapters/sqlite.js` wraps Better-SQLite3 with async interface
+- **Migrations**: Applied via Supabase MCP tools (documented in `.agent/migrations/README.md`)
+- **Test Mode**: Uses dedicated Supabase test project with `setupTestDb()/cleanupTestDb()` helpers from `tests/test-db-setup.js`
 
 ## Tables (4 total)
 
@@ -23,9 +16,8 @@ The database contains 4 tables after the removal of `visual_settings` in migrati
 
 ### flows
 
-Stores flow graph data (nodes and edges) as JSON.
+Stores flow graph data (nodes and edges) as JSONB.
 
-**PostgreSQL (Supabase):**
 ```sql
 CREATE TABLE flows (
   id BIGSERIAL PRIMARY KEY,
@@ -40,26 +32,13 @@ CREATE TABLE flows (
 CREATE INDEX idx_flows_user_name ON flows(user_id, name);
 ```
 
-**SQLite (Legacy):**
-```sql
-CREATE TABLE flows (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id TEXT NOT NULL DEFAULT 'default',
-  name TEXT NOT NULL DEFAULT 'main',
-  data JSON NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, name)
-);
-```
-
 **Fields:**
-- `id` - Auto-incrementing primary key (BIGSERIAL in PostgreSQL, INTEGER in SQLite)
+- `id` - Auto-incrementing primary key (BIGSERIAL)
 - `user_id` - User identifier (currently always 'default')
 - `name` - Flow name (currently always 'main')
-- `data` - JSON object containing `{nodes: [], edges: []}` (JSONB in PostgreSQL for better indexing)
-- `created_at` - Timestamp of first creation (TIMESTAMPTZ in PostgreSQL, DATETIME in SQLite)
-- `updated_at` - Timestamp of last update
+- `data` - JSONB object containing `{nodes: [], edges: []}`
+- `created_at` - Timestamp of first creation (TIMESTAMPTZ)
+- `updated_at` - Timestamp of last update (TIMESTAMPTZ)
 
 **Data Structure:**
 ```json
@@ -94,7 +73,6 @@ CREATE TABLE flows (
 
 Stores all LLM interactions (user messages and assistant responses).
 
-**PostgreSQL (Supabase):**
 ```sql
 CREATE TABLE conversation_history (
   id BIGSERIAL PRIMARY KEY,
@@ -105,23 +83,12 @@ CREATE TABLE conversation_history (
 );
 ```
 
-**SQLite (Legacy):**
-```sql
-CREATE TABLE conversation_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
-  content TEXT NOT NULL,
-  tool_calls JSON,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
 **Fields:**
-- `id` - Auto-incrementing primary key (BIGSERIAL in PostgreSQL, INTEGER in SQLite)
+- `id` - Auto-incrementing primary key (BIGSERIAL)
 - `role` - Either 'user' or 'assistant'
 - `content` - Message text (user request or LLM response)
-- `tool_calls` - JSON array of tool calls (JSONB in PostgreSQL, for assistant messages only)
-- `timestamp` - Message timestamp (TIMESTAMPTZ in PostgreSQL, DATETIME in SQLite)
+- `tool_calls` - JSONB array of tool calls (for assistant messages only)
+- `timestamp` - Message timestamp (TIMESTAMPTZ)
 
 **API Functions:**
 - `addConversationMessage(role, content, toolCalls)` - Add message
@@ -137,7 +104,6 @@ CREATE TABLE conversation_history (
 
 Stores flow snapshots for undo/redo functionality.
 
-**PostgreSQL (Supabase):**
 ```sql
 CREATE TABLE undo_history (
   id BIGSERIAL PRIMARY KEY,
@@ -148,19 +114,10 @@ CREATE TABLE undo_history (
 CREATE INDEX idx_undo_history_created_at ON undo_history(created_at);
 ```
 
-**SQLite (Legacy):**
-```sql
-CREATE TABLE undo_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  snapshot JSON NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
 **Fields:**
-- `id` - Auto-incrementing primary key (BIGSERIAL in PostgreSQL; note: may have gaps after deletions)
-- `snapshot` - Complete flow state JSON (JSONB in PostgreSQL, same format as `flows.data`)
-- `created_at` - Snapshot timestamp (TIMESTAMPTZ in PostgreSQL; used for timestamp-based navigation)
+- `id` - Auto-incrementing primary key (BIGSERIAL; note: may have gaps after deletions)
+- `snapshot` - Complete flow state JSONB (same format as `flows.data`)
+- `created_at` - Snapshot timestamp (TIMESTAMPTZ; used for timestamp-based navigation)
 
 **Snapshot Management:**
 - Maximum 50 snapshots retained
@@ -180,7 +137,6 @@ CREATE TABLE undo_history (
 
 Single-row table tracking current position in undo history.
 
-**PostgreSQL (Supabase):**
 ```sql
 CREATE TABLE undo_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -191,17 +147,6 @@ CREATE TABLE undo_state (
 INSERT INTO undo_state (id, current_snapshot_time, current_index)
 VALUES (1, NULL, NULL)
 ON CONFLICT DO NOTHING;
-```
-
-**SQLite (Legacy):**
-```sql
-CREATE TABLE undo_state (
-  id INTEGER PRIMARY KEY CHECK (id = 1),
-  current_snapshot_time TEXT DEFAULT NULL,
-  current_index INTEGER DEFAULT NULL  -- DEPRECATED: Use current_snapshot_time instead
-);
-
-INSERT OR IGNORE INTO undo_state (id, current_snapshot_time, current_index) VALUES (1, NULL, NULL);
 ```
 
 **Fields:**
@@ -234,47 +179,25 @@ INSERT OR IGNORE INTO undo_state (id, current_snapshot_time, current_index) VALU
 
 ## Migration History
 
-### 001_initial.sql
-- Initial schema creation
-- Migrated from JSON file storage (`server/data/flow-data.json`)
-- Created all tables including flows, conversation_history, undo_history, undo_state, visual_settings
-- Established indexes and constraints
+All migrations applied via Supabase MCP tools. See [.agent/migrations/README.md](../migrations/README.md) for details.
 
-### 002_remove_visual_settings.sql
-- Removed visual_settings table (simplified from dynamic customization to hardcoded theme)
-- Theme constants now maintained in frontend (`src/constants/theme.js`)
-- Reduced table count from 5 to 4
-
-**Migrations applied automatically on server startup** via `db.js`:
-```javascript
-// Migrations run in order on every server start
-const migration001 = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
-db.exec(migration001);
-
-const migration002 = readFileSync(join(__dirname, 'migrations', '002_remove_visual_settings.sql'), 'utf-8');
-db.exec(migration002);
-```
+**Applied Migrations:**
+- **20251021070648** - create_flows_table (JSONB data, indexes)
+- **20251021070701** - create_undo_history_table (JSONB snapshot, GIN index)
+- **20251021070712** - create_undo_state_table (singleton with CHECK constraint)
+- **20251021070725** - create_conversation_history_table (role CHECK, JSONB tool_calls)
 
 ## Performance Considerations
 
-- **WAL Mode**: Allows concurrent reads during writes
-- **Index on flows(user_id, name)**: Fast flow lookups
+- **JSONB storage**: Native PostgreSQL indexing and querying for complex data
+- **GIN indexes**: Fast queries on JSONB fields (`data`, `snapshot`, `tool_calls`)
+- **Index on flows(user_id, name)**: Fast flow lookups via composite key
 - **UNIQUE constraint**: Prevents duplicate flows
-- **Snapshot limit**: Prevents unbounded growth of undo history
+- **Snapshot limit**: Prevents unbounded growth of undo history (50 max)
 - **Conversation limit**: Only last 6 interactions sent to LLM (but all stored)
-- **Synchronous operations**: Better-SQLite3 uses sync API, simpler than async
-- **Deduplication**: Reduces redundant snapshots
+- **Timestamp-based navigation**: Handles BIGSERIAL gaps in undo/redo operations
+- **Deduplication**: Reduces redundant snapshots via `stableStringify()` comparison
 
 ## Testing
 
-All tests use in-memory database:
-```javascript
-process.env.DB_PATH = ':memory:';
-```
-
-Each test file:
-1. Imports `closeDb` from `db.js`
-2. Calls `closeDb()` in `afterEach` to ensure clean state
-3. Schema automatically re-created on next `getDb()` call
-
-See `tests/db.test.js` for comprehensive database layer tests.
+See [test_suite.md](./test_suite.md) and [writing-tests.md](../SOP/writing-tests.md) for testing details.
