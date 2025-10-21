@@ -1,6 +1,16 @@
 # SQLite → Supabase Migration Plan
 
-## TL;DR
+## ✅ STATUS: COMPLETE (2025-10-21)
+
+Migration successfully completed. All phases executed. See [todo.md](../../todo.md) for detailed completion status.
+
+**Actual Time:** ~6 hours
+**Outcome:** All tests passing, production-ready
+**Key Achievement:** Timestamp-based undo/redo navigation (handles PostgreSQL ID gaps)
+
+---
+
+## TL;DR (Original Plan)
 
 **What:** Convert from synchronous SQLite to async PostgreSQL (Supabase)
 **Why:** Better scalability, cloud-native, already have MCP connection
