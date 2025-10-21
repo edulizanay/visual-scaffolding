@@ -52,15 +52,26 @@ visual-scaffolding/
 │
 ├── server/                       # Backend Express server
 │   ├── server.js                 # Main server & API routes
-│   ├── db.js                     # Database abstraction layer (Supabase)
+│   ├── app.js                    # Express app configuration
+│   ├── db.js                     # Compatibility layer (re-exports from repositories)
 │   ├── supabase-client.js        # Supabase PostgreSQL client configuration
+│   ├── repositories/             # Domain-specific data access layer
+│   │   ├── flowRepository.js     # Flow CRUD operations
+│   │   ├── undoRepository.js     # Undo/redo history management
+│   │   ├── conversationRepository.js  # Conversation history operations
+│   │   └── notesRepository.js    # Notes CRUD operations
+│   ├── services/                 # Business logic layer
+│   │   └── flowService.js        # Flow read/write with snapshot integration
 │   ├── conversationService.js    # Conversation history management
 │   ├── historyService.js         # Undo/redo state management (timestamp-based)
 │   ├── routes/
+│   │   ├── index.js              # Central route registration
 │   │   ├── flowRoutes.js         # Flow domain endpoints
-│   │   └── conversationRoutes.js # Conversation endpoints
+│   │   ├── conversationRoutes.js # Conversation endpoints
+│   │   └── notesRoutes.js        # Notes panel endpoints
 │   ├── llm/
 │   │   ├── llmService.js         # LLM context building & parsing
+│   │   ├── llmUtils.js           # Shared LLM utilities
 │   │   └── tools.js              # Tool definitions for AI
 │   └── tools/
 │       └── executor.js           # Tool execution logic
@@ -149,6 +160,66 @@ visual-scaffolding/
 - Auto-snapshot on every change (50 snapshot limit)
 - Deduplication for identical states
 - Backwards compatibility: `getUndoStatus()` returns both `currentTimestamp` and computed `currentIndex`
+
+## Backend Architecture
+
+### Repository Layer
+
+The backend uses a layered architecture with domain-specific repositories for data access:
+
+**Domain Repositories:**
+- **flowRepository.js** - Flow CRUD operations
+  - `getFlow(userId, name)` - Retrieve flow by user and name
+  - `saveFlow(flowData, userId, name)` - Save/update flow data
+  - `sanitizeFlowData(flowData)` - Validate and clean flow structure
+  - `getFlowId(userId, name)` - Get flow ID for joins
+
+- **undoRepository.js** - Undo/redo history management
+  - `pushUndoSnapshot(flowData, origin)` - Create snapshot with deduplication
+  - `undo()` - Navigate to previous snapshot by timestamp
+  - `redo()` - Navigate to next snapshot by timestamp
+  - `getUndoStatus()` - Get current position and availability
+  - `clearUndoHistory()` - Remove all snapshots
+  - `initializeUndoHistory()` - Ensure singleton row exists
+
+- **conversationRepository.js** - Conversation history operations
+  - `addConversationMessage(role, content, toolCalls)` - Add message with limit
+  - `getConversationHistory()` - Retrieve last 6 messages
+  - `clearConversationHistory()` - Remove all messages
+
+- **notesRepository.js** - Notes CRUD operations (singleton pattern)
+  - `getNotes()` - Retrieve notes with graceful empty state fallback
+  - `saveNotes(bullets, conversationHistory)` - Upsert notes data
+  - `updateBullets(bullets)` - Update bullets while preserving conversation history
+
+**Service Layer:**
+- **flowService.js** - Consolidates flow read/write logic
+  - `readFlow(userId, name)` - Wrapper around flowRepository.getFlow
+  - `writeFlow(flowData, skipSnapshot, origin, userId, name)` - Save flow + create snapshot
+  - Used by: app.js, executor.js (eliminates duplicate implementations)
+
+**Compatibility Layer:**
+- **db.js** - Re-exports from repositories for backward compatibility
+  - Allows gradual migration to direct repository imports
+  - See [migration-plan.md](../migration-plan.md) for future removal plan
+
+**Shared Utilities:**
+- **llmUtils.js** - Common LLM helpers
+  - `checkLLMAvailability()` - Verify API keys configured
+  - `logError(operation, error)` - Consistent error logging
+
+### Route Organization
+
+Routes are namespaced and mounted via central registration:
+
+- **Namespaced Routes:** All routes under `/api/<domain>/*`
+  - `/api/flow/*` - Flow operations (node, edge, group CRUD)
+  - `/api/conversation/*` - Chat and history
+  - `/api/notes/*` - Notes panel operations
+
+- **Route Registration:** `routes/index.js` mounts all domain routers
+  - Dependency injection pattern for `readFlow`/`writeFlow`
+  - Each domain has dedicated route file
 
 ## Database Schema
 
