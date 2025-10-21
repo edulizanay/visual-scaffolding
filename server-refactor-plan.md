@@ -255,26 +255,26 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **4.1: Create llmUtils.js**
+- [x] **4.1: Create llmUtils.js**
   - [ ] Create `server/llm/llmUtils.js`
   - [ ] Implement `checkLLMAvailability()` - returns Boolean for API key check
   - [ ] Implement `logError(operation, error)` - consistent error logging
   - [ ] Add ABOUTME comments
   - [ ] Verify ~20 lines total
 
-- [ ] **4.2: Update conversationRoutes.js**
+- [x] **4.2: Update conversationRoutes.js**
   - [ ] Delete `logError()` function (lines 13-15)
   - [ ] Delete `checkLLMAvailability()` function (lines 30-32)
   - [ ] Add import: `import { checkLLMAvailability, logError } from '../llm/llmUtils.js';`
   - [ ] Lines saved: 5 net reduction
 
-- [ ] **4.3: Update notesRoutes.js**
+- [x] **4.3: Update notesRoutes.js**
   - [ ] Delete `logError()` function (lines 10-12)
   - [ ] Delete `checkLLMAvailability()` function (lines 15-17)
   - [ ] Add import: `import { checkLLMAvailability, logError } from '../llm/llmUtils.js';`
   - [ ] Lines saved: 5 net reduction
 
-- [ ] **4.4: Verify no regressions**
+- [x] **4.4: Verify no regressions**
   - [ ] Run: `npm test -- integration/conversation-endpoint.test.js`
   - [ ] Run: `npm test -- api-notes.test.js`
   - [ ] Verify route behavior unchanged
