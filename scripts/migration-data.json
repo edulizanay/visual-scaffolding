@@ -1,0 +1,464 @@
+{
+  "flows": [
+    {
+      "id": 1,
+      "user_id": "default",
+      "name": "main",
+      "data": {
+        "nodes": [
+          {
+            "id": "mufasa",
+            "type": "default",
+            "position": {
+              "x": 0,
+              "y": 330
+            },
+            "data": {
+              "label": "Mufasa",
+              "description": "King of the Pride Lands, father of Simba",
+              "collapsed": false
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right"
+          },
+          {
+            "id": "scar",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 440
+            },
+            "data": {
+              "label": "Scar",
+              "description": "Mufasa's brother, antagonist"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "simba",
+            "type": "default",
+            "position": {
+              "x": 222,
+              "y": 220
+            },
+            "data": {
+              "label": "Simba",
+              "description": "Son of Mufasa, future king",
+              "collapsed": false
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "nala",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 0
+            },
+            "data": {
+              "label": "Nala",
+              "description": "Simba's childhood friend and later queen"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "timon",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 110
+            },
+            "data": {
+              "label": "Timon",
+              "description": "Meerkat, friend of Simba"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "pumbaa",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 220
+            },
+            "data": {
+              "label": "Pumbaa",
+              "description": "Warthog, friend of Simba"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "rafiki",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 330
+            },
+            "data": {
+              "label": "Rafiki",
+              "description": "Wise baboon, mentor"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "zazu",
+            "type": "default",
+            "position": {
+              "x": 222,
+              "y": 330
+            },
+            "data": {
+              "label": "Zazu",
+              "description": "Hornbill, royal advisor"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "sarabi",
+            "type": "default",
+            "position": {
+              "x": 222,
+              "y": 440
+            },
+            "data": {
+              "label": "Sarabi",
+              "description": "Mufasa's queen and Simba's mother"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right"
+          }
+        ],
+        "edges": [
+          {
+            "id": "1761022094491_0snyv9j6b",
+            "source": "mufasa",
+            "target": "simba",
+            "data": {
+              "label": "father"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_0tqeg4q8f",
+            "source": "simba",
+            "target": "nala",
+            "data": {
+              "label": "friend"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_0ts5jcrjd",
+            "source": "simba",
+            "target": "timon",
+            "data": {
+              "label": "friend"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_qxlb12iok",
+            "source": "simba",
+            "target": "pumbaa",
+            "data": {
+              "label": "friend"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_bad6kvkba",
+            "source": "simba",
+            "target": "rafiki",
+            "data": {
+              "label": "mentor"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094492_aefi1n741",
+            "source": "mufasa",
+            "target": "zazu",
+            "data": {
+              "label": "advisor"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022095215_5zhu1a95a",
+            "source": "simba",
+            "target": "scar",
+            "data": {
+              "label": "uncle"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761023713441_551uquxf1",
+            "source": "mufasa",
+            "target": "sarabi"
+          }
+        ]
+      },
+      "created_at": "2025-10-07 12:18:54",
+      "updated_at": "2025-10-21 05:15:19",
+      "visual_settings": "{\"nodeWidth\":242.02127269687506,\"nodeHeight\":50.65561521562502,\"descriptionFontSize\":11,\"edgeFontSize\":12,\"ranksep\":50,\"nodesep\":50,\"fitViewPadding\":0.24875156250000002,\"animationDuration\":800,\"background\":\"linear-gradient(180deg, #0f0a1a 0%, #1a0f2e 100%)\",\"nodeColor\":\"#ffa500\"}"
+    }
+  ],
+  "conversation_history": [
+    {
+      "id": 395,
+      "role": "user",
+      "content": "autolayout",
+      "tool_calls": null,
+      "timestamp": "2025-10-21 05:15:18"
+    },
+    {
+      "id": 396,
+      "role": "assistant",
+      "content": "[\n  {\n    \"type\": \"tool_use\",\n    \"id\": \"toolu_autolayout_01\",\n    \"name\": \"autoLayout\",\n    \"input\": {}\n  }\n]",
+      "tool_calls": [
+        {
+          "id": "toolu_autolayout_01",
+          "name": "autoLayout",
+          "params": {}
+        }
+      ],
+      "timestamp": "2025-10-21 05:15:19"
+    }
+  ],
+  "undo_history": [
+    {
+      "id": 3325,
+      "snapshot": {
+        "nodes": [
+          {
+            "id": "mufasa",
+            "type": "default",
+            "position": {
+              "x": 0,
+              "y": 330
+            },
+            "data": {
+              "label": "Mufasa",
+              "description": "King of the Pride Lands, father of Simba",
+              "collapsed": false
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right"
+          },
+          {
+            "id": "scar",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 440
+            },
+            "data": {
+              "label": "Scar",
+              "description": "Mufasa's brother, antagonist"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "simba",
+            "type": "default",
+            "position": {
+              "x": 222,
+              "y": 220
+            },
+            "data": {
+              "label": "Simba",
+              "description": "Son of Mufasa, future king",
+              "collapsed": false
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "nala",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 0
+            },
+            "data": {
+              "label": "Nala",
+              "description": "Simba's childhood friend and later queen"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "timon",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 110
+            },
+            "data": {
+              "label": "Timon",
+              "description": "Meerkat, friend of Simba"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "pumbaa",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 220
+            },
+            "data": {
+              "label": "Pumbaa",
+              "description": "Warthog, friend of Simba"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "rafiki",
+            "type": "default",
+            "position": {
+              "x": 444,
+              "y": 330
+            },
+            "data": {
+              "label": "Rafiki",
+              "description": "Wise baboon, mentor"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "zazu",
+            "type": "default",
+            "position": {
+              "x": 222,
+              "y": 330
+            },
+            "data": {
+              "label": "Zazu",
+              "description": "Hornbill, royal advisor"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right",
+            "hidden": false
+          },
+          {
+            "id": "sarabi",
+            "type": "default",
+            "position": {
+              "x": 222,
+              "y": 440
+            },
+            "data": {
+              "label": "Sarabi",
+              "description": "Mufasa's queen and Simba's mother"
+            },
+            "targetPosition": "left",
+            "sourcePosition": "right"
+          }
+        ],
+        "edges": [
+          {
+            "id": "1761022094491_0snyv9j6b",
+            "source": "mufasa",
+            "target": "simba",
+            "data": {
+              "label": "father"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_0tqeg4q8f",
+            "source": "simba",
+            "target": "nala",
+            "data": {
+              "label": "friend"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_0ts5jcrjd",
+            "source": "simba",
+            "target": "timon",
+            "data": {
+              "label": "friend"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_qxlb12iok",
+            "source": "simba",
+            "target": "pumbaa",
+            "data": {
+              "label": "friend"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094491_bad6kvkba",
+            "source": "simba",
+            "target": "rafiki",
+            "data": {
+              "label": "mentor"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022094492_aefi1n741",
+            "source": "mufasa",
+            "target": "zazu",
+            "data": {
+              "label": "advisor"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761022095215_5zhu1a95a",
+            "source": "simba",
+            "target": "scar",
+            "data": {
+              "label": "uncle"
+            },
+            "hidden": false
+          },
+          {
+            "id": "1761023713441_551uquxf1",
+            "source": "mufasa",
+            "target": "sarabi"
+          }
+        ]
+      },
+      "created_at": "2025-10-21 07:12:18"
+    }
+  ],
+  "undo_state": [
+    {
+      "id": 1,
+      "current_index": 3325
+    }
+  ]
+}

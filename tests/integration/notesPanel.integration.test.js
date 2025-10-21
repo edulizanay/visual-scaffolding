@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
-import { closeDb } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,16 +14,16 @@ const __dirname = path.dirname(__filename);
 // Notes file path
 const NOTES_FILE_PATH = path.join(__dirname, '../../notes-debug.json');
 
-beforeEach(() => {
-  process.env.DB_PATH = ':memory:';
+beforeEach(async () => {
+  await setupTestDb();
   // Clean up notes file before each test
   if (fs.existsSync(NOTES_FILE_PATH)) {
     fs.unlinkSync(NOTES_FILE_PATH);
   }
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
   // Clean up notes file after each test
   if (fs.existsSync(NOTES_FILE_PATH)) {
     fs.unlinkSync(NOTES_FILE_PATH);

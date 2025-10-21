@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
-import { closeDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 import { executeToolCalls } from '../server/tools/executor.js';
 
 async function executeTool(toolName, params) {
@@ -15,19 +15,17 @@ async function executeTool(toolName, params) {
 let app;
 
 beforeAll(async () => {
-  process.env.DB_PATH = ':memory:';
-
   // Import server setup
   const serverModule = await import('../server/server.js');
   app = serverModule.default || serverModule.app;
 });
 
-beforeEach(() => {
-  process.env.DB_PATH = ':memory:';
+beforeEach(async () => {
+  await setupTestDb();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 describe('PUT /api/node/:id - Label Updates', () => {

@@ -3,15 +3,16 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
-import { closeDb, saveFlow } from '../../server/db.js';
+import { saveFlow } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';
+import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
 
-beforeEach(() => {
-  process.env.DB_PATH = ':memory:';
+beforeEach(async () => {
+  await setupTestDb();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 describe('Message Retry Loop - Tool Execution', () => {

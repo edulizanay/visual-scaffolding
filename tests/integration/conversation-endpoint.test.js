@@ -117,21 +117,22 @@ vi.mock('../../server/llm/llmService.js', () => ({
 
 // Now import the modules that depend on llmService
 const { default: app } = await import('../../server/server.js');
-const { closeDb, saveFlow } = await import('../../server/db.js');
+const { saveFlow } = await import('../../server/db.js');
+const { setupTestDb, cleanupTestDb } = await import('../test-db-setup.js');
 
-beforeEach(() => {
-  process.env.DB_PATH = ':memory:';
+beforeEach(async () => {
+  await setupTestDb();
   process.env.GROQ_API_KEY = 'test-api-key'; // Enable LLM for tests
 
   // Initialize with empty flow
-  saveFlow({ nodes: [], edges: [] });
+  await saveFlow({ nodes: [], edges: [] });
 
   // Reset mock between tests
   mockCallConversationLLM = vi.fn();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
   delete process.env.GROQ_API_KEY;
   vi.clearAllMocks();
 });

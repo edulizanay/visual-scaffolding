@@ -4,24 +4,25 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
-import { saveFlow, closeDb } from '../../server/db.js';
+import { saveFlow } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
 
 // Import server
 let app;
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
 
   // Initialize with empty flow
-  saveFlow({ nodes: [], edges: [] });
+  await saveFlow({ nodes: [], edges: [] });
 
   // Dynamically import app to get fresh instance
   const serverModule = await import('../../server/server.js');
   app = serverModule.default;
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 describe('ChatInterface Routing', () => {
