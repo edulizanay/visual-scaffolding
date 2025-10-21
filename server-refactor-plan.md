@@ -32,7 +32,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **1.1: Create flowRepository.js**
+- [x] **1.1: Create flowRepository.js**
   - [ ] Create `server/repositories/flowRepository.js`
   - [ ] Extract `sanitizeFlowData()` (db.js lines 32-39)
   - [ ] Extract `getFlow()` (db.js lines 41-58)
@@ -41,7 +41,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Add ABOUTME comments
   - [ ] Verify ~100 lines total
 
-- [ ] **1.2: Create undoRepository.js**
+- [x] **1.2: Create undoRepository.js**
   - [ ] Create `server/repositories/undoRepository.js`
   - [ ] Extract `stableStringify()` (db.js lines 13-24)
   - [ ] Extract `pushUndoSnapshot()` (db.js lines 174-307)
@@ -53,7 +53,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Add ABOUTME comments
   - [ ] Verify ~200 lines total
 
-- [ ] **1.3: Create conversationRepository.js**
+- [x] **1.3: Create conversationRepository.js**
   - [ ] Create `server/repositories/conversationRepository.js`
   - [ ] Extract `addConversationMessage()` (db.js lines 109-121)
   - [ ] Extract `getConversationHistory()` (db.js lines 127-152)
@@ -61,7 +61,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Add ABOUTME comments
   - [ ] Verify ~50 lines total
 
-- [ ] **1.4: Update db.js to re-export**
+- [x] **1.4: Update db.js to re-export**
   - [ ] Replace db.js content with:
     ```javascript
     // ABOUTME: Database layer compatibility exports
@@ -72,12 +72,12 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
     ```
   - [ ] Verify db.js is now ~10 lines
 
-- [ ] **1.5: Update tests**
+- [x] **1.5: Update tests**
   - [ ] Run `npm test -- tests/db.test.js`
   - [ ] Verify all 404 lines of tests still pass
   - [ ] Add test suites that import repositories directly (optional)
 
-- [ ] **1.6: Verify no regressions**
+- [x] **1.6: Verify no regressions**
   - [ ] Run full test suite: `npm test`
   - [ ] Verify 542 tests passing
   - [ ] Check coverage: `npm run test:coverage` (>86%)
