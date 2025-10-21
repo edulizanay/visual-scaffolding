@@ -98,11 +98,10 @@ function App() {
 
     if (dragEndChanges.length === 0) return;
 
-    // Use helper to determine moved nodes
+    // Use helper to determine moved nodes (position comes from change payload, not stale ref)
     const movedNodes = getMovedNodes(
       dragEndChanges,
-      dragStartPositionsRef.current,
-      nodesRef.current
+      dragStartPositionsRef.current
     );
 
     if (movedNodes.length === 0) return;
