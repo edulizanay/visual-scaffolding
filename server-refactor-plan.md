@@ -90,7 +90,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **2.1: Create Supabase migration**
+- [x] **2.1: Create Supabase migration**
   - [ ] Use Supabase MCP `apply_migration` tool
   - [ ] Migration name: `create_notes_table`
   - [ ] SQL:
@@ -116,7 +116,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Verify migration applied successfully
   - [ ] Document in `.agent/migrations/README.md`
 
-- [ ] **2.2: Create notesRepository.js**
+- [x] **2.2: Create notesRepository.js**
   - [ ] Create `server/repositories/notesRepository.js`
   - [ ] Implement `getNotes()` - returns empty state if row missing
   - [ ] Implement `saveNotes(bullets, conversationHistory)` - upsert
@@ -124,13 +124,13 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Add ABOUTME comments
   - [ ] Verify ~70 lines total
 
-- [ ] **2.3: Update test-db-setup.js**
+- [x] **2.3: Update test-db-setup.js**
   - [ ] Add `'notes'` to `tables` array (line 27)
   - [ ] Add `seedNotes()` helper after `seedConversationHistory`
   - [ ] Add notes singleton reset in `truncateAllTables()` (after undo_state)
   - [ ] Verify cleanup handles notes table
 
-- [ ] **2.4: Update notesRoutes.js**
+- [x] **2.4: Update notesRoutes.js**
   - [ ] Replace import: `'../notesService.js'` → `'../repositories/notesRepository.js'`
   - [ ] Replace function calls: `loadNotes()` → `getNotes()`
   - [ ] **CRITICAL**: Add `await` to all repository calls (getNotes, saveNotes, updateBullets are now async)
@@ -138,7 +138,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Verify all route handlers are async functions
   - [ ] Verify route still works
 
-- [ ] **2.5: Update tests/notesService.test.js**
+- [x] **2.5: Update tests/notesService.test.js**
   - [ ] Update import to use `notesRepository.js`
   - [ ] Add `setupTestDb/cleanupTestDb` imports and hooks
   - [ ] **CRITICAL**: Add `await` to all repository calls (getNotes, saveNotes, updateBullets)
@@ -147,7 +147,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Run `npm test -- tests/notesService.test.js`
   - [ ] Verify all 168 lines of tests pass
 
-- [ ] **2.6: Update tests/api-notes.test.js**
+- [x] **2.6: Update tests/api-notes.test.js**
   - [ ] Remove `existsSync, unlinkSync` imports (lines 7-8)
   - [ ] Remove `NOTES_FILE_PATH` constant (lines 14-15)
   - [ ] Remove file cleanup in `beforeEach` (lines 28-31)
@@ -159,7 +159,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Run `npm test -- tests/api-notes.test.js`
   - [ ] Verify tests pass
 
-- [ ] **2.7: Update tests/integration/notesPanel.integration.test.js**
+- [x] **2.7: Update tests/integration/notesPanel.integration.test.js**
   - [ ] Remove `fs` import (line 7)
   - [ ] Remove `NOTES_FILE_PATH` constant (lines 14-15)
   - [ ] Remove file cleanup in `beforeEach` (lines 19-22)
@@ -172,7 +172,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Run `npm test -- tests/integration/notesPanel.integration.test.js`
   - [ ] Verify tests pass
 
-- [ ] **2.8: Update tests/e2e/notesPanel.e2e.test.js**
+- [x] **2.8: Update tests/e2e/notesPanel.e2e.test.js**
   - [ ] Remove `fs` import (line 8)
   - [ ] Remove `NOTES_FILE_PATH` constant (lines 15-16)
   - [ ] Remove file cleanup in `beforeEach` (lines 22-25)
