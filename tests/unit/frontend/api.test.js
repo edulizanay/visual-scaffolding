@@ -4,7 +4,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   loadFlow,
-  saveFlow,
   sendMessage,
   getConversationDebug,
   clearConversation,
@@ -88,71 +87,6 @@ describe('loadFlow', () => {
       'Error loading flow:',
       expect.any(Error)
     );
-  });
-});
-
-describe('saveFlow', () => {
-  it('should save flow data successfully', async () => {
-    const nodes = [{ id: '1', data: { label: 'Test' } }];
-    const edges = [{ id: 'e1', source: '1', target: '2' }];
-    const mockResponse = { success: true };
-
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    });
-
-    const result = await saveFlow(nodes, edges);
-
-    expect(global.fetch).toHaveBeenCalledWith('/api/flow', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nodes, edges }),
-    });
-    expect(result).toEqual(mockResponse);
-  });
-
-  it('should save flow with skipSnapshot parameter', async () => {
-    const nodes = [{ id: '1', data: { label: 'Test' } }];
-    const edges = [];
-    const mockResponse = { success: true };
-
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    });
-
-    const result = await saveFlow(nodes, edges, true);
-
-    expect(global.fetch).toHaveBeenCalledWith('/api/flow?skipSnapshot=true', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nodes, edges }),
-    });
-    expect(result).toEqual(mockResponse);
-  });
-
-  it('should throw error on failed save', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-    });
-
-    await expect(saveFlow([], [])).rejects.toThrow('Failed to save flow');
-    expect(console.error).toHaveBeenCalledWith(
-      'Error saving flow:',
-      expect.any(Error)
-    );
-  });
-
-  it('should handle network errors during save', async () => {
-    global.fetch.mockRejectedValueOnce(new Error('Network timeout'));
-
-    await expect(saveFlow([], [])).rejects.toThrow('Network timeout');
   });
 });
 

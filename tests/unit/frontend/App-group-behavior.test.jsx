@@ -104,7 +104,6 @@ vi.mock('../../../src/hooks/useHotkeys', () => ({
 
 vi.mock('../../../src/services/api', () => ({
   loadFlow: vi.fn(),
-  saveFlow: vi.fn(),
   undoFlow: vi.fn(),
   redoFlow: vi.fn(),
   getHistoryStatus: vi.fn(),
@@ -146,7 +145,6 @@ describe('App group behaviour', () => {
     ReactFlow.mockProps = null;
 
     api.loadFlow.mockResolvedValue(defaultFlow);
-    api.saveFlow.mockResolvedValue({ success: true });
     api.getHistoryStatus.mockResolvedValue({ canUndo: false });
     api.toggleGroupExpansion.mockResolvedValue({ success: true, flow: defaultFlow });
   });

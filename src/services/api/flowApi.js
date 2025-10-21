@@ -15,29 +15,6 @@ export const loadFlow = async () => {
   }
 };
 
-export const saveFlow = async (nodes, edges, skipSnapshot = false) => {
-  try {
-    const url = skipSnapshot
-      ? `${API_BASE_URL}/flow?skipSnapshot=true`
-      : `${API_BASE_URL}/flow`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nodes, edges }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to save flow');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error saving flow:', error);
-    throw error;
-  }
-};
-
 export const undoFlow = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/flow/undo`, {
