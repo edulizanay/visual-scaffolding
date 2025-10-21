@@ -1,33 +1,16 @@
 // ABOUTME: Integration tests for Notes Panel feature
-// ABOUTME: Tests verify components working together with real API calls and file system
+// ABOUTME: Tests verify components working together with real API calls and Supabase
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
-import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Notes file path
-const NOTES_FILE_PATH = path.join(__dirname, '../../notes-debug.json');
+import { setupTestDb, cleanupTestDb, testSupabase, seedNotes } from '../test-db-setup.js';
 
 beforeEach(async () => {
   await setupTestDb();
-  // Clean up notes file before each test
-  if (fs.existsSync(NOTES_FILE_PATH)) {
-    fs.unlinkSync(NOTES_FILE_PATH);
-  }
 });
 
 afterEach(async () => {
   await cleanupTestDb();
-  // Clean up notes file after each test
-  if (fs.existsSync(NOTES_FILE_PATH)) {
-    fs.unlinkSync(NOTES_FILE_PATH);
-  }
 });
 
 describe('Notes Panel Integration Tests', () => {
@@ -59,17 +42,21 @@ describe('Notes Panel Integration Tests', () => {
     expect(response.body.newBullets.length).toBeGreaterThan(0);
     expect(response.body.bullets.length).toBe(response.body.newBullets.length);
 
-    // Verify file was created and saved
-    expect(fs.existsSync(NOTES_FILE_PATH)).toBe(true);
-    const savedData = JSON.parse(fs.readFileSync(NOTES_FILE_PATH, 'utf-8'));
+    // Verify data was saved to Supabase
+    const { data: savedData } = await testSupabase
+      .from('notes')
+      .select('bullets, conversation_history')
+      .eq('id', 1)
+      .single();
+
     expect(savedData.bullets).toEqual(response.body.bullets);
-    expect(savedData.conversationHistory.length).toBeGreaterThan(0);
+    expect(savedData.conversation_history.length).toBeGreaterThan(0);
   }, 30000); // 30 second timeout for LLM call
 
-  // I2: File persistence: Save → restart → load returns same data
-  it('I2: should persist notes to file and load them back correctly', async () => {
+  // I2: Supabase persistence: Save → restart → load returns same data
+  it('I2: should persist notes to Supabase and load them back correctly', async () => {
     const { default: app } = await import('../../server/server.js');
-    const { loadNotes, saveNotes } = await import('../../server/notesService.js');
+    const { getNotes, saveNotes } = await import('../../server/repositories/notesRepository.js');
 
     // Save some test notes
     const testBullets = [
@@ -90,10 +77,7 @@ describe('Notes Panel Integration Tests', () => {
       }
     ];
 
-    saveNotes(testBullets, testHistory);
-
-    // Verify file exists
-    expect(fs.existsSync(NOTES_FILE_PATH)).toBe(true);
+    await saveNotes(testBullets, testHistory);
 
     // Load notes via API
     const response = await request(app)
@@ -105,7 +89,7 @@ describe('Notes Panel Integration Tests', () => {
     expect(response.body.conversationHistory).toEqual(testHistory);
 
     // Also verify direct load
-    const directLoad = loadNotes();
+    const directLoad = await getNotes();
     expect(directLoad.bullets).toEqual(testBullets);
     expect(directLoad.conversationHistory).toEqual(testHistory);
   });
@@ -142,13 +126,13 @@ describe('Notes Panel Integration Tests', () => {
   // I4: App.jsx → ChatInterface → NotesPanel data flow
   it('I4: should support complete data flow from ChatInterface to NotesPanel', async () => {
     const { default: app } = await import('../../server/server.js');
-    const { loadNotes } = await import('../../server/notesService.js');
+    const { getNotes } = await import('../../server/repositories/notesRepository.js');
 
     // Simulate ChatInterface sending message when panel is open
     // This should NOT create nodes, only update notes
 
     // First, verify no notes exist
-    const emptyNotes = loadNotes();
+    const emptyNotes = await getNotes();
     expect(emptyNotes.bullets).toEqual([]);
 
     // Update notes via PUT endpoint (simulating user edit in panel)
@@ -162,7 +146,7 @@ describe('Notes Panel Integration Tests', () => {
     expect(updateResponse.body.bullets).toEqual(testBullets);
 
     // Verify notes were saved
-    const loadedNotes = loadNotes();
+    const loadedNotes = await getNotes();
     expect(loadedNotes.bullets).toEqual(testBullets);
 
     // Load via GET endpoint (simulating panel opening)
@@ -198,8 +182,8 @@ describe('Notes Panel Integration Tests', () => {
 
     // Verify they are independent
     // Notes should not affect conversation and vice versa
-    const { updateBullets } = await import('../../server/notesService.js');
-    updateBullets(['Note bullet 1']);
+    const { updateBullets } = await import('../../server/repositories/notesRepository.js');
+    await updateBullets(['Note bullet 1']);
 
     const notesCheck = await request(app).get('/api/notes').expect(200);
     expect(notesCheck.body.bullets).toEqual(['Note bullet 1']);

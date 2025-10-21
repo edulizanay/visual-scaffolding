@@ -10,9 +10,9 @@ Visual Scaffolding uses **Supabase (PostgreSQL)** for all database operations.
 - **Migrations**: Applied via Supabase MCP tools (documented in `.agent/migrations/README.md`)
 - **Test Mode**: Uses dedicated Supabase test project with `setupTestDb()/cleanupTestDb()` helpers from `tests/test-db-setup.js`
 
-## Tables (4 total)
+## Tables (5 total)
 
-The database contains 4 tables after the removal of `visual_settings` in migration 002.
+The database contains 5 tables: flows, conversation_history, notes, undo_history, and undo_state.
 
 ### flows
 
@@ -100,6 +100,71 @@ CREATE TABLE conversation_history (
 - Debug endpoint returns full history
 - Retry messages are added as 'user' role
 
+### notes
+
+Stores notes panel data (bullets and conversation history) in a singleton pattern.
+
+```sql
+CREATE TABLE notes (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  bullets JSONB NOT NULL DEFAULT '[]',
+  conversation_history JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO notes (id, bullets, conversation_history)
+VALUES (1, '[]', '[]')
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all operations on notes"
+  ON notes FOR ALL
+  USING (true) WITH CHECK (true);
+```
+
+**Fields:**
+- `id` - Always 1 (singleton table enforced by CHECK constraint)
+- `bullets` - JSONB array of note strings
+- `conversation_history` - JSONB array of LLM interactions (same format as conversation_history table)
+- `created_at` - Timestamp of first creation (TIMESTAMPTZ)
+- `updated_at` - Timestamp of last update (TIMESTAMPTZ)
+
+**Data Structure:**
+```json
+{
+  "bullets": [
+    "Build authentication system",
+    "Create user registration flow",
+    "Add password reset functionality"
+  ],
+  "conversation_history": [
+    {
+      "role": "user",
+      "content": "I want to build a login system",
+      "timestamp": "2025-10-21T10:00:00Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Here are the key steps...",
+      "timestamp": "2025-10-21T10:00:01Z"
+    }
+  ]
+}
+```
+
+**API Functions:**
+- `getNotes()` - Retrieve notes with graceful empty state fallback
+- `saveNotes(bullets, conversationHistory)` - Upsert notes data
+- `updateBullets(bullets)` - Update bullets while preserving conversation history
+
+**Usage Notes:**
+- Singleton pattern ensures only one notes record exists
+- Upsert operations handle first-run scenarios gracefully
+- Conversation history stored separately from main conversation_history table
+- RLS policy allows all operations (single-user application)
+
 ### undo_history
 
 Stores flow snapshots for undo/redo functionality.
@@ -186,6 +251,7 @@ All migrations applied via Supabase MCP tools. See [.agent/migrations/README.md]
 - **20251021070701** - create_undo_history_table (JSONB snapshot, GIN index)
 - **20251021070712** - create_undo_state_table (singleton with CHECK constraint)
 - **20251021070725** - create_conversation_history_table (role CHECK, JSONB tool_calls)
+- **20251021191600** - create_notes_table (singleton pattern, RLS enabled)
 
 ## Performance Considerations
 

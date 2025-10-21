@@ -1,18 +1,9 @@
 // ABOUTME: Integration tests for notes API endpoints
-// ABOUTME: Tests GET/POST/PUT /api/notes endpoints with file storage
+// ABOUTME: Tests GET/POST/PUT /api/notes endpoints with Supabase storage
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
-import { existsSync, unlinkSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Path to notes file
-const NOTES_FILE_PATH = join(__dirname, '..', 'notes-debug.json');
+import { setupTestDb, cleanupTestDb, seedNotes, testSupabase } from './test-db-setup.js';
 
 let app;
 
@@ -24,27 +15,16 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await setupTestDb();
-
-  // Clean up notes file before each test
-  if (existsSync(NOTES_FILE_PATH)) {
-    unlinkSync(NOTES_FILE_PATH);
-  }
 });
 
 afterEach(async () => {
   await cleanupTestDb();
-
-  // Clean up notes file after each test
-  if (existsSync(NOTES_FILE_PATH)) {
-    unlinkSync(NOTES_FILE_PATH);
-  }
 });
 
 describe('GET /api/notes', () => {
-  it('T1.10: returns bullets array when file exists', async () => {
-    // Pre-populate notes file
-    const { saveNotes } = await import('../server/notesService.js');
-    saveNotes(['Bullet 1', 'Bullet 2'], [
+  it('T1.10: returns bullets array when notes exist', async () => {
+    // Pre-populate notes in Supabase
+    await seedNotes(['Bullet 1', 'Bullet 2'], [
       { role: 'user', content: 'test', timestamp: '2025-10-18T10:00:00Z' }
     ]);
 
@@ -61,10 +41,8 @@ describe('GET /api/notes', () => {
     expect(response.body.conversationHistory).toHaveLength(1);
   });
 
-  it('T1.10b: returns empty state when file does not exist', async () => {
-    // Ensure file doesn't exist
-    expect(existsSync(NOTES_FILE_PATH)).toBe(false);
-
+  it('T1.10b: returns empty state when notes table is empty', async () => {
+    // setupTestDb already ensures notes row exists with empty arrays
     const response = await request(app)
       .get('/api/notes')
       .expect(200);
@@ -114,10 +92,9 @@ describe('POST /api/notes', () => {
 });
 
 describe('PUT /api/notes', () => {
-  it('T1.12: updates bullets and persists to file', async () => {
-    // Pre-populate notes file
-    const { saveNotes } = await import('../server/notesService.js');
-    saveNotes(['Old bullet 1'], [
+  it('T1.12: updates bullets and persists to Supabase', async () => {
+    // Pre-populate notes in Supabase
+    await seedNotes(['Old bullet 1'], [
       { role: 'user', content: 'old msg', timestamp: '2025-10-18T10:00:00Z' }
     ]);
 
@@ -131,11 +108,15 @@ describe('PUT /api/notes', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.bullets).toEqual(newBullets);
 
-    // Verify file was updated
-    const { loadNotes } = await import('../server/notesService.js');
-    const savedData = loadNotes();
+    // Verify Supabase was updated
+    const { data: savedData } = await testSupabase
+      .from('notes')
+      .select('bullets, conversation_history')
+      .eq('id', 1)
+      .single();
+
     expect(savedData.bullets).toEqual(newBullets);
-    expect(savedData.conversationHistory).toHaveLength(1); // Preserved
+    expect(savedData.conversation_history).toHaveLength(1); // Preserved
   });
 
   it('T1.12b: returns error when bullets array is missing', async () => {

@@ -22,6 +22,12 @@ This directory documents the Supabase migrations applied via MCP.
 - JSONB tool_calls column (nullable)
 - Indexes on timestamp and tool_calls (GIN)
 
+### 20251021191600 - create_notes_table
+- Created `notes` table with INTEGER PRIMARY KEY (singleton pattern, CHECK id = 1)
+- JSONB columns for bullets and conversation_history
+- Seeded with empty arrays
+- RLS enabled with allow-all policy (matches existing table security)
+
 ## Notes
 
 Migrations are managed directly in Supabase via MCP tools. This file documents what was applied for reference.

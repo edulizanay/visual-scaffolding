@@ -28,7 +28,7 @@ afterEach(async () => {
   await cleanupTestDb();
 });
 
-describe('POST /api/group', () => {
+describe('POST /api/flow/group', () => {
   it('should create group with multiple nodes', async () => {
     // Create nodes first
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
@@ -41,7 +41,7 @@ describe('POST /api/group', () => {
 
     // Create group
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node2Result.nodeId],
         label: 'Test Group'
@@ -85,7 +85,7 @@ describe('POST /api/group', () => {
     const node2Result = await executeTool('addNode', { label: 'Node 2' });
 
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node2Result.nodeId]
       })
@@ -100,7 +100,7 @@ describe('POST /api/group', () => {
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
 
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId]
       })
@@ -112,7 +112,7 @@ describe('POST /api/group', () => {
 
   it('should fail when memberIds is not an array', async () => {
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: 'not-an-array'
       })
@@ -126,7 +126,7 @@ describe('POST /api/group', () => {
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
 
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, 'nonexistent-node']
       })
@@ -152,7 +152,7 @@ describe('POST /api/group', () => {
 
     // Try to group nodes from different parent groups
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node3Result.nodeId]
       })
@@ -174,7 +174,7 @@ describe('POST /api/group', () => {
 
     // Group two nodes from the same parent group into a sub-group
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node2Result.nodeId],
         label: 'Sub Group'
@@ -223,7 +223,7 @@ describe('POST /api/group', () => {
 
     // Group the two group nodes together
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [group1Result.groupId, group2Result.groupId],
         label: 'Super Group'
@@ -247,7 +247,7 @@ describe('POST /api/group', () => {
   });
 });
 
-describe('DELETE /api/group/:id', () => {
+describe('DELETE /api/flow/group/:id', () => {
   it('should ungroup and restore member nodes', async () => {
     // Create group first
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
@@ -258,7 +258,7 @@ describe('DELETE /api/group/:id', () => {
 
     // Ungroup
     const response = await request(app)
-      .delete(`/api/group/${groupResult.groupId}`)
+      .delete(`/api/flow/group/${groupResult.groupId}`)
       .expect(200);
 
     expect(response.body.success).toBe(true);
@@ -281,7 +281,7 @@ describe('DELETE /api/group/:id', () => {
 
   it('should fail when group does not exist', async () => {
     const response = await request(app)
-      .delete('/api/group/nonexistent-group')
+      .delete('/api/flow/group/nonexistent-group')
       .expect(400);
 
     expect(response.body.success).toBe(false);
@@ -300,7 +300,7 @@ describe('DELETE /api/group/:id', () => {
     expect(innerGroupResult.success).toBe(true);
 
     const outerGroupResponse = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1.nodeId, node2.nodeId, innerGroupResult.groupId],
         label: 'Outer Group'
@@ -311,7 +311,7 @@ describe('DELETE /api/group/:id', () => {
     const outerGroupId = outerGroupResponse.body.groupId;
 
     const ungroupResponse = await request(app)
-      .delete(`/api/group/${innerGroupResult.groupId}`)
+      .delete(`/api/flow/group/${innerGroupResult.groupId}`)
       .expect(200);
 
     expect(ungroupResponse.body.success).toBe(true);
@@ -333,7 +333,7 @@ describe('DELETE /api/group/:id', () => {
     const nodeResult = await executeTool('addNode', { label: 'Regular Node' });
 
     const response = await request(app)
-      .delete(`/api/group/${nodeResult.nodeId}`)
+      .delete(`/api/flow/group/${nodeResult.nodeId}`)
       .expect(400);
 
     expect(response.body.success).toBe(false);
@@ -341,7 +341,7 @@ describe('DELETE /api/group/:id', () => {
   });
 });
 
-describe('PUT /api/group/:id/expand', () => {
+describe('PUT /api/flow/group/:id/expand', () => {
   it('should expand group and show members', async () => {
     // Create collapsed group
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
@@ -352,7 +352,7 @@ describe('PUT /api/group/:id/expand', () => {
 
     // Expand group
     const response = await request(app)
-      .put(`/api/group/${groupResult.groupId}/expand`)
+      .put(`/api/flow/group/${groupResult.groupId}/expand`)
       .send({
         expand: true
       })
@@ -389,7 +389,7 @@ describe('PUT /api/group/:id/expand', () => {
     });
 
     const response = await request(app)
-      .put(`/api/group/${groupResult.groupId}/expand`)
+      .put(`/api/flow/group/${groupResult.groupId}/expand`)
       .send({
         expand: false
       })
@@ -413,7 +413,7 @@ describe('PUT /api/group/:id/expand', () => {
 
   it('should fail when group does not exist', async () => {
     const response = await request(app)
-      .put('/api/group/nonexistent-group/expand')
+      .put('/api/flow/group/nonexistent-group/expand')
       .send({
         expand: true
       })

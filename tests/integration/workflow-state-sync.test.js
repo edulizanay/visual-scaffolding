@@ -48,7 +48,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
 
     // Step 1: Backend creates node (saves snapshot #1)
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 
@@ -75,7 +75,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
 
     // Step 1: Backend creates node at default position
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 
@@ -107,7 +107,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
   it('Create node → Update position → Undo → Position is restored', async () => {
     // Step 1: Create node
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 
@@ -116,7 +116,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
 
     // Step 2: Update node position (simulating drag)
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({
         label: 'Test Node',
         position: { x: 300, y: 400 }
@@ -255,9 +255,9 @@ describe('Workflow: LLM creates nodes → Layout → Undo → Retry', () => {
 describe('Workflow: Multiple operations → Undo chain integrity', () => {
   it('Create 3 nodes → Undo all → State is empty', async () => {
     // Create 3 nodes
-    await request(app).post('/api/node').send({ label: 'Node 1' });
-    await request(app).post('/api/node').send({ label: 'Node 2' });
-    await request(app).post('/api/node').send({ label: 'Node 3' });
+    await request(app).post('/api/flow/node').send({ label: 'Node 1' });
+    await request(app).post('/api/flow/node').send({ label: 'Node 2' });
+    await request(app).post('/api/flow/node').send({ label: 'Node 3' });
 
     const flowAfterCreates = await getCurrentFlow();
     expect(flowAfterCreates.nodes.length).toBe(3);
@@ -274,7 +274,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
   it('Create → Update → Delete → Undo 3x → State restored correctly', async () => {
     // Step 1: Create node
     const createRes = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Original' })
       .expect(200);
 
@@ -282,7 +282,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
 
     // Step 2: Update node
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ label: 'Updated' })
       .expect(200);
 
@@ -291,7 +291,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
 
     // Step 3: Delete node
     await request(app)
-      .delete(`/api/node/${nodeId}`)
+      .delete(`/api/flow/node/${nodeId}`)
       .expect(200);
 
     const flowAfterDelete = await getCurrentFlow();
@@ -316,7 +316,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
 
   it('10 undo/redo cycles → No corruption', async () => {
     // Create initial state
-    await request(app).post('/api/node').send({ label: 'Test' });
+    await request(app).post('/api/flow/node').send({ label: 'Test' });
 
     // 10 cycles of undo/redo
     for (let i = 0; i < 10; i++) {
@@ -333,7 +333,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
 describe('State Sync: Visual state === Database state', () => {
   it('After node creation, GET /api/flow returns what backend saved', async () => {
     const createRes = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test', description: 'Description' })
       .expect(200);
 
@@ -352,7 +352,7 @@ describe('State Sync: Visual state === Database state', () => {
 
   it('After position update, database has new position', async () => {
     const createRes = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test' })
       .expect(200);
 
@@ -361,7 +361,7 @@ describe('State Sync: Visual state === Database state', () => {
 
     // Update position
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ label: 'Test', position: newPosition })
       .expect(200);
 
@@ -372,7 +372,7 @@ describe('State Sync: Visual state === Database state', () => {
 
   it('After frontend saves layout positions, undo snapshot has those positions', async () => {
     // Create node
-    await request(app).post('/api/node').send({ label: 'Test' });
+    await request(app).post('/api/flow/node').send({ label: 'Test' });
 
     // Simulate layout saving positions
     const currentFlow = await getCurrentFlow();
