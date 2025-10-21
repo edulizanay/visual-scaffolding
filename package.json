@@ -19,6 +19,7 @@
   "dependencies": {
     "@cerebras/cerebras_cloud_sdk": "^1.50.0",
     "@dagrejs/dagre": "^1.1.5",
+    "@supabase/supabase-js": "^2.76.0",
     "@xyflow/react": "^12.0.0",
     "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",

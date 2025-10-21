@@ -456,3 +456,23 @@ export async function initializeUndoHistory(flowData) {
   await clearUndoHistory();
   await pushUndoSnapshot(flowData);
 }
+
+// ==================== Legacy Exports (for test compatibility) ====================
+
+/**
+ * Legacy export for tests that use in-memory SQLite
+ * Supabase doesn't need a db connection object
+ * @deprecated - Remove after migrating tests to Supabase
+ */
+export function getDb() {
+  throw new Error('getDb() is deprecated - Supabase migration in progress. Tests need to be updated.');
+}
+
+/**
+ * Legacy export for tests that close db connections
+ * Supabase manages connections automatically
+ * @deprecated - Remove after migrating tests to Supabase
+ */
+export function closeDb() {
+  // No-op: Supabase manages connections automatically
+}
