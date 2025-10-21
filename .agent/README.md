@@ -5,7 +5,7 @@ This directory contains all project documentation. Use this index to quickly fin
 ## 📁 Documentation Structure
 
 ```
-.agent/ (3925 lines)
+.agent/ (3918 lines)
 ├── README.md          # This file - documentation index (131 lines)
 ├── system/            # Current state of the system (1237 lines)
 ├── tasks/             # Feature PRDs & implementation plans (1124 lines)

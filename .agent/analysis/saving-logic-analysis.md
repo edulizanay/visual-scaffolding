@@ -1,9 +1,11 @@
-# Backend Save Funnel PRD & Execution Plan
+# Backend Save Funnel - Architecture Documentation
+
+> **Status**: ✅ **COMPLETED** - Migration to backend-only persistence finished. This document describes the current architecture.
 
 ## 1. Objective
-- Consolidate all flow persistence through backend tooling so the server remains the single source of truth.
-- Retire the frontend autosave fallback once drag-end and subtree operations have reliable server coverage.
-- Preserve undo/redo semantics and minimise user-visible regressions during the migration.
+- ✅ All flow persistence goes through backend APIs - server is the single source of truth
+- ✅ Frontend autosave retired - no fallback needed
+- ✅ Undo/redo semantics preserved through backend snapshot history
 
 ## 2. Scope
 **In scope**
@@ -16,50 +18,41 @@
 - Multi-tenant user separation or real-time collaboration.
 - Schema changes to the underlying SQLite tables beyond optional metadata fields.
 
-## 3. Current Architecture Snapshot
-- **Frontend autosave** (`src/App.jsx:96-107`) debounces every node/edge change and posts `/api/flow`, creating history snapshots.
-- **Backend tool routes** (`server/routes/flowRoutes.js`) wrap `executeToolCalls` for CRUD, grouping, undo/redo, and layout operations.
-- **History storage** lives in `server/db.js` (50-snapshot window, dedupe on identical JSON payloads).
-- **LLM workflows** already call `executeToolCalls` exclusively, flushing autosave first (`ChatInterface.jsx:122-143`).
+## 3. Current Architecture (Backend-Only)
+- **No frontend autosave** - All persistence through explicit backend API calls
+- **Backend tool routes** (`server/routes/flowRoutes.js`) handle all CRUD, grouping, undo/redo, and layout operations
+- **History storage** in `server/db.js` (50-snapshot window, dedupe on identical JSON payloads)
+- **LLM workflows** call `executeToolCalls` exclusively via `/api/conversation/message`
+- **UI actions** call dedicated endpoints: `updateNode`, `deleteNode`, `createEdge`, etc.
 
-## 4. Problems & Goals
-Problems:
-- Autosave hides intent; every local drag posts full flow state and creates implicit history entries.
-- Some UI actions (Alt+collapse) mutate state purely on the client, relying on autosave for persistence.
-- Double-write patterns (`executeToolCalls` + route-level `writeFlow`) depend on dedupe heuristics.
+## 4. Design Principles (Achieved)
+✅ **Explicit intent**: Every persisted mutation issues a backend API call with meaningful metadata (`origin` field)
+✅ **No implicit saves**: UI actions directly call backend endpoints - no debouncing or batching
+✅ **Snapshot creation**: Backend creates history snapshots with action-specific origins (`ui.node.update`, `ui.node.delete`, `ui.subtree`, `llm.tool`)
+✅ **Undo/redo fidelity**: All operations create snapshots - full undo/redo support across all actions
 
-Goals:
-- Every persisted mutation issues an explicit backend tool call with meaningful metadata.
-- Subtree collapse and drag-end updates have first-class server endpoints.
-- Autosave is removed without losing undo/redo fidelity or user confidence.
+## 5. Implementation Status
+### Completed Features ✅
+1. **Node position updates**: `updateNode({ position })` called per moved node on drag-end via `onNodesChange`
+2. **Subtree collapse**: `toggleSubtreeCollapse` backend tool replicates full collapse behavior
+3. **Node deletion**: `deleteNode` API called via React Flow's `onNodesDelete` callback
+4. **Edge deletion**: `deleteEdge` API called via React Flow's `onEdgesDelete` callback
+5. **Undo/redo**: Full history maintained for all structural and positional changes
+6. **LLM workflows**: Operate exclusively through `executeToolCalls` via `/api/conversation/message`
+7. **Snapshot metadata**: All snapshots include `origin` field (`ui.node.update`, `ui.node.delete`, `ui.edge.delete`, `ui.subtree`, `llm.tool`)
+8. **Testing**: 703 automated tests covering all persistence paths
+9. **Error handling**: Failed operations revert local state and alert user
 
-## 5. Requirements
-### Functional
-1. Persist node position updates via drag-end: fire one `updateNode({ position })` call per node that moved in the React Flow `onNodesChange` event. No batching or debouncing initially.
-2. Add a backend tool/route for subtree collapse (`toggleSubtreeCollapse`) that replicates the full `collapseSubtreeByHandles` behavior: setting `data.collapsed` on the parent, toggling `hidden`/`subtreeHidden` flags on all descendants, and hiding affected edges.
-3. Maintain undo/redo history for all structural and positional changes.
-4. Ensure LLM tool execution continues to operate exclusively through `executeToolCalls`.
-5. Store snapshot metadata (e.g., `origin`) inside the snapshot JSON payload; no schema migration required.
-
-### Non-Functional
-1. Dual-run period where autosave remains enabled as fallback, but short-circuits when `lastChangeWasPositional` flag is set (avoiding duplicate snapshots).
-2. Instrumentation for drag-end calls, subtree toggles, and error rates.
-3. Automated tests covering drag-end persistence, subtree collapse, and interleaved LLM/manual edits.
-4. Record mutation `origin` (`ui.drag`, `ui.subtree`, `llm.tool`) on all new snapshots from day one for debugging and analysis.
-
-## 6. Decisions & Policies
-- **Visual-only state**: Keep selection, viewport position, and layout animation flags *ephemeral* (client memory only, reset on reload). Persist collapses that alter logical graph structure.
-- **Drag-end error handling**: Capture original node positions at drag start (e.g., via `onNodeDragStart` and a ref). On `updateNode` failure, revert all nodes involved in the gesture back to those positions and show a toast. Simple and predictable UX.
-- **Undo granularity**: Each node movement creates one snapshot. React Flow reports all moved nodes in a single `onNodesChange` event; we call `updateNode` for each. Undo steps through them individually—acceptable tradeoff.
-- **Subtree collapse scope**: `toggleSubtreeCollapse` updates the parent node's `data.collapsed` flag AND walks all descendants to toggle their `hidden`/`subtreeHidden` flags, plus hides affected edges. This is a single atomic operation from the user's perspective.
-- **Autosave coexistence**: During dual-run, set a `lastChangeWasPositional` flag on drag stop. Debounced autosave checks this flag and skips if true, preventing duplicate snapshots without complex coordination.
-- **Feature flags**: Two environment boolean flags in config—`ENABLE_BACKEND_DRAG_SAVE` and `ENABLE_BACKEND_SUBTREE`. Deploy to toggle; no runtime or per-user complexity.
-- **Snapshot metadata**: Include `origin` field (`ui.drag`, `ui.subtree`, `llm.tool`) inside the snapshot JSON payload on all snapshots from initial implementation. Tiny change, invaluable for debugging; parse the JSON when analysing history (JSON-only change keeps migrations unnecessary).
-- **Shared descendants helper**: Move the edge-based `getAllDescendants` (from `useFlowLayout`) into `shared/`; keep the parentGroupId helper (`getGroupDescendants`) in place for group-only workflows.
-- **Drag gesture grouping**: When multiple nodes move in a single drag gesture, invoke `updateNode` for each moved node using the same `origin` (e.g., `ui.drag`) and reuse the pre-drag snapshot for potential reverts so history stays readable.
-- **API call volume**: Start with one `updateNode` request per moved node (mirrors current gesture semantics); revisit batching only if telemetry shows noisy behaviour.
-- **Concurrency**: Accept last-write-wins. Instrument drag-end calls so we can revisit if real multi-user workflows emerge.
-- **Autosave retirement criteria**: Logs show drag-end updates succeeding with negligible errors, regression tests pass, and manual smoke tests verify no stale flow once autosave is disabled.
+## 6. Architecture Decisions
+- **Visual-only state**: Selection, viewport position, and layout animation are ephemeral (client memory only). Only structural changes (collapse, position, content) persist.
+- **Drag-end error handling**: Original positions captured at drag start. On `updateNode` failure, positions revert and user sees alert. Simple and predictable UX.
+- **Undo granularity**: Each moved node creates one snapshot. React Flow reports all moves in single `onNodesChange` event; we call `updateNode` for each. Undo steps through individually.
+- **Subtree collapse**: Single atomic operation - updates parent's `data.collapsed` AND toggles all descendant `hidden`/`subtreeHidden` flags, plus hides affected edges.
+- **Snapshot metadata**: Every snapshot includes `origin` field (`ui.node.update`, `ui.node.delete`, `ui.edge.delete`, `ui.subtree`, `llm.tool`) for debugging and analysis.
+- **Shared utilities**: Edge-based `getAllDescendants` in `shared/flowUtils/`; group-specific `getGroupDescendants` for group workflows.
+- **API call pattern**: One request per entity (no batching) - mirrors user action semantics, keeps implementation simple.
+- **Concurrency**: Last-write-wins. Single-user application - no conflict resolution needed.
+- **Position detection**: Extract position from React Flow's change payload (not stale refs) to avoid async state issues.
 
 ## 7. UI Mutation Inventory
 | User action | UI trigger / source | Current persistence path | Backend coverage |
