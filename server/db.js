@@ -2,6 +2,10 @@
 // ABOUTME: Provides async wrappers around Supabase client for flow persistence
 
 import { supabase } from './supabase-client.js';
+import Database from 'better-sqlite3';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync, mkdirSync, existsSync } from 'fs';
 
 // ==================== Flow Operations ====================
 
@@ -459,31 +463,60 @@ export async function initializeUndoHistory(flowData) {
 
 // ==================== Legacy Exports (for test compatibility) ====================
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+let legacyDb = null;
+
 /**
- * Legacy mock DB object for tests that use SQLite-style API
- * Returns a lightweight mock that throws on actual use
- * @deprecated - Remove after migrating tests to Supabase (Phase 4)
+ * Lazily initialize legacy SQLite database (for tests that still expect it)
  */
-const mockDb = {
-  prepare: () => {
-    throw new Error('db.prepare() is not supported with Supabase. Use async DB functions from db.js instead.');
-  },
-  exec: () => {
-    throw new Error('db.exec() is not supported with Supabase. Use async DB functions from db.js instead.');
-  },
-  pragma: () => {
-    throw new Error('db.pragma() is not supported with Supabase. Pragma settings are managed by Supabase.');
+function ensureLegacyDb() {
+  if (legacyDb) return legacyDb;
+
+  const dbPath = process.env.DB_PATH || join(__dirname, 'data', 'flow.db');
+
+  if (dbPath !== ':memory:' && !dbPath.startsWith(__dirname)) {
+    throw new Error(
+      'DB_PATH must reside within the server directory or use :memory: for tests.'
+    );
   }
-};
+
+  if (dbPath !== ':memory:') {
+    const dirPath = dirname(dbPath);
+    if (!existsSync(dirPath) && dirPath.startsWith(__dirname)) {
+      mkdirSync(dirPath, { recursive: true });
+    }
+  }
+
+  legacyDb = new Database(dbPath);
+  legacyDb.pragma('journal_mode = WAL');
+  legacyDb.pragma('foreign_keys = ON');
+
+  const migration001 = readFileSync(
+    join(__dirname, 'migrations', '001_initial.sql'),
+    'utf-8'
+  );
+  legacyDb.exec(migration001);
+
+  const migration002 = readFileSync(
+    join(__dirname, 'migrations', '002_remove_visual_settings.sql'),
+    'utf-8'
+  );
+  legacyDb.exec(migration002);
+
+  return legacyDb;
+}
 
 /**
  * Legacy export for tests that use in-memory SQLite
- * Returns a mock that throws if actually used
  * @deprecated - Remove after migrating tests to Supabase (Phase 4)
  */
 export function getDb() {
-  console.warn('[DEPRECATION WARNING] getDb() is deprecated. Tests will be migrated to Supabase in Phase 4.');
-  return mockDb;
+  console.warn(
+    '[DEPRECATION WARNING] getDb() is deprecated. Tests will be migrated to Supabase in Phase 4.'
+  );
+  return ensureLegacyDb();
 }
 
 /**
@@ -492,5 +525,8 @@ export function getDb() {
  * @deprecated - Remove after migrating tests to Supabase (Phase 4)
  */
 export function closeDb() {
-  // No-op: Supabase manages connections automatically
+  if (legacyDb) {
+    legacyDb.close();
+    legacyDb = null;
+  }
 }
