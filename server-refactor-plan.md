@@ -287,11 +287,11 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **5.1: Verify frontend uses namespaced routes**
+- [x] **5.1: Verify frontend uses namespaced routes**
   - [ ] Run: `rg "'/api/(node|edge|group)'" src/`
   - [ ] Expected: No matches (frontend already uses `/api/flow/*`)
 
-- [ ] **5.2: Update test files to use namespaced routes**
+- [x] **5.2: Update test files to use namespaced routes**
   - [ ] Update `tests/api-node-creation.test.js`
     - [ ] Replace `/api/node` → `/api/flow/node` (4 instances)
     - [ ] Run test, verify passes
@@ -313,11 +313,11 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
     - [ ] Replace `/api/node` → `/api/flow/node` (2 instances)
     - [ ] Run test, verify passes
 
-- [ ] **5.3: Verify no remaining legacy route usage**
+- [x] **5.3: Verify no remaining legacy route usage**
   - [ ] Run: `rg "'/api/(node|edge|group)'" -g '*.js' -g '!node_modules'`
   - [ ] Expected: No matches
 
-- [ ] **5.4: Remove legacy route mounting**
+- [x] **5.4: Remove legacy route mounting**
   - [ ] Open `server/routes/index.js`
   - [ ] Delete lines 23-27:
     ```javascript
@@ -329,7 +329,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
     ```
   - [ ] Lines saved: 5 lines deleted
 
-- [ ] **5.5: Verify all tests still pass**
+- [x] **5.5: Verify all tests still pass**
   - [ ] Run full test suite: `npm test`
   - [ ] Verify 542 tests passing
   - [ ] Specifically check updated integration tests
