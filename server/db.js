@@ -460,18 +460,36 @@ export async function initializeUndoHistory(flowData) {
 // ==================== Legacy Exports (for test compatibility) ====================
 
 /**
+ * Legacy mock DB object for tests that use SQLite-style API
+ * Returns a lightweight mock that throws on actual use
+ * @deprecated - Remove after migrating tests to Supabase (Phase 4)
+ */
+const mockDb = {
+  prepare: () => {
+    throw new Error('db.prepare() is not supported with Supabase. Use async DB functions from db.js instead.');
+  },
+  exec: () => {
+    throw new Error('db.exec() is not supported with Supabase. Use async DB functions from db.js instead.');
+  },
+  pragma: () => {
+    throw new Error('db.pragma() is not supported with Supabase. Pragma settings are managed by Supabase.');
+  }
+};
+
+/**
  * Legacy export for tests that use in-memory SQLite
- * Supabase doesn't need a db connection object
- * @deprecated - Remove after migrating tests to Supabase
+ * Returns a mock that throws if actually used
+ * @deprecated - Remove after migrating tests to Supabase (Phase 4)
  */
 export function getDb() {
-  throw new Error('getDb() is deprecated - Supabase migration in progress. Tests need to be updated.');
+  console.warn('[DEPRECATION WARNING] getDb() is deprecated. Tests will be migrated to Supabase in Phase 4.');
+  return mockDb;
 }
 
 /**
  * Legacy export for tests that close db connections
  * Supabase manages connections automatically
- * @deprecated - Remove after migrating tests to Supabase
+ * @deprecated - Remove after migrating tests to Supabase (Phase 4)
  */
 export function closeDb() {
   // No-op: Supabase manages connections automatically
