@@ -8,11 +8,11 @@ import { NODE_WIDTH, NODE_HEIGHT } from '../../shared/constants/nodeDimensions.j
 import { collapseSubtreeByHandles, getAllDescendants } from '../../shared/flowUtils/subtreeHelpers.js';
 
 async function readFlow() {
-  return dbGetFlow();
+  return await dbGetFlow();
 }
 
 async function writeFlow(flowData, skipSnapshot = false, origin = null) {
-  dbSaveFlow(flowData);
+  await dbSaveFlow(flowData);
   if (!skipSnapshot) {
     await pushSnapshot(flowData, origin);
   }

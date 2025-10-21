@@ -11,8 +11,8 @@ import {
  * Returns updated history
  */
 export async function addUserMessage(content) {
-  addConversationMessage('user', content);
-  return getConversationHistory();
+  await addConversationMessage('user', content);
+  return await getConversationHistory();
 }
 
 /**
@@ -20,8 +20,8 @@ export async function addUserMessage(content) {
  * Returns updated history
  */
 export async function addAssistantMessage(content, toolCalls = []) {
-  addConversationMessage('assistant', content, toolCalls);
-  return getConversationHistory();
+  await addConversationMessage('assistant', content, toolCalls);
+  return await getConversationHistory();
 }
 
 /**
@@ -29,12 +29,12 @@ export async function addAssistantMessage(content, toolCalls = []) {
  * If limit is provided, returns last N interactions (2N messages)
  */
 export async function getHistory(limit) {
-  return getConversationHistory(limit);
+  return await getConversationHistory(limit);
 }
 
 /**
  * Clear all conversation history
  */
 export async function clearHistory() {
-  clearConversationHistory();
+  await clearConversationHistory();
 }
