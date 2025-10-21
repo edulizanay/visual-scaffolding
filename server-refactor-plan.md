@@ -342,23 +342,23 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **6.1: Document Priority 1 modules**
+- [x] **6.1: Document Priority 1 modules**
   - [ ] List in plan.md: `server/historyService.js`, `server/llm/llmService.js`, `server/conversationService.js`
   - [ ] Note: These should import from repositories, not db.js
 
-- [ ] **6.2: Document Priority 2 modules**
+- [x] **6.2: Document Priority 2 modules**
   - [ ] List in plan.md: Test files can migrate after Priority 1 stable
   - [ ] Note: Tests currently verify compatibility layer works
 
-- [ ] **6.3: Document Priority 3 modules**
+- [x] **6.3: Document Priority 3 modules**
   - [ ] List in plan.md: Route handlers get readFlow/writeFlow via DI, no action needed
 
-- [ ] **6.4: Document compatibility layer removal plan**
+- [x] **6.4: Document compatibility layer removal plan**
   - [ ] When: After Priority 1 + 2 complete
   - [ ] Verify: `rg "from ['\"].*[/]db['\"]" -g '!node_modules'`
   - [ ] Action: Delete db.js, verify tests pass
 
-- [ ] **6.5: Note this is for future work**
+- [x] **6.5: Note this is for future work**
   - [ ] Mark as not included in current refactor
   - [ ] Purpose: Documentation only
 
