@@ -457,11 +457,29 @@ export async function getUndoStatus() {
     canRedo = nextExists && nextExists.length > 0;
   }
 
+  // Compute backwards-compatible currentIndex (1-based position in history)
+  // This maintains API compatibility with existing tests/consumers
+  let currentIndex = -1;
+  if (currentTime !== null) {
+    // Count snapshots up to and including current time
+    const { count: positionCount, error: positionError } = await supabase
+      .from('undo_history')
+      .select('*', { count: 'exact', head: true })
+      .lte('created_at', currentTime);
+
+    if (positionError) {
+      throw positionError;
+    }
+
+    currentIndex = positionCount || 0;
+  }
+
   return {
     canUndo,
     canRedo,
     snapshotCount: totalSnapshots,
-    currentTimestamp: currentTime
+    currentTimestamp: currentTime,
+    currentIndex // Backwards compatible: position in history (1-based)
   };
 }
 
