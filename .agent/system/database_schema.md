@@ -137,25 +137,28 @@ Single-row table tracking current position in undo history.
 ```sql
 CREATE TABLE undo_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  current_index INTEGER NOT NULL DEFAULT -1
+  current_snapshot_time TIMESTAMPTZ DEFAULT NULL
 );
 
-INSERT OR IGNORE INTO undo_state (id, current_index) VALUES (1, -1);
+INSERT OR IGNORE INTO undo_state (id, current_snapshot_time) VALUES (1, NULL);
 ```
 
 **Fields:**
 - `id` - Always 1 (enforced by CHECK constraint)
-- `current_index` - ID of current snapshot in `undo_history`, or -1 if no snapshots
+- `current_snapshot_time` - Timestamp of current snapshot in `undo_history`, or NULL if no snapshots
 
 **State Management:**
-- `-1` = No snapshots exist yet
-- `N` = Currently at snapshot with `undo_history.id = N`
-- When new snapshot added, `current_index` updated to new snapshot ID
-- On undo, decremented to previous ID
-- On redo, incremented to next ID
-- On truncate (new change after undo), future snapshots deleted
+- `NULL` = No snapshots exist yet
+- `<timestamp>` = Currently at snapshot with `undo_history.created_at = <timestamp>`
+- When new snapshot added, `current_snapshot_time` updated to new snapshot's `created_at`
+- On undo, set to previous snapshot's `created_at` (found via `WHERE created_at < current_snapshot_time ORDER BY created_at DESC LIMIT 1`)
+- On redo, set to next snapshot's `created_at` (found via `WHERE created_at > current_snapshot_time ORDER BY created_at ASC LIMIT 1`)
+- On truncate (new change after undo), snapshots with `created_at > current_snapshot_time` are deleted
 
-**Undo/Redo Logic:** Can undo if `current_index > 1`. Can redo if not at latest snapshot.
+**Undo/Redo Logic:**
+- Can undo if there exists a snapshot with `created_at < current_snapshot_time`
+- Can redo if there exists a snapshot with `created_at > current_snapshot_time`
+- Uses timestamp-based navigation instead of sequential IDs to handle PostgreSQL auto-increment gaps
 
 ## Data Flow
 
