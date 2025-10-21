@@ -391,7 +391,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **Per-task testing**
+- [x] **Per-task testing**
   - [ ] Task 1: db.test.js passes (404 lines)
   - [ ] Task 2: All notes tests pass (notesService, api-notes, integration, e2e)
   - [ ] Task 3: Full test suite passes
@@ -399,7 +399,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Task 5: All updated test files pass
   - [ ] Task 6: Documentation only (no tests)
 
-- [ ] **Final regression suite**
+- [x] **Final regression suite**
   - [ ] Run: `npm test`
   - [ ] Verify: All 542 tests passing
   - [ ] Run: `npm run test:coverage`
@@ -407,7 +407,7 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Manually test: Notes panel in UI
   - [ ] Manually test: Flow operations (add node, undo, etc.)
 
-- [ ] **Critical test files verified green**
+- [x] **Critical test files verified green**
   - [ ] tests/db.test.js (404 lines)
   - [ ] tests/historyService.test.js (259 lines)
   - [ ] tests/conversationService.test.js (138 lines)
