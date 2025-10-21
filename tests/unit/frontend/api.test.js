@@ -40,13 +40,6 @@ afterEach(() => {
   console.error.mockRestore();
 });
 
-describe('API Configuration', () => {
-  it('should use /api as base URL', () => {
-    // This is implicitly tested by all other tests checking the fetch URLs
-    expect(true).toBe(true);
-  });
-});
-
 describe('loadFlow', () => {
   it('should fetch flow data successfully', async () => {
     const mockFlowData = {

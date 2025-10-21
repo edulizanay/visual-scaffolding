@@ -107,23 +107,29 @@ visual-scaffolding/
 
 ### Data Flow
 1. Load flow from backend on mount → Initialize React Flow with design token theme
-2. User edits (drag, edit labels) → Debounced autosave (500ms)
+2. User edits (drag, edit labels, delete) → Direct backend API calls with error handling
 3. AI chat message → Backend processes → Frontend receives updated flow → Auto-layout
 4. Undo/Redo → Fetch snapshot from backend → Update React Flow state
+
+**Persistence Architecture:**
+- All persistence through explicit backend API calls (no frontend autosave)
+- Each action creates a snapshot with origin tag (`ui.node.update`, `ui.node.delete`, `ui.edge.delete`, `ui.subtree`, `llm.tool`)
+- Failed operations revert UI state and alert user
+- Backend is single source of truth for flow state
 
 ## Core Features
 
 ### 1. Visual Flow Editor
 - Interactive node-based canvas using React Flow
 - Manual node creation via double-click (⌘/Ctrl + Double-click)
-- Drag-and-drop positioning
+- Drag-and-drop positioning with backend persistence
 - **Group nodes** - combine multiple nodes into collapsible groups (⌘/Ctrl + G)
 - **Dual collapse systems**:
   - Group collapse: Uses `isCollapsed` on group nodes, managed via backend API
-  - Subtree collapse: Uses `data.collapsed` on any node, frontend-only (Alt + Click)
+  - Subtree collapse: Uses `data.collapsed` on any node, managed via backend API (Alt + Click)
 - **Auto-layout using pure Dagre algorithm** - no custom compression logic
 - Smooth animations for layout transitions
-- Real-time autosave (500ms debounce)
+- **Backend-only persistence** - all actions saved via explicit API calls
 - **Keyboard shortcuts panel** - slide-in panel showing all hotkeys (? button)
 
 ### 2. AI-Powered Flow Generation
@@ -151,10 +157,10 @@ See [database_schema.md](./database_schema.md) for detailed schema documentation
 
 **Flow Operations:**
 - `GET /api/flow` - Load current flow state
-- `POST /api/flow` - Save flow state
 - `POST /api/flow/undo` - Undo last change
 - `POST /api/flow/redo` - Redo undone change
 - `GET /api/flow/history-status` - Get undo/redo availability
+- `PUT /api/subtree/:id/collapse` - Toggle subtree collapse (creates snapshot with origin: `ui.subtree`)
 
 **Unified Flow Command Operations:**
 - `POST /api/node` - Create node (optionally with parent or group)

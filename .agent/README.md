@@ -5,11 +5,11 @@ This directory contains all project documentation. Use this index to quickly fin
 ## 📁 Documentation Structure
 
 ```
-.agent/ (3848 lines)
-├── README.md          # This file - documentation index (131 lines)
-├── system/            # Current state of the system (1237 lines)
-├── tasks/             # Feature PRDs & implementation plans (1134 lines)
-└── SOP/               # Standard operating procedures (1212 lines)
+.agent/ (2740 lines)
+├── README.md          # This file - documentation index (129 lines)
+├── system/            # Current state of the system (1243 lines)
+├── tasks/             # Feature PRDs & implementation plans (355 lines)
+└── SOP/               # Standard operating procedures (1013 lines)
 ```
 
 **Documentation Guidelines**: Try to keep total documentation below 2,300 lines. Focus on clarity and conciseness over exhaustive detail. The lines count is updated automatically.
@@ -31,8 +31,7 @@ Feature-specific PRDs and implementation plans:
 
 | Task | Status | Description |
 |------|--------|-------------|
-| **[backend-save-funnel-implementation-plan.md](./tasks/backend-save-funnel-implementation-plan.md)** | ✅ Complete | Backend persistence for drag/subtree with feature flags, autosave fallback |
-| **[hotkeys-visual-and-logic-centralization.md](./Tasks/hotkeys-visual-and-logic-centralization.md)** | Planning | Centralize keyboard shortcuts in single registry, improve UX hints |
+| **[database-migration.md](./tasks/database-migration.md)** | Planning | Future migration from SQLite to Supabase PostgreSQL (614 lines) |
 
 ## 🛠️ Standard Operating Procedures (SOPs)
 
@@ -64,8 +63,8 @@ Keyboard shortcuts registry | [project_architecture.md](./system/project_archite
 Design token system | [project_architecture.md](./system/project_architecture.md) → Structured Design Token System
 Development commands, setup | [project_architecture.md](./system/project_architecture.md) → Development Workflow
 API endpoints | [project_architecture.md](./system/project_architecture.md) → Integration Points
-Backend save funnel & feature flags | [backend-save-funnel-implementation-plan.md](./tasks/backend-save-funnel-implementation-plan.md)
-Feature requirements | `Tasks/` folder
+Backend persistence architecture | [adding-persistence-actions.md](./SOP/adding-persistence-actions.md)
+Future database migration plan | [database-migration.md](./tasks/database-migration.md)
 How to add flow commands | [unified-flow-commands.md](./SOP/unified-flow-commands.md)
 How to add/modify keyboard shortcuts | [hotkeys-management.md](./SOP/hotkeys-management.md)
 How to work with design tokens/theme | [theme-and-design-tokens.md](./SOP/theme-and-design-tokens.md)
@@ -117,13 +116,12 @@ How to do X (migrations, LLM tools, etc.) | `SOP/` folder
 
 ---
 
-**Last Updated**: October 14, 2025
+**Last Updated**: October 21, 2025
 
 **Recent Major Changes**:
-- **Backend save funnel** - Feature-flagged persistence via backend APIs (drag, subtree) with autosave fallback; 716 tests passing
-- **Server.js refactoring** - Extracted helper functions, organized into sections, reduced conversation endpoint from 90→13 lines
-- **Layout algorithm** - Simplified to pure Dagre (removed compression causing diagonal bugs), TDD approach, 542 tests passing
-- **Frontend refactoring** - Extracted node visibility helpers, JSDoc documentation, 2-line ABOUTME headers
+- **Backend-only persistence** - Completed migration: all saves via explicit API calls, autosave removed; 703 tests passing
+- **Node/edge deletion** - Connected to backend APIs with proper undo/redo support
+- **Undo/redo for drag** - Restored support for position changes via backend persistence
 - **Vitest migration** - 2.95x faster, 170+ hidden tests fixed, native ESM, 86.38% coverage
 - **Design tokens** - Two-tier system (primitives + semantic theme) in single theme.js file
 - **Group nodes** - Nested groups, depth-based halo padding, dual collapse systems

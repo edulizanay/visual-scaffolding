@@ -358,8 +358,6 @@ sqlite3 server/data/flow.db "SELECT id, datetime(created_at, 'localtime'), json_
 
 2. **Update this SOP** if you discovered improvements to the process
 
-3. **Update `.agent/analysis/saving-logic-analysis.md`** UI Mutation Inventory table
-
 **Checklist:**
 - [ ] Code comments added explaining backend call
 - [ ] Origin tag documented if new pattern
@@ -396,13 +394,13 @@ Before considering your persistence action complete:
 
 ## References
 
-- **Implementation Plan**: [backend-save-funnel-implementation-plan.md](../tasks/backend-save-funnel-implementation-plan.md)
 - **Existing Examples**:
-  - Drag-end: `src/App.jsx:89-143` (`onNodesChange` handler)
-  - Delete node: `src/App.jsx:243-254` (`onNodesDelete` handler)
-  - Subtree: `src/App.jsx:439-461` (`onNodeClick` with altKey)
-- **Backend Tools**: `server/tools/executor.js`
-- **API Routes**: `server/routes/flowRoutes.js`
+  - Drag-end: [App.jsx:89-143](../../src/App.jsx#L89-L143) (`onNodesChange` handler)
+  - Delete node: [App.jsx:243-268](../../src/App.jsx#L243-L268) (`onNodesDelete` handler)
+  - Delete edge: [App.jsx:270-293](../../src/App.jsx#L270-L293) (`onEdgesDelete` handler)
+  - Subtree: [App.jsx:439-461](../../src/App.jsx#L439-L461) (`onNodeClick` with altKey)
+- **Backend Tools**: [server/tools/executor.js](../../server/tools/executor.js)
+- **API Routes**: [server/routes/flowRoutes.js](../../server/routes/flowRoutes.js)
 
 ---
 

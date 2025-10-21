@@ -79,205 +79,84 @@ describe('ChatInterface Component', () => {
 
 ### 1. Backend Unit Tests
 
-Test individual functions and services:
+Test individual functions and services in `tests/` directory:
 
 ```javascript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initDb, closeDb, getDb } from '../server/db.js';
 import { saveFlow, getFlow } from '../server/db.js';
 
-describe('Database Operations', () => {
-  beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
-    await initDb();
-  });
-
-  afterEach(async () => {
-    await closeDb();
-  });
-
-  it('should save and retrieve flow', async () => {
-    const flow = { nodes: [], edges: [] };
-    await saveFlow('default', 'main', flow);
-
-    const retrieved = await getFlow('default', 'main');
-    expect(retrieved).toEqual(flow);
-  });
+it('should save and retrieve flow', async () => {
+  const flow = { nodes: [], edges: [] };
+  await saveFlow('default', 'main', flow);
+  expect(await getFlow('default', 'main')).toEqual(flow);
 });
 ```
 
 ### 2. API Integration Tests
 
-Test full HTTP request/response cycle using Supertest:
+Test HTTP endpoints using Supertest in `tests/api-*.test.js`:
 
 ```javascript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import app from '../server/server.js';
-import { initDb, closeDb } from '../server/db.js';
 
-describe('POST /api/node', () => {
-  beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
-    await initDb();
-  });
+it('should create a new node', async () => {
+  const response = await request(app)
+    .post('/api/node')
+    .send({ label: 'Test Node' })
+    .expect(201);
 
-  afterEach(async () => {
-    await closeDb();
-  });
-
-  it('should create a new node', async () => {
-    const response = await request(app)
-      .post('/api/node')
-      .send({ label: 'Test Node' })
-      .expect(201);
-
-    expect(response.body).toHaveProperty('id');
-    expect(response.body.label).toBe('Test Node');
-  });
+  expect(response.body).toHaveProperty('id');
 });
 ```
 
 ### 3. Frontend Component Tests
 
-Test React components with React Testing Library:
+Test React components with React Testing Library in `src/**/__tests__/`:
 
 ```javascript
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Node from '../../src/Node.jsx';
 
-describe('Node Component', () => {
-  it('should allow editing label on double-click', async () => {
-    const user = userEvent.setup();
-    const onUpdate = vi.fn();
+it('should allow editing label on double-click', async () => {
+  const user = userEvent.setup();
+  const onUpdate = vi.fn();
+  render(<Node data={{ label: 'Test' }} id="node-1" onUpdateNode={onUpdate} />);
 
-    render(
-      <Node
-        data={{ label: 'Test' }}
-        id="node-1"
-        onUpdateNode={onUpdate}
-      />
-    );
+  await user.dblClick(screen.getByText('Test'));
+  await user.type(screen.getByRole('textbox'), 'New{Enter}');
 
-    // Double-click to enter edit mode
-    await user.dblClick(screen.getByText('Test'));
-
-    // Type new label
-    const input = screen.getByRole('textbox');
-    await user.clear(input);
-    await user.type(input, 'New Label');
-    await user.keyboard('{Enter}');
-
-    expect(onUpdate).toHaveBeenCalledWith('node-1', { label: 'New Label' });
-  });
+  expect(onUpdate).toHaveBeenCalled();
 });
 ```
 
-### 4. Mocking in Vitest
+### 4. Testing Layout Algorithms
 
-Use `vi.fn()` for mock functions and `vi.mock()` for module mocks:
+Test layout calculations with specific node/edge structures (see [tests/unit/frontend/getLayoutedElements.test.js](../../tests/unit/frontend/getLayoutedElements.test.js)):
 
 ```javascript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getLayoutedElements } from '../../src/hooks/useFlowLayout.js';
 
-describe('LLM Service', () => {
-  beforeEach(() => {
-    // Mock external API calls
-    vi.mock('../server/llm/llmService.js', () => ({
-      callLLM: vi.fn().mockResolvedValue({
-        response: '<response>[{"tool": "addNode", "params": {"label": "Test"}}]</response>'
-      })
-    }));
-  });
+const makeNode = (id, overrides = {}) => ({
+  id, type: 'default', position: { x: 0, y: 0 },
+  data: { label: id, ...overrides?.data }, ...overrides
+});
+const makeEdge = (source, target) => ({ id: `${source}-${target}`, source, target });
 
-  it('should parse LLM response', async () => {
-    const { callLLM } = await import('../server/llm/llmService.js');
-    const result = await callLLM('Create a test node');
+it('should maintain horizontal parent-child alignment', () => {
+  const nodes = [makeNode('parent'), makeNode('child')];
+  const edges = [makeEdge('parent', 'child')];
+  const { nodes: layouted } = getLayoutedElements(nodes, edges, 'LR');
 
-    expect(result.response).toContain('addNode');
-  });
+  const parent = layouted.find(n => n.id === 'parent');
+  const child = layouted.find(n => n.id === 'child');
+
+  expect(child.position.y).toBeCloseTo(parent.position.y, 5);
+  expect(child.position.x).toBeGreaterThan(parent.position.x);
 });
 ```
 
-### 5. Testing Async Operations
-
-Always use `async/await` for asynchronous tests:
-
-```javascript
-it('should handle async operation', async () => {
-  const result = await someAsyncFunction();
-  expect(result).toBeDefined();
-});
-
-// Use waitFor for eventual assertions
-it('should update UI after async operation', async () => {
-  render(<Component />);
-
-  await waitFor(() => {
-    expect(screen.getByText('Loaded')).toBeInTheDocument();
-  });
-});
-```
-
-## Test Conventions
-
-### 1. Use In-Memory Database
-```javascript
-beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
-  await initDb();
-});
-```
-
-### 2. Clean Up After Tests
-```javascript
-afterEach(async () => {
-  await closeDb();
-  vi.clearAllMocks(); // Clear mocks if used
-});
-```
-
-### 3. Descriptive Test Names
-Use `should` pattern for clarity:
-```javascript
-it('should create a node with parent connection', async () => {
-  // Test implementation
-});
-```
-
-### 4. Arrange-Act-Assert Pattern
-```javascript
-it('should calculate total correctly', () => {
-  // Arrange - Set up test data
-  const items = [1, 2, 3];
-
-  // Act - Perform the action
-  const result = calculateTotal(items);
-
-  // Assert - Verify the result
-  expect(result).toBe(6);
-});
-```
-
-### 5. Test One Thing Per Test
-```javascript
-// Good - Tests one specific behavior
-it('should return null when user not found', () => {
-  const user = findUser('nonexistent');
-  expect(user).toBeNull();
-});
-
-// Bad - Tests multiple unrelated things
-it('should handle user operations', () => {
-  const user = createUser('test');
-  expect(user).toBeDefined();
-  const deleted = deleteUser('test');
-  expect(deleted).toBe(true);
-  // Too much in one test!
-});
-```
+**TDD Approach:** Write failing test → Implement fix → Refactor
 
 ## Running Tests
 
@@ -308,33 +187,9 @@ npm run test:ui
 import { executeTool } from '../server/tools/executor.js';
 
 it('should add node via tool execution', async () => {
-  const result = await executeTool('addNode', {
-    label: 'Test Node',
-    description: 'Test description'
-  });
-
+  const result = await executeTool('addNode', { label: 'Test Node' });
   expect(result.success).toBe(true);
   expect(result.nodeId).toBeDefined();
-});
-```
-
-### Testing Group Operations
-```javascript
-it('should create group from selected nodes', async () => {
-  // Create nodes first
-  const node1 = await createNode({ label: 'Node 1' });
-  const node2 = await createNode({ label: 'Node 2' });
-
-  // Create group
-  const response = await request(app)
-    .post('/api/group')
-    .send({
-      label: 'Test Group',
-      nodeIds: [node1.id, node2.id]
-    })
-    .expect(201);
-
-  expect(response.body.groupId).toBeDefined();
 });
 ```
 
@@ -343,45 +198,12 @@ it('should create group from selected nodes', async () => {
 it('should return 400 for invalid node data', async () => {
   const response = await request(app)
     .post('/api/node')
-    .send({ /* missing required label */ })
+    .send({}) // missing required label
     .expect(400);
 
   expect(response.body.error).toBeDefined();
 });
 ```
-
-### Testing Layout Algorithms
-Test layout calculations with specific node/edge structures:
-
-```javascript
-import { getLayoutedElements } from '../../src/hooks/useFlowLayout.js';
-
-// Helpers for creating test data
-const makeNode = (id, overrides = {}) => ({
-  id, type: overrides.type || 'default',
-  position: overrides.position || { x: 0, y: 0 },
-  data: { label: id, ...overrides.data },
-  parentGroupId: overrides.parentGroupId, hidden: overrides.hidden,
-});
-
-const makeEdge = (source, target) => ({ id: `${source}-${target}`, source, target });
-
-it('should maintain horizontal parent-child alignment', () => {
-  const nodes = [makeNode('parent'), makeNode('child')];
-  const edges = [makeEdge('parent', 'child')];
-  const { nodes: layouted } = getLayoutedElements(nodes, edges, 'LR');
-
-  const parent = layouted.find(n => n.id === 'parent');
-  const child = layouted.find(n => n.id === 'child');
-
-  expect(child.position.y).toBeCloseTo(parent.position.y, 5); // Same y = horizontal
-  expect(child.position.x).toBeGreaterThan(parent.position.x); // Child to the right
-});
-```
-
-**TDD for Layout Bugs:** RED (failing test) → GREEN (fix) → REFACTOR (clean up)
-
-**Tips:** Use `toBeCloseTo()` for positions, test cross-group edges, keep minimal test data, see [tests/unit/frontend/getLayoutedElements.test.js](../../tests/unit/frontend/getLayoutedElements.test.js) for examples
 
 ## Debugging Tests
 
@@ -414,25 +236,6 @@ it.skip('should test something later', () => {
 });
 ```
 
-## Migration from Jest
-
-If converting an old Jest test:
-
-### Before (Jest)
-```javascript
-jest.fn()
-jest.mock()
-jest.clearAllMocks()
-```
-
-### After (Vitest)
-```javascript
-vi.fn()
-vi.mock()
-vi.clearAllMocks()
-```
-
-**Note**: Most Jest APIs work identically in Vitest due to globals being enabled.
 
 ## Best Practices
 
