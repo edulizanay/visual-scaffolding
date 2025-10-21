@@ -3,7 +3,7 @@
 > Updated: 2025‑10‑20  
 > Source PRD: [.agent/analysis/saving-logic-analysis.md](../analysis/saving-logic-analysis.md)
 
-Use this checklist to drive the migration. Work through phases in order, on a dedicated branch per phase. Leave all feature flags defaulted to `false` on `main`. Do not merge a phase until every item in that phase is checked and its success criteria are met.
+Use this checklist to drive the migration. Work through phases in order, on a dedicated feature branch per phase (e.g., `feature/backend-save-phase-7`). Leave all feature flags defaulted to `false` on `main` until the single-path cleanup is complete. Do not merge a phase until every item in that phase is checked and its success criteria are met.
 
 ---
 
@@ -127,7 +127,7 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 
 ---
 
-## Final Sign-off
+## Final Sign-off (Dual-Run Architecture)
 
 **Implementation Complete**: 2025-10-20
 
@@ -147,3 +147,72 @@ Use this checklist to drive the migration. Work through phases in order, on a de
 
 **Status**: Ready for staging deployment. Flags default to `false` for controlled rollout.
 
+---
+
+## Phase 7 – Single-Path Backend Cleanup ✅
+**Goal**: remove dual-run scaffolding and autosave fallback so backend persistence is the only save path.
+
+**Branch**: `feature/backend-save-phase-7`
+
+### Implementation ✅
+- [x] Remove feature flag infrastructure:
+  - Deleted `server/config.js`, `/api/flow/config` endpoint, and `src/utils/featureFlags.js`.
+  - Stripped flag state/hooks from `App.jsx` and related helpers.
+- [x] Delete autosave fallback logic:
+  - Removed `debouncedAutoSave`, `lastChangeWasPositionalRef`, and autosave skip logic.
+  - Removed `onFlushPendingSave` and `onProcessingChange` props from ChatInterface.
+  - Deleted legacy subtree collapse path; always call backend API.
+- [x] Simplify code:
+  - Removed conditional logic for feature flags in drag and subtree handlers.
+  - Removed unused imports (`saveFlow`, `collapseSubtreeByHandles`, `useDebouncedCallback`).
+- [x] Update tests:
+  - Removed unit tests for flag helpers (`shouldUseBackendDragSave`, `shouldUseBackendSubtree`).
+  - Removed obsolete tests (`auto-save skips while backend is processing`, processing state notifications).
+  - Updated ChatInterface tests to remove `onProcessingChange` expectations.
+  - All 707 tests passing ✅
+- [x] Update helper functions:
+  - Kept `getMovedNodes` and `getTargetCollapseState` (still useful).
+  - Removed feature flag conditional functions.
+
+### Success ✅
+- [x] App builds and runs with backend-only persistence; no feature flags required.
+- [x] All 707 tests passing (reduced from 708 after removing obsolete autosave test).
+- [x] Drag-end position updates always call `updateNode` API.
+- [x] Subtree collapse always calls `toggleSubtreeCollapse` API.
+- [x] No autosave fallback logic remaining.
+- [x] Autosave code paths removed (no `saveFlow` debounce, no `useDebouncedCallback` import).
+- [x] Tests pass on branch.
+- [ ] QA checklist executed (drag, subtree, undo/redo) to confirm single-path behaviour (pending manual testing).
+- [ ] Merge to main after QA approval.
+- [ ] Merge branch back to `main`.
+
+---
+
+## Phase 8 – Documentation & Deployment Updates (New)
+**Goal**: finalise docs and deployment guidance for backend-only persistence.
+
+**Branch**: create `feature/backend-save-phase-8` from latest `main`.
+
+### Implementation
+- [ ] Update `.agent/analysis/saving-logic-analysis.md` to describe the backend-only architecture.
+- [ ] Refresh README/architecture docs (remove references to feature flags/autosave fallback).
+- [ ] Update SOP (`adding-persistence-actions.md`) to assume single-path backend saves.
+- [ ] Document deployment checklist for staging/prod (no flags; rollback via git revert).
+- [ ] Archive or trim Phase 4 QA script to single-path version.
+
+### Success
+- [ ] Documentation reflects backend-only persistence.
+- [ ] SOP and deployment notes published.
+- [ ] Final sign-off updated (below) to reflect single-path completion.
+- [ ] Merge branch back to `main`.
+
+---
+
+## Final Sign-off (Backend-Only Architecture) – Pending
+- [ ] Drag-end & subtree operations succeed ≥99% post-release (backend only).
+- [ ] Snapshot history shows expected origins (`ui.node.update`, `ui.subtree`, `llm.tool`).
+- [ ] Undo/redo verified after autosave removal.
+- [ ] Stakeholders (you) confirm autosave removal acceptable.
+- [ ] Deployment checklist executed (staging/prod) without feature flags.
+
+> Once Phases 7–8 are completed and merged, update this section from “Pending” to ✅ and remove references to the dual-run setup above.

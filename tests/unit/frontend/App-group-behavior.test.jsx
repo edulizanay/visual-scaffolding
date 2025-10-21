@@ -244,42 +244,4 @@ describe('App group behaviour', () => {
     expect(screen.getByText('to ungroup')).toBeInTheDocument();
   });
 
-  test('auto-save skips while backend is processing', async () => {
-    api.loadFlow.mockResolvedValueOnce(defaultFlow);
-
-    await renderApp();
-
-    // Enable fake timers after app is rendered
-    vi.useFakeTimers();
-
-    // Flush initial debounce timers
-    await act(async () => {
-      vi.runOnlyPendingTimers();
-    });
-    api.saveFlow.mockClear();
-
-    const handlers = getChatHandlers();
-    expect(handlers.onFlowUpdate).toBeDefined();
-    expect(handlers.onProcessingChange).toBeDefined();
-
-    await act(async () => {
-      handlers.onProcessingChange(true);
-    });
-
-    await act(async () => {
-      handlers.onFlowUpdate({
-        nodes: [
-          { id: 'group-1', type: 'group', isCollapsed: false, position: { x: 0, y: 0 }, data: { label: 'Group 1' } },
-        ],
-        edges: [],
-      });
-    });
-
-    await act(async () => {
-      vi.advanceTimersByTime(600);
-    });
-
-    expect(api.saveFlow).not.toHaveBeenCalled();
-  });
-
 });

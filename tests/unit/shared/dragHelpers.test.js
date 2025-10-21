@@ -1,8 +1,8 @@
 // ABOUTME: Unit tests for drag-end position update helpers
-// ABOUTME: Tests pure functions for moved node detection and backend decision logic
+// ABOUTME: Tests pure functions for moved node detection
 
 import { describe, it, expect } from 'vitest';
-import { getMovedNodes, shouldUseBackendDragSave } from '../../../src/utils/dragHelpers.js';
+import { getMovedNodes } from '../../../src/utils/dragHelpers.js';
 
 describe('dragHelpers', () => {
   describe('getMovedNodes', () => {
@@ -74,28 +74,6 @@ describe('dragHelpers', () => {
       // With threshold 1.0, should return empty
       const customResult = getMovedNodes(dragEndChanges, originalPositions, currentNodes, 1.0);
       expect(customResult).toHaveLength(0);
-    });
-  });
-
-  describe('shouldUseBackendDragSave', () => {
-    it('should return true when flag enabled and nodes moved', () => {
-      const result = shouldUseBackendDragSave(true, [{ id: 'node1' }]);
-      expect(result).toBe(true);
-    });
-
-    it('should return false when flag disabled', () => {
-      const result = shouldUseBackendDragSave(false, [{ id: 'node1' }]);
-      expect(result).toBe(false);
-    });
-
-    it('should return false when no nodes moved', () => {
-      const result = shouldUseBackendDragSave(true, []);
-      expect(result).toBe(false);
-    });
-
-    it('should return false when both flag disabled and no nodes moved', () => {
-      const result = shouldUseBackendDragSave(false, []);
-      expect(result).toBe(false);
     });
   });
 });

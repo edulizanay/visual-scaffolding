@@ -3,7 +3,6 @@
 import { Router } from 'express';
 import { undo as historyUndo, redo as historyRedo, getHistoryStatus } from '../historyService.js';
 import { executeToolCalls, executeTool, logToolExecution } from '../tools/executor.js';
-import { config } from '../config.js';
 
 const router = Router();
 
@@ -96,14 +95,6 @@ function toolEndpoint(config, readFlow, writeFlow) {
 }
 
 export function registerFlowRoutes(router, { readFlow, writeFlow }) {
-  // Config endpoint for feature flags
-  router.get('/config', (req, res) => {
-    res.json({
-      ENABLE_BACKEND_DRAG_SAVE: config.ENABLE_BACKEND_DRAG_SAVE,
-      ENABLE_BACKEND_SUBTREE: config.ENABLE_BACKEND_SUBTREE,
-    });
-  });
-
   // Flow CRUD endpoints
   router.get('/', async (req, res) => {
     try {

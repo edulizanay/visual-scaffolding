@@ -17,7 +17,6 @@ vi.mock('../../../../services/api', () => ({
 
 describe('ChatInterface Component', () => {
   let mockOnFlowUpdate;
-  let mockOnProcessingChange;
   let user;
 
   beforeEach(() => {
@@ -26,7 +25,6 @@ describe('ChatInterface Component', () => {
 
     // Create mock callbacks
     mockOnFlowUpdate = vi.fn();
-    mockOnProcessingChange = vi.fn();
 
     // Setup default API responses
     api.getConversationDebug.mockResolvedValue({ history: [] });
@@ -42,14 +40,14 @@ describe('ChatInterface Component', () => {
 
   describe('Initial Render', () => {
     it('should render textarea with correct placeholder', () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command or '\/resume' to continue conversation/i);
       expect(textarea).toBeTruthy();
     });
 
     it('should load conversation history on mount', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalledTimes(1);
@@ -57,7 +55,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should render keyboard shortcut hints', () => {
-      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       // Check for kbd elements (⌘ and ⏎)
       const kbdElements = container.querySelectorAll('kbd');
@@ -67,7 +65,7 @@ describe('ChatInterface Component', () => {
 
   describe('Message Submission via Keyboard', () => {
     it('should send message on Cmd+Enter', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -80,7 +78,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should send message on Ctrl+Enter', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -93,7 +91,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should NOT send message on Enter without modifier key', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -105,7 +103,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should NOT send message on Shift+Enter', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -123,7 +121,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should NOT send empty or whitespace-only messages', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -135,7 +133,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should trim message before sending', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -150,7 +148,7 @@ describe('ChatInterface Component', () => {
 
   describe('Input Clearing After Send', () => {
     it('should clear input immediately after submission', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -167,7 +165,7 @@ describe('ChatInterface Component', () => {
     it('should keep input cleared even if API call fails', async () => {
       api.sendMessage.mockRejectedValue(new Error('Network error'));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -184,37 +182,12 @@ describe('ChatInterface Component', () => {
   });
 
   describe('Processing State', () => {
-    it('should notify parent when processing starts', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
-
-      const textarea = screen.getByPlaceholderText(/Type a command/i);
-      await user.click(textarea);
-      await user.type(textarea, 'Test');
-      await user.keyboard('{Meta>}{Enter}{/Meta}');
-
-      await waitFor(() => {
-        expect(mockOnProcessingChange).toHaveBeenCalledWith(true);
-      });
-    });
-
-    it('should notify parent when processing completes', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
-
-      const textarea = screen.getByPlaceholderText(/Type a command/i);
-      await user.click(textarea);
-      await user.type(textarea, 'Test');
-      await user.keyboard('{Meta>}{Enter}{/Meta}');
-
-      await waitFor(() => {
-        expect(mockOnProcessingChange).toHaveBeenCalledWith(false);
-      });
-    });
 
     it('should show processing placeholder with animated dots', async () => {
       // Make API call slow to catch processing state
       api.sendMessage.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ response: 'ok' }), 100)));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -232,7 +205,7 @@ describe('ChatInterface Component', () => {
       // Make API call slow to catch processing state
       api.sendMessage.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ response: 'ok' }), 100)));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -248,27 +221,25 @@ describe('ChatInterface Component', () => {
     });
 
     it('should restore normal opacity after processing completes', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
       await user.type(textarea, 'Test');
       await user.keyboard('{Meta>}{Enter}{/Meta}');
 
+      // Wait for processing to complete
       await waitFor(() => {
-        expect(mockOnProcessingChange).toHaveBeenCalledWith(false);
+        const normalTextarea = screen.getByPlaceholderText(/Type a command/i);
+        expect(normalTextarea.style.opacity).toBe('1');
       });
-
-      // After processing completes
-      const normalTextarea = screen.getByPlaceholderText(/Type a command/i);
-      expect(normalTextarea.style.opacity).toBe('1');
     });
 
     it('should NOT allow multiple submissions while processing', async () => {
       // Make API call slow
       api.sendMessage.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ response: 'ok' }), 1000)));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
 
@@ -289,7 +260,7 @@ describe('ChatInterface Component', () => {
     it('should ignore repeated Cmd+Enter events during key repeat', async () => {
       api.sendMessage.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ response: 'ok' }), 100)));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -301,10 +272,6 @@ describe('ChatInterface Component', () => {
 
       await waitFor(() => {
         expect(api.sendMessage).toHaveBeenCalledTimes(1);
-      });
-
-      await waitFor(() => {
-        expect(mockOnProcessingChange).toHaveBeenCalledWith(false);
       });
     });
   });
@@ -320,7 +287,7 @@ describe('ChatInterface Component', () => {
         updatedFlow
       });
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -338,7 +305,7 @@ describe('ChatInterface Component', () => {
         updatedFlow: null
       });
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -355,7 +322,7 @@ describe('ChatInterface Component', () => {
 
   describe('Conversation Management', () => {
     it('should clear conversation on first non-resume message', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -368,7 +335,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should NOT clear conversation when first message is /resume', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -384,7 +351,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should NOT clear conversation on subsequent messages', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
 
@@ -411,7 +378,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should reload conversation history after each message', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
 
@@ -445,7 +412,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should navigate to previous message on ArrowUp', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalled();
@@ -460,7 +427,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should navigate through multiple history entries', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalled();
@@ -480,7 +447,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should navigate forward with ArrowDown', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalled();
@@ -500,7 +467,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should save draft message when navigating history', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalled();
@@ -520,7 +487,7 @@ describe('ChatInterface Component', () => {
     });
 
     it('should reset history position after sending message', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(api.getConversationDebug).toHaveBeenCalled();
@@ -553,7 +520,7 @@ describe('ChatInterface Component', () => {
 
   describe('Global Keyboard Focus', () => {
     it('should focus textarea when typing anywhere on document', async () => {
-      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
 
@@ -570,7 +537,7 @@ describe('ChatInterface Component', () => {
       const { container } = render(
         <div>
           <input type="text" data-testid="other-input" />
-          <ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />
+          <ChatInterface onFlowUpdate={mockOnFlowUpdate} />
         </div>
       );
 
@@ -593,7 +560,7 @@ describe('ChatInterface Component', () => {
 
       api.sendMessage.mockRejectedValue(new Error('API Error'));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -602,11 +569,6 @@ describe('ChatInterface Component', () => {
 
       await waitFor(() => {
         expect(console.error).toHaveBeenCalled();
-      });
-
-      // Should reset processing state
-      await waitFor(() => {
-        expect(mockOnProcessingChange).toHaveBeenCalledWith(false);
       });
 
       console.error = consoleError;
@@ -618,7 +580,7 @@ describe('ChatInterface Component', () => {
 
       api.clearConversation.mockRejectedValue(new Error('Clear failed'));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       await user.click(textarea);
@@ -641,7 +603,7 @@ describe('ChatInterface Component', () => {
 
       api.getConversationDebug.mockRejectedValue(new Error('Load failed'));
 
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       await waitFor(() => {
         expect(console.error).toHaveBeenCalled();
@@ -657,21 +619,21 @@ describe('ChatInterface Component', () => {
 
   describe('Textarea Auto-sizing', () => {
     it('should render with minimum height', () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       expect(textarea.style.minHeight).toBe('38px');
     });
 
     it('should have maximum height constraint', () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       expect(textarea.style.maxHeight).toBe('76px');
     });
 
     it('should adjust height when content changes', async () => {
-      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const textarea = screen.getByPlaceholderText(/Type a command/i);
       const initialHeight = textarea.style.height;
@@ -686,14 +648,14 @@ describe('ChatInterface Component', () => {
 
   describe('Kbd Component', () => {
     it('should render keyboard hint badges', () => {
-      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const kbdElements = container.querySelectorAll('kbd');
       expect(kbdElements.length).toBe(2);
     });
 
     it('should show keyboard hints only when message is typed', async () => {
-      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+      const { container } = render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
       const hintContainer = container.querySelector('div[style*="pointer-events: none"]');
 
@@ -721,7 +683,7 @@ describe('ChatInterface Component', () => {
 
     describe('T2.1: When isNotesPanelOpen=true', () => {
       it('should call /api/notes endpoint', async () => {
-        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} isNotesPanelOpen={true} />);
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} isNotesPanelOpen={true} />);
 
         const textarea = screen.getByPlaceholderText(/Type a command/i);
         await user.click(textarea);
@@ -737,7 +699,7 @@ describe('ChatInterface Component', () => {
       });
 
       it('should not call clearConversation when panel is open', async () => {
-        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} isNotesPanelOpen={true} />);
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} isNotesPanelOpen={true} />);
 
         const textarea = screen.getByPlaceholderText(/Type a command/i);
         await user.click(textarea);
@@ -755,7 +717,7 @@ describe('ChatInterface Component', () => {
 
     describe('T2.2: When isNotesPanelOpen=false', () => {
       it('should call /api/conversation/message endpoint', async () => {
-        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} isNotesPanelOpen={false} />);
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} isNotesPanelOpen={false} />);
 
         const textarea = screen.getByPlaceholderText(/Type a command/i);
         await user.click(textarea);
@@ -773,7 +735,7 @@ describe('ChatInterface Component', () => {
 
     describe('T2.3: Prop is optional (defaults to false)', () => {
       it('should default to conversation mode when prop is not provided', async () => {
-        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
         const textarea = screen.getByPlaceholderText(/Type a command/i);
         await user.click(textarea);
@@ -789,7 +751,7 @@ describe('ChatInterface Component', () => {
       });
 
       it('should maintain backward compatibility (existing behavior)', async () => {
-        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} onProcessingChange={mockOnProcessingChange} />);
+        render(<ChatInterface onFlowUpdate={mockOnFlowUpdate} />);
 
         const textarea = screen.getByPlaceholderText(/Type a command/i);
         await user.click(textarea);

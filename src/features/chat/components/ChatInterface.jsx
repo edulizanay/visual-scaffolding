@@ -26,7 +26,7 @@ export const Kbd = ({ children, style = {} }) => (
   </kbd>
 );
 
-function ChatInterface({ onFlowUpdate, onProcessingChange, onFlushPendingSave, isNotesPanelOpen = false, onNotesUpdate }) {
+function ChatInterface({ onFlowUpdate, isNotesPanelOpen = false, onNotesUpdate }) {
   const [message, setMessage] = useState('');
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [draftMessage, setDraftMessage] = useState('');
@@ -36,10 +36,6 @@ function ChatInterface({ onFlowUpdate, onProcessingChange, onFlushPendingSave, i
   const isFirstMessage = useRef(true);
   const textareaRef = useRef(null);
   const submissionLockRef = useRef(false);
-
-  useEffect(() => {
-    onProcessingChange?.(isProcessing);
-  }, [isProcessing, onProcessingChange]);
 
   const adjustTextareaHeight = useCallback((textarea) => {
     if (!textarea) return;
@@ -120,11 +116,6 @@ function ChatInterface({ onFlowUpdate, onProcessingChange, onFlushPendingSave, i
     }
 
     try {
-      // Flush any pending autosave before sending to LLM to ensure DB is up-to-date
-      if (onFlushPendingSave) {
-        await onFlushPendingSave();
-      }
-
       const response = await sendMessage(messageToSend);
       console.log('✅ AI Response:', response);
 

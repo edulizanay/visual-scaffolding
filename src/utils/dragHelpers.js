@@ -1,5 +1,5 @@
 // ABOUTME: Pure helpers for drag-end position update logic
-// ABOUTME: Testable functions for determining which nodes moved and should call backend
+// ABOUTME: Testable functions for determining which nodes moved during drag
 
 /**
  * Determine which nodes have moved significantly during drag
@@ -32,14 +32,4 @@ export function getMovedNodes(dragEndChanges, originalPositions, currentNodes, t
       };
     })
     .filter(Boolean);
-}
-
-/**
- * Determine if backend drag save should be used
- * @param {boolean} featureFlagEnabled - ENABLE_BACKEND_DRAG_SAVE flag
- * @param {Array} movedNodes - Result from getMovedNodes
- * @returns {boolean} True if should call backend
- */
-export function shouldUseBackendDragSave(featureFlagEnabled, movedNodes) {
-  return featureFlagEnabled && movedNodes.length > 0;
 }

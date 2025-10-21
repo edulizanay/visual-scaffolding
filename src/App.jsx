@@ -1,5 +1,5 @@
 // ABOUTME: Main application component with React Flow canvas
-// ABOUTME: Persistence via backend APIs (flags ON) or autosave fallback (flags OFF)
+// ABOUTME: All persistence handled via backend APIs
 import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
@@ -9,11 +9,10 @@ import {
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
-import { Node, Edge, GroupHaloOverlay, useFlowLayout, validateGroupMembership, collapseSubtreeByHandles, getExpandedGroupHalos, applyGroupVisibility } from './features/flow-canvas';
+import { Node, Edge, GroupHaloOverlay, useFlowLayout, validateGroupMembership, getExpandedGroupHalos, applyGroupVisibility } from './features/flow-canvas';
 
 import {
   loadFlow,
-  saveFlow,
   undoFlow,
   redoFlow,
   createNode,
@@ -29,17 +28,14 @@ import { ChatInterface, KeyboardShortcutsPanel } from './features/chat';
 import { NotesPanel } from './features/notes';
 
 import { useHotkeys } from './hooks/useHotkeys';
-import { useDebouncedCallback } from './shared/hooks/useDebouncedCallback.js';
 import { THEME } from './constants/theme.js';
-import { getFeatureFlags } from './utils/featureFlags.js';
-import { getMovedNodes, shouldUseBackendDragSave } from './utils/dragHelpers.js';
-import { shouldUseBackendSubtree, getTargetCollapseState } from './utils/subtreeHelpers.js';
+import { getMovedNodes } from './utils/dragHelpers.js';
+import { getTargetCollapseState } from './utils/subtreeHelpers.js';
 
 function App() {
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isBackendProcessing, setIsBackendProcessing] = useState(false);
   const reactFlowInstance = useRef(null);
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
@@ -47,10 +43,7 @@ function App() {
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
   const [notesBullets, setNotesBullets] = useState(null);
 
-  // Phase 3: Backend save funnel dual-run state
-  const [featureFlags, setFeatureFlags] = useState({ ENABLE_BACKEND_DRAG_SAVE: false, ENABLE_BACKEND_SUBTREE: false });
   const dragStartPositionsRef = useRef(null);
-  const lastChangeWasPositionalRef = useRef(false);
 
   const {
     applyLayoutWithAnimation,
@@ -84,7 +77,7 @@ function App() {
     return applyGroupVisibility(nodesWithPosition, flow.edges);
   }, []);
 
-  // Phase 3: Drag start handler - capture original positions
+  // Drag start handler - capture original positions
   const onNodeDragStart = useCallback(() => {
     const positionMap = {};
     nodesRef.current.forEach(node => {
@@ -93,7 +86,7 @@ function App() {
     dragStartPositionsRef.current = positionMap;
   }, []);
 
-  // Phase 3: Wrapped onNodesChange to detect drag-end and call backend
+  // Wrapped onNodesChange to detect drag-end and call backend
   const onNodesChange = useCallback((changes) => {
     // Pass through to React Flow's handler first
     onNodesChangeRaw(changes);
@@ -112,58 +105,42 @@ function App() {
       nodesRef.current
     );
 
-    // Backend save funnel: When ENABLE_BACKEND_DRAG_SAVE is true, persist via updateNode API.
-    // When false, autosave handles persistence (legacy fallback).
-    if (shouldUseBackendDragSave(featureFlags.ENABLE_BACKEND_DRAG_SAVE, movedNodes)) {
-        // Set flag immediately to prevent autosave race condition
-        lastChangeWasPositionalRef.current = true;
+    if (movedNodes.length === 0) return;
 
-        // Call backend API for each moved node (creates snapshot with origin: 'ui.node.update')
-        const updatePromises = movedNodes.map(async ({ id, position, originalPosition }) => {
-          try {
-            const result = await updateNode(id, { position });
-            if (!result.success) {
-              console.error(`Failed to update node ${id} position:`, result.error);
-              // Revert this node's position
-              setNodes(prev => prev.map(n =>
-                n.id === id ? { ...n, position: originalPosition } : n
-              ));
-              return { success: false, nodeId: id, error: result.error };
-            }
-            return { success: true, nodeId: id };
-          } catch (error) {
-            console.error(`Error updating node ${id} position:`, error);
-            // Revert this node's position
-            setNodes(prev => prev.map(n =>
-              n.id === id ? { ...n, position: originalPosition } : n
-            ));
-            return { success: false, nodeId: id, error: error.message };
-          }
-        });
-
-        Promise.all(updatePromises).then(results => {
-          const failures = results.filter(r => !r.success);
-          if (failures.length > 0) {
-            const failedNodeIds = failures.map(f => f.nodeId).join(', ');
-            console.error(`Failed to save position for nodes: ${failedNodeIds}`);
-            alert(`Failed to save position for ${failures.length} node(s): ${failedNodeIds}. Positions have been reverted.`);
-            // Clear flag on failure so autosave can handle it
-            lastChangeWasPositionalRef.current = false;
-          }
-          // Clear drag state after gesture completes
-          dragStartPositionsRef.current = null;
-        });
+    // Call backend API for each moved node (creates snapshot with origin: 'ui.node.update')
+    const updatePromises = movedNodes.map(async ({ id, position, originalPosition }) => {
+      try {
+        const result = await updateNode(id, { position });
+        if (!result.success) {
+          console.error(`Failed to update node ${id} position:`, result.error);
+          // Revert this node's position
+          setNodes(prev => prev.map(n =>
+            n.id === id ? { ...n, position: originalPosition } : n
+          ));
+          return { success: false, nodeId: id, error: result.error };
+        }
+        return { success: true, nodeId: id };
+      } catch (error) {
+        console.error(`Error updating node ${id} position:`, error);
+        // Revert this node's position
+        setNodes(prev => prev.map(n =>
+          n.id === id ? { ...n, position: originalPosition } : n
+        ));
+        return { success: false, nodeId: id, error: error.message };
       }
-  }, [onNodesChangeRaw, featureFlags.ENABLE_BACKEND_DRAG_SAVE, setNodes]);
+    });
 
-  // Load feature flags on mount
-  useEffect(() => {
-    const loadFlags = async () => {
-      const flags = await getFeatureFlags();
-      setFeatureFlags(flags);
-    };
-    loadFlags();
-  }, []);
+    Promise.all(updatePromises).then(results => {
+      const failures = results.filter(r => !r.success);
+      if (failures.length > 0) {
+        const failedNodeIds = failures.map(f => f.nodeId).join(', ');
+        console.error(`Failed to save position for nodes: ${failedNodeIds}`);
+        alert(`Failed to save position for ${failures.length} node(s): ${failedNodeIds}. Positions have been reverted.`);
+      }
+      // Clear drag state after gesture completes
+      dragStartPositionsRef.current = null;
+    });
+  }, [onNodesChangeRaw, setNodes]);
 
   useEffect(() => {
     const fetchFlow = async () => {
@@ -182,26 +159,6 @@ function App() {
 
     fetchFlow();
   }, [setNodes, setEdges, normalizeFlow]);
-
-  // Autosave: Legacy persistence mechanism, now serves as fallback when backend flags are OFF.
-  // Skips positional changes when ENABLE_BACKEND_DRAG_SAVE is true (handled by backend).
-  const { debouncedFn: debouncedAutoSave, flush: flushAutoSave } = useDebouncedCallback(async (nodes, edges) => {
-    // Skip autosave if last change was positional (already handled by backend)
-    if (lastChangeWasPositionalRef.current) {
-      lastChangeWasPositionalRef.current = false;
-      return;
-    }
-    try {
-      await saveFlow(nodes, edges);
-    } catch (error) {
-      console.error('Failed to save flow:', error);
-    }
-  }, 500);
-
-  useEffect(() => {
-    if (isLoading || isAnimating || isBackendProcessing) return;
-    debouncedAutoSave(nodes, edges);
-  }, [nodes, edges, isLoading, isAnimating, isBackendProcessing, debouncedAutoSave]);
 
   const handleFlowUpdate = useCallback((updatedFlow, options = {}) => {
     if (!updatedFlow) return;
@@ -460,35 +417,22 @@ function App() {
       // Alt+Click: Collapse/expand subtree
       // NOTE: This is SUBTREE COLLAPSE, separate from GROUP COLLAPSE
       // - Uses data.collapsed property
-      // - Affects edge-based hierarchy via getAllDescendants
+      // - Affects edge-based hierarchy
       // - No synthetic edges generated
-      // - Phase 3: Calls backend when ENABLE_BACKEND_SUBTREE flag is enabled
       if (event.altKey) {
         const targetCollapsedState = getTargetCollapseState(node);
 
-        if (shouldUseBackendSubtree(featureFlags.ENABLE_BACKEND_SUBTREE)) {
-          // Backend path: call API
-          try {
-            const result = await apiToggleSubtreeCollapse(node.id, targetCollapsedState);
-            if (result.success && result.flow) {
-              handleFlowUpdate(result.flow);
-            } else {
-              console.error('Failed to toggle subtree collapse:', result.error);
-              alert(`Failed to ${targetCollapsedState ? 'collapse' : 'expand'} subtree: ${result.error}`);
-            }
-          } catch (error) {
-            console.error('Error toggling subtree collapse:', error);
-            alert(`Error ${targetCollapsedState ? 'collapsing' : 'expanding'} subtree: ${error.message}`);
+        try {
+          const result = await apiToggleSubtreeCollapse(node.id, targetCollapsedState);
+          if (result.success && result.flow) {
+            handleFlowUpdate(result.flow);
+          } else {
+            console.error('Failed to toggle subtree collapse:', result.error);
+            alert(`Failed to ${targetCollapsedState ? 'collapse' : 'expand'} subtree: ${result.error}`);
           }
-        } else {
-          // Legacy frontend-only path
-          const nextFlow = collapseSubtreeByHandles(
-            { nodes: nodesRef.current, edges: edgesRef.current },
-            node.id,
-            targetCollapsedState,
-            getAllDescendants
-          );
-          commitFlow(nextFlow);
+        } catch (error) {
+          console.error('Error toggling subtree collapse:', error);
+          alert(`Error ${targetCollapsedState ? 'collapsing' : 'expanding'} subtree: ${error.message}`);
         }
       }
       // Cmd+Click: Toggle selection
@@ -508,7 +452,7 @@ function App() {
         setSelectedNodeIds([]);
       }
     },
-    [commitFlow, setSelectedNodeIds, getAllDescendants, featureFlags.ENABLE_BACKEND_SUBTREE, handleFlowUpdate]
+    [setSelectedNodeIds, handleFlowUpdate]
   );
 
   const handleUndo = useCallback(async () => {
@@ -647,8 +591,6 @@ function App() {
       </ReactFlow>
       <ChatInterface
         onFlowUpdate={handleFlowUpdate}
-        onProcessingChange={setIsBackendProcessing}
-        onFlushPendingSave={flushAutoSave}
         isNotesPanelOpen={isNotesPanelOpen}
         onNotesUpdate={setNotesBullets}
       />
