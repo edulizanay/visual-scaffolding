@@ -1,10 +1,10 @@
 // ABOUTME: Flow API client for backend flow operations
 // ABOUTME: Handles flow CRUD, history, nodes, and edges
-const API_BASE_URL = '/api';
+const API_BASE_URL = '/api/flow';
 
 export const loadFlow = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/flow`);
+    const response = await fetch(`${API_BASE_URL}`);
     if (!response.ok) {
       throw new Error('Failed to load flow');
     }
@@ -17,7 +17,7 @@ export const loadFlow = async () => {
 
 export const undoFlow = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/flow/undo`, {
+    const response = await fetch(`${API_BASE_URL}/undo`, {
       method: 'POST',
     });
     if (!response.ok) {
@@ -32,7 +32,7 @@ export const undoFlow = async () => {
 
 export const redoFlow = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/flow/redo`, {
+    const response = await fetch(`${API_BASE_URL}/redo`, {
       method: 'POST',
     });
     if (!response.ok) {
@@ -47,7 +47,7 @@ export const redoFlow = async () => {
 
 export const getHistoryStatus = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/flow/history-status`);
+    const response = await fetch(`${API_BASE_URL}/history-status`);
     if (!response.ok) {
       throw new Error('Failed to get history status');
     }
