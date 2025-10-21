@@ -1,16 +1,16 @@
 // ABOUTME: Tests undo/redo functionality with auto-save to ensure redo chain isn't truncated
 // ABOUTME: Verifies that auto-save after undo doesn't destroy the redo chain
 import { pushSnapshot, undo, redo, canRedo, clearHistory } from '../server/historyService.js';
-import { closeDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 describe('Undo/Redo with Auto-save', () => {
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
+    await setupTestDb();
     await clearHistory();
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   test('auto-save after undo should not truncate redo chain', async () => {

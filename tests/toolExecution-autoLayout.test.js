@@ -3,19 +3,20 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { executeTool, executeToolCalls } from '../server/tools/executor.js';
-import { getFlow as dbGetFlow, closeDb } from '../server/db.js';
+import { getFlow as dbGetFlow } from '../server/db.js';
 import { getHistoryStatus } from '../server/historyService.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 async function getFlow() {
   return dbGetFlow();
 }
 
-beforeEach(() => {
-  process.env.DB_PATH = ':memory:';
+beforeEach(async () => {
+  await setupTestDb();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 describe('executeAutoLayout', () => {

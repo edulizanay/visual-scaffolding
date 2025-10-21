@@ -1,11 +1,12 @@
 // ABOUTME: Unit tests for Notes LLM service
 // ABOUTME: Tests notes context building, bullet parsing, and LLM failover
 import { parseNotesBullets, buildNotesContext, callNotesLLM } from '../../server/llm/llmService.js';
-import { saveFlow, closeDb } from '../../server/db.js';
+import { saveFlow } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
 
 describe('notesLLMService', () => {
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
+    await setupTestDb();
 
     // Create test flow
     await saveFlow({
@@ -16,8 +17,8 @@ describe('notesLLMService', () => {
     });
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   describe('parseNotesBullets - T1.1, T1.2, T1.3', () => {

@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { executeToolCalls } from '../server/tools/executor.js';
 import { readFlow } from '../server/server.js';
-import { closeDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 async function executeTool(toolName, params) {
   const results = await executeToolCalls([{ name: toolName, params }]);
@@ -15,12 +15,12 @@ async function loadFlow() {
   return readFlow();
 }
 
-beforeEach(() => {
-  process.env.DB_PATH = ':memory:';
+beforeEach(async () => {
+  await setupTestDb();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 describe('executeTool - addNode', () => {
