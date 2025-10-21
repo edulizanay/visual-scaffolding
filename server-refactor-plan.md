@@ -368,19 +368,19 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 ### Checklist
 
-- [ ] **Update .agent/system/project_architecture.md**
+- [x] **Update .agent/system/project_architecture.md**
   - [ ] Add "Repository Layer" section
   - [ ] Document domain repositories (flow, undo, conversation, notes)
   - [ ] Document service layer (flowService, conversationService)
   - [ ] Commit with refactor changes
 
-- [ ] **Update .agent/system/database_schema.md**
+- [x] **Update .agent/system/database_schema.md**
   - [ ] Add notes table documentation after conversation_history
   - [ ] Include: Table structure, fields, API functions, RLS info
   - [ ] Mark as singleton table pattern
   - [ ] Commit with refactor changes
 
-- [ ] **Update .agent/migrations/README.md**
+- [x] **Update .agent/migrations/README.md**
   - [ ] Add entry for create_notes_table migration
   - [ ] Include timestamp, table details, RLS policy
   - [ ] Commit with refactor changes
