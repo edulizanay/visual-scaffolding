@@ -281,7 +281,7 @@ describe('DELETE /api/group/:id', () => {
 
   it('should fail when group does not exist', async () => {
     const response = await request(app)
-      .delete('/api/group/nonexistent-group')
+      .delete('/api/flow/group/nonexistent-group')
       .expect(400);
 
     expect(response.body.success).toBe(false);
@@ -413,7 +413,7 @@ describe('PUT /api/group/:id/expand', () => {
 
   it('should fail when group does not exist', async () => {
     const response = await request(app)
-      .put('/api/group/nonexistent-group/expand')
+      .put('/api/flow/group/nonexistent-group/expand')
       .send({
         expand: true
       })

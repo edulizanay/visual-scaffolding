@@ -158,7 +158,7 @@ describe('PUT /api/edge/:id', () => {
 
   it('should fail when edge does not exist', async () => {
     const response = await request(app)
-      .put('/api/edge/nonexistent-edge')
+      .put('/api/flow/edge/nonexistent-edge')
       .send({
         label: 'Updated'
       })
@@ -190,7 +190,7 @@ describe('DELETE /api/edge/:id', () => {
 
   it('should fail when edge does not exist', async () => {
     const response = await request(app)
-      .delete('/api/edge/nonexistent-edge')
+      .delete('/api/flow/edge/nonexistent-edge')
       .expect(400);
 
     expect(response.body.success).toBe(false);

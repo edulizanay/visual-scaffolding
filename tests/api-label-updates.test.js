@@ -187,7 +187,7 @@ describe('PUT /api/edge/:id - Label Updates', () => {
 
   it('should fail when edge does not exist', async () => {
     const response = await request(app)
-      .put('/api/edge/nonexistent-edge')
+      .put('/api/flow/edge/nonexistent-edge')
       .send({
         label: 'Updated Label'
       })

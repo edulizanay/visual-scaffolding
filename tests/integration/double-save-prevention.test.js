@@ -120,7 +120,7 @@ describe('Double-save prevention', () => {
 
     // Create group via API
     await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result[0].nodeId, node2Result[0].nodeId],
         label: 'Test Group'
