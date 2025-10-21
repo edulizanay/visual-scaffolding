@@ -47,7 +47,7 @@ describe('Database Connection', () => {
       .single();
 
     expect(state).toBeDefined();
-    expect(state.current_index).toBe(-1);
+    expect(state.current_index).toBeNull();
   });
 });
 

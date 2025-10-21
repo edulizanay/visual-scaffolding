@@ -3,6 +3,26 @@
 
 import { supabase } from './supabase-client.js';
 
+// ==================== Helper Functions ====================
+
+/**
+ * Stable JSON stringify for comparing JSONB objects
+ * PostgreSQL JSONB stores properties in alphabetical order,
+ * so we sort keys recursively before stringifying
+ */
+function stableStringify(obj) {
+  if (obj === null) return 'null';
+  if (typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) {
+    return '[' + obj.map(item => stableStringify(item)).join(',') + ']';
+  }
+  const sorted = {};
+  Object.keys(obj).sort().forEach(key => {
+    sorted[key] = stableStringify(obj[key]);
+  });
+  return JSON.stringify(sorted);
+}
+
 // ==================== Flow Operations ====================
 
 /**
@@ -193,21 +213,6 @@ export async function pushUndoSnapshot(flowData) {
     const { _meta: currentMeta, ...currentFlow } = currentData;
 
     // Use stable JSON stringify to handle JSONB property reordering
-    // PostgreSQL JSONB stores properties in alphabetical order, so we need
-    // to sort keys before comparison (recursively)
-    const stableStringify = (obj) => {
-      if (obj === null) return 'null';
-      if (typeof obj !== 'object') return JSON.stringify(obj);
-      if (Array.isArray(obj)) {
-        return '[' + obj.map(item => stableStringify(item)).join(',') + ']';
-      }
-      const sorted = {};
-      Object.keys(obj).sort().forEach(key => {
-        sorted[key] = stableStringify(obj[key]);
-      });
-      return JSON.stringify(sorted);
-    };
-
     const lastStr = stableStringify(lastFlow);
     const currentStr = stableStringify(currentFlow);
 

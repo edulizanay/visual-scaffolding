@@ -55,17 +55,17 @@ export async function truncateAllTables() {
   if (!undoStateExists) {
     const { error: insertError } = await testSupabase
       .from('undo_state')
-      .insert({ id: 1, current_snapshot_time: null });
+      .insert({ id: 1, current_snapshot_time: null, current_index: null });
 
     if (insertError) {
       console.error('Failed to initialize undo_state:', insertError);
       throw insertError;
     }
   } else {
-    // Reset undo_state to initial state
+    // Reset undo_state to initial state (both active and deprecated fields)
     const { error: undoStateError } = await testSupabase
       .from('undo_state')
-      .update({ current_snapshot_time: null })
+      .update({ current_snapshot_time: null, current_index: null })
       .eq('id', 1)
       .select();
 

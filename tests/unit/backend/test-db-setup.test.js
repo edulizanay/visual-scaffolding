@@ -72,13 +72,13 @@ describe('Test Infrastructure - truncateAllTables', () => {
     // Truncate
     await truncateAllTables();
 
-    // Verify reset to -1
+    // Verify reset to null
     const { data: afterData } = await testSupabase
       .from('undo_state')
       .select('current_index')
       .eq('id', 1)
       .single();
-    expect(afterData.current_index).toBe(-1);
+    expect(afterData.current_index).toBeNull();
   });
 });
 
