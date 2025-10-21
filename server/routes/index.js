@@ -19,10 +19,4 @@ export function registerRoutes(app, { readFlow, writeFlow }) {
   app.use('/api/flow', flowRouter);
   app.use('/api/conversation', conversationRouter);
   app.use('/api/notes', notesRouter);
-
-  // Legacy flat routes under /api
-  // /api/node, /api/edge, /api/group (not nested under /api/flow)
-  const legacyRouter = Router();
-  registerFlowRoutes(legacyRouter, { readFlow, writeFlow });
-  app.use('/api', legacyRouter);
 }
