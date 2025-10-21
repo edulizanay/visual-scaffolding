@@ -7,6 +7,12 @@ export default defineConfig({
     // Enable globals for Jest-compatible API
     globals: true,
 
+    // Disable watch mode to prevent orphaned processes
+    watch: false,
+
+    // Increase teardown timeout for proper worker cleanup
+    teardownTimeout: 30000,
+
     // Multi-environment setup using projects
     projects: [
       // Backend tests - Node environment
