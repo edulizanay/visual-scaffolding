@@ -17,8 +17,10 @@ import {
   redoFlow,
   createNode,
   updateNode,
+  deleteNode,
   createEdge,
   updateEdge,
+  deleteEdge,
   createGroup as apiCreateGroup,
   ungroup as apiUngroup,
   toggleGroupExpansion as apiToggleGroupExpansion,
@@ -237,6 +239,32 @@ function App() {
     ),
     [handleMutation]
   );
+
+  const onNodesDelete = useCallback(async (deletedNodes) => {
+    // Call backend API for each deleted node
+    for (const node of deletedNodes) {
+      await handleMutation(
+        () => deleteNode(node.id),
+        {
+          errorContext: 'delete node',
+          onError: (msg) => console.error(msg)
+        }
+      );
+    }
+  }, [handleMutation]);
+
+  const onEdgesDelete = useCallback(async (deletedEdges) => {
+    // Call backend API for each deleted edge
+    for (const edge of deletedEdges) {
+      await handleMutation(
+        () => deleteEdge(edge.id),
+        {
+          errorContext: 'delete edge',
+          onError: (msg) => console.error(msg)
+        }
+      );
+    }
+  }, [handleMutation]);
 
   const getNodeDimensions = useCallback((node) => {
     return {
@@ -572,6 +600,8 @@ function App() {
         edges={edgesWithHandlers}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeClick={onNodeClick}
