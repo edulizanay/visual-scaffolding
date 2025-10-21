@@ -183,27 +183,27 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
   - [ ] Run `npm test -- tests/e2e/notesPanel.e2e.test.js`
   - [ ] Verify tests pass
 
-- [ ] **2.9: Verify no remaining notesService imports**
+- [x] **2.9: Verify no remaining notesService imports**
   - [ ] Run: `rg "from ['\"].*notesService" -g '!node_modules'`
   - [ ] Expected: No matches (all 4 files updated in 2.4-2.8)
   - [ ] If stragglers found, update them
 
-- [ ] **2.10: Verify no remaining notes-debug.json references**
+- [x] **2.10: Verify no remaining notes-debug.json references**
   - [ ] Run: `rg 'notes-debug' -g '!node_modules'`
   - [ ] Expected: Only `package.json` server:dev script
   - [ ] If other matches found, clean them up
 
-- [ ] **2.11: Delete notesService.js and notes-debug.json**
+- [x] **2.11: Delete notesService.js and notes-debug.json**
   - [ ] Delete `server/notesService.js` (73 lines removed)
   - [ ] Delete `notes-debug.json` (if exists in project root)
   - [ ] Update `.gitignore`: Remove notes-debug.json entry (if exists)
 
-- [ ] **2.12: Update package.json**
+- [x] **2.12: Update package.json**
   - [ ] Edit `server:dev` script
   - [ ] Remove `--ignore 'notes-debug.json'` from nodemon command
   - [ ] Final script: `"server:dev": "nodemon --ignore 'server/data/**' server/server.js"`
 
-- [ ] **2.13: Verify all notes tests pass**
+- [x] **2.13: Verify all notes tests pass**
   - [ ] Run: `npm test -- notesService.test.js`
   - [ ] Run: `npm test -- api-notes.test.js`
   - [ ] Run: `npm test -- integration/notesPanel`
