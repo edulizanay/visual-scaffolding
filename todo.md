@@ -153,9 +153,12 @@
 
 **Timestamp-Based Undo/Redo Refactor (Phase 5a):**
 - ✅ Migrated undo_state from ID-based (`current_index`) to timestamp-based (`current_snapshot_time`)
-- ✅ Database migration: `003_timestamp_based_undo.sql` (adds `current_snapshot_time` column to SQLite)
-- ✅ Supabase migration: Column renamed via ALTER TABLE
-- ✅ Backwards compatibility: `getUndoStatus()` now returns BOTH `currentIndex` (computed from position) AND `currentTimestamp`
+- ✅ SQLite migration: `003_timestamp_based_undo.sql` (adds `current_snapshot_time` column)
+- ✅ Supabase migrations:
+  - `convert_undo_state_to_timestamp_based`: Renamed current_index → current_snapshot_time
+  - `restore_current_index_for_schema_parity`: Added current_index back (NULL, deprecated) for schema parity
+- ✅ **Schema Parity**: Both databases now have BOTH columns (`current_index` deprecated/NULL, `current_snapshot_time` active)
+- ✅ Backwards compatibility: `getUndoStatus()` returns BOTH `currentIndex` (computed) AND `currentTimestamp`
 - ✅ All 16 historyService tests passing with timestamp navigation
 
 **Why Timestamp-Based?**
