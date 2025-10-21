@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server/server.js",
-    "server:dev": "nodemon --ignore 'server/data/**' --ignore 'notes-debug.json' server/server.js",
+    "server:dev": "nodemon --ignore 'server/data/**' server/server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server:dev\"",
     "test": "vitest run",
     "test:watch": "vitest",
