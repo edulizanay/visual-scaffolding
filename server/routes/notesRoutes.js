@@ -3,18 +3,9 @@
 import { Router } from 'express';
 import { getNotes, saveNotes, updateBullets } from '../repositories/notesRepository.js';
 import { buildNotesContext, callNotesLLM } from '../llm/llmService.js';
+import { checkLLMAvailability, logError } from '../llm/llmUtils.js';
 
 const router = Router();
-
-// Logs errors with consistent formatting
-function logError(operation, error) {
-  console.error(`Error ${operation}:`, error);
-}
-
-// Checks if LLM API keys are configured
-function checkLLMAvailability() {
-  return Boolean(process.env.GROQ_API_KEY || process.env.CEREBRAS_API_KEY);
-}
 
 export function registerNotesRoutes(router) {
   router.get('/', async (req, res) => {
