@@ -93,7 +93,7 @@ describe('Double-save prevention', () => {
 
     // Create edge via API
     await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: node1Result[0].nodeId,
         targetNodeId: node2Result[0].nodeId,

@@ -129,7 +129,7 @@ describe('Save race conditions', () => {
       const promises = [
         request(app).post('/api/flow/node').send({ label: 'New Node' }),
         request(app).put(`/api/node/${node1[0].nodeId}`).send({ label: 'Updated Node 1' }),
-        request(app).post('/api/edge').send({
+        request(app).post('/api/flow/edge').send({
           sourceNodeId: node1[0].nodeId,
           targetNodeId: node2[0].nodeId
         })
