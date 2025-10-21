@@ -96,9 +96,9 @@ describe('Save race conditions', () => {
 
       // Update it 3 times rapidly
       const promises = [
-        request(app).put(`/api/node/${nodeId}`).send({ label: 'Update 1' }),
-        request(app).put(`/api/node/${nodeId}`).send({ label: 'Update 2' }),
-        request(app).put(`/api/node/${nodeId}`).send({ label: 'Update 3' })
+        request(app).put(`/api/flow/node/${nodeId}`).send({ label: 'Update 1' }),
+        request(app).put(`/api/flow/node/${nodeId}`).send({ label: 'Update 2' }),
+        request(app).put(`/api/flow/node/${nodeId}`).send({ label: 'Update 3' })
       ];
 
       const results = await Promise.all(promises);
@@ -128,7 +128,7 @@ describe('Save race conditions', () => {
       // Mix of different operations
       const promises = [
         request(app).post('/api/flow/node').send({ label: 'New Node' }),
-        request(app).put(`/api/node/${node1[0].nodeId}`).send({ label: 'Updated Node 1' }),
+        request(app).put(`/api/flow/node/${node1[0].nodeId}`).send({ label: 'Updated Node 1' }),
         request(app).post('/api/flow/edge').send({
           sourceNodeId: node1[0].nodeId,
           targetNodeId: node2[0].nodeId

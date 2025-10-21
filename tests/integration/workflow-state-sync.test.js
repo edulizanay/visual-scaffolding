@@ -116,7 +116,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
 
     // Step 2: Update node position (simulating drag)
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({
         label: 'Test Node',
         position: { x: 300, y: 400 }
@@ -282,7 +282,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
 
     // Step 2: Update node
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ label: 'Updated' })
       .expect(200);
 
@@ -291,7 +291,7 @@ describe('Workflow: Multiple operations → Undo chain integrity', () => {
 
     // Step 3: Delete node
     await request(app)
-      .delete(`/api/node/${nodeId}`)
+      .delete(`/api/flow/node/${nodeId}`)
       .expect(200);
 
     const flowAfterDelete = await getCurrentFlow();
@@ -361,7 +361,7 @@ describe('State Sync: Visual state === Database state', () => {
 
     // Update position
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ label: 'Test', position: newPosition })
       .expect(200);
 

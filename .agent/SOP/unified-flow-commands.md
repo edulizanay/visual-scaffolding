@@ -19,8 +19,8 @@ Keep every flow mutation (node CRUD, grouping, layout tweaks, visual changes) in
 - Document new commands or parameters in `.agent/system/project_architecture.md` or feature task docs.
 
 ## Reference Examples
-- `executeAddNode` + `POST /api/node` + `createNode()` — double-click in the UI and LLM tool creation now share the same backend command.
-- `executeCreateGroup` + `POST /api/group` + `createGroup()` — Cmd+G grouping in UI and LLM tool creation share the same backend command.
-- `executeUpdateNode` + `PUT /api/node/:id` + `updateNode()` — label editing in UI and LLM tool updates share the same backend command.
-- `executeAddEdge` + `POST /api/edge` + `createEdge()` — drag-to-connect in UI and LLM tool creation share the same backend command.
+- `executeAddNode` + `POST /api/flow/node` + `createNode()` — double-click in the UI and LLM tool creation now share the same backend command.
+- `executeCreateGroup` + `POST /api/flow/group` + `createGroup()` — Cmd+G grouping in UI and LLM tool creation share the same backend command.
+- `executeUpdateNode` + `PUT /api/flow/node/:id` + `updateNode()` — label editing in UI and LLM tool updates share the same backend command.
+- `executeAddEdge` + `POST /api/flow/edge` + `createEdge()` — drag-to-connect in UI and LLM tool creation share the same backend command.
 - Group collapse/expand routes through `toggleGroupExpansion` before the result is persisted and broadcast back to React Flow.

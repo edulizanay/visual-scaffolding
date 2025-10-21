@@ -132,7 +132,7 @@ describe('POST /api/flow/edge', () => {
   });
 });
 
-describe('PUT /api/edge/:id', () => {
+describe('PUT /api/flow/edge/:id', () => {
   it('should update edge label', async () => {
     // Create edge first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -145,7 +145,7 @@ describe('PUT /api/edge/:id', () => {
 
     // Update edge label
     const response = await request(app)
-      .put(`/api/edge/${edgeResult.edgeId}`)
+      .put(`/api/flow/edge/${edgeResult.edgeId}`)
       .send({
         label: 'Updated'
       })
@@ -169,7 +169,7 @@ describe('PUT /api/edge/:id', () => {
   });
 });
 
-describe('DELETE /api/edge/:id', () => {
+describe('DELETE /api/flow/edge/:id', () => {
   it('should delete edge', async () => {
     // Create edge first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -181,7 +181,7 @@ describe('DELETE /api/edge/:id', () => {
 
     // Delete edge
     const response = await request(app)
-      .delete(`/api/edge/${edgeResult.edgeId}`)
+      .delete(`/api/flow/edge/${edgeResult.edgeId}`)
       .expect(200);
 
     expect(response.body.success).toBe(true);

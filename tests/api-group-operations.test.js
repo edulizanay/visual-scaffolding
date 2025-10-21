@@ -28,7 +28,7 @@ afterEach(async () => {
   await cleanupTestDb();
 });
 
-describe('POST /api/group', () => {
+describe('POST /api/flow/group', () => {
   it('should create group with multiple nodes', async () => {
     // Create nodes first
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
@@ -247,7 +247,7 @@ describe('POST /api/group', () => {
   });
 });
 
-describe('DELETE /api/group/:id', () => {
+describe('DELETE /api/flow/group/:id', () => {
   it('should ungroup and restore member nodes', async () => {
     // Create group first
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
@@ -258,7 +258,7 @@ describe('DELETE /api/group/:id', () => {
 
     // Ungroup
     const response = await request(app)
-      .delete(`/api/group/${groupResult.groupId}`)
+      .delete(`/api/flow/group/${groupResult.groupId}`)
       .expect(200);
 
     expect(response.body.success).toBe(true);
@@ -311,7 +311,7 @@ describe('DELETE /api/group/:id', () => {
     const outerGroupId = outerGroupResponse.body.groupId;
 
     const ungroupResponse = await request(app)
-      .delete(`/api/group/${innerGroupResult.groupId}`)
+      .delete(`/api/flow/group/${innerGroupResult.groupId}`)
       .expect(200);
 
     expect(ungroupResponse.body.success).toBe(true);
@@ -333,7 +333,7 @@ describe('DELETE /api/group/:id', () => {
     const nodeResult = await executeTool('addNode', { label: 'Regular Node' });
 
     const response = await request(app)
-      .delete(`/api/group/${nodeResult.nodeId}`)
+      .delete(`/api/flow/group/${nodeResult.nodeId}`)
       .expect(400);
 
     expect(response.body.success).toBe(false);
@@ -341,7 +341,7 @@ describe('DELETE /api/group/:id', () => {
   });
 });
 
-describe('PUT /api/group/:id/expand', () => {
+describe('PUT /api/flow/group/:id/expand', () => {
   it('should expand group and show members', async () => {
     // Create collapsed group
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
@@ -352,7 +352,7 @@ describe('PUT /api/group/:id/expand', () => {
 
     // Expand group
     const response = await request(app)
-      .put(`/api/group/${groupResult.groupId}/expand`)
+      .put(`/api/flow/group/${groupResult.groupId}/expand`)
       .send({
         expand: true
       })
@@ -389,7 +389,7 @@ describe('PUT /api/group/:id/expand', () => {
     });
 
     const response = await request(app)
-      .put(`/api/group/${groupResult.groupId}/expand`)
+      .put(`/api/flow/group/${groupResult.groupId}/expand`)
       .send({
         expand: false
       })

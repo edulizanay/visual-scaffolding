@@ -87,7 +87,7 @@ These are NOT persisted - they're computed on every render via `applyGroupVisibi
 - Double-click on collapsed group node
 - Double-click on group halo border
 - AI command: `toggleGroupExpansion`
-- API: `PUT /api/group/:id/expand`
+- API: `PUT /api/flow/group/:id/expand`
 
 ### System 2: Subtree Collapse (Frontend-Only)
 
@@ -162,9 +162,9 @@ They can operate on the same nodes simultaneously without conflicts.
 - `toggleGroupExpansion` - Tool definition for AI collapse/expand
 
 **`server/server.js`** - REST API endpoints:
-- `POST /api/group` - Create group
-- `DELETE /api/group/:id` - Ungroup
-- `PUT /api/group/:id/expand` - Toggle expansion
+- `POST /api/flow/group` - Create group
+- `DELETE /api/flow/group/:id` - Ungroup
+- `PUT /api/flow/group/:id/expand` - Toggle expansion
 
 ## Synthetic Edge Generation
 

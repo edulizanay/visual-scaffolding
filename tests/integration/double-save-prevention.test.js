@@ -69,7 +69,7 @@ describe('Double-save prevention', () => {
 
     // Update node via API
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ label: 'Updated' })
       .expect(200);
 
@@ -155,7 +155,7 @@ describe('Double-save prevention', () => {
 
     // Toggle expansion via API
     await request(app)
-      .put(`/api/group/${groupResult[0].groupId}/expand`)
+      .put(`/api/flow/group/${groupResult[0].groupId}/expand`)
       .send({ expand: true })
       .expect(200);
 

@@ -149,7 +149,7 @@ describe('Save path verification', () => {
   });
 
   describe('API operations create snapshots', () => {
-    it('should create snapshot when POST /api/node', async () => {
+    it('should create snapshot when POST /api/flow/node', async () => {
       const statusBefore = await getHistoryStatus();
 
       await request(app)
@@ -161,7 +161,7 @@ describe('Save path verification', () => {
       expect(statusAfter.snapshotCount).toBe(statusBefore.snapshotCount + 1);
     });
 
-    it('should create snapshot when POST /api/edge', async () => {
+    it('should create snapshot when POST /api/flow/edge', async () => {
       const node1 = await executeToolCalls([
         { name: 'addNode', params: { label: 'Node 1' } }
       ]);
@@ -183,7 +183,7 @@ describe('Save path verification', () => {
       expect(statusAfter.snapshotCount).toBe(statusBefore.snapshotCount + 1);
     });
 
-    it('should create snapshot when POST /api/group', async () => {
+    it('should create snapshot when POST /api/flow/group', async () => {
       const node1 = await executeToolCalls([
         { name: 'addNode', params: { label: 'Node 1' } }
       ]);

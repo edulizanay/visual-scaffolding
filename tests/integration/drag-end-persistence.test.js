@@ -64,7 +64,7 @@ describe('Drag-end Position Persistence', () => {
 
     // Update node position (simulating drag-end)
     const updateResponse = await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ position: { x: 200, y: 250 } })
       .expect(200);
 
@@ -100,7 +100,7 @@ describe('Drag-end Position Persistence', () => {
 
     // Update position
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ position: { x: 200, y: 250 } })
       .expect(200);
 
@@ -129,13 +129,13 @@ describe('Drag-end Position Persistence', () => {
 
     // First position update
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ position: { x: 150, y: 150 } })
       .expect(200);
 
     // Second position update
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ position: { x: 200, y: 200 } })
       .expect(200);
 
@@ -166,7 +166,7 @@ describe('Drag-end Position Persistence', () => {
 
     // Update position
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ position: { x: 200, y: 200 } })
       .expect(200);
 
@@ -175,7 +175,7 @@ describe('Drag-end Position Persistence', () => {
 
     // Update to same position again (should be deduplicated)
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ position: { x: 200, y: 200 } })
       .expect(200);
 

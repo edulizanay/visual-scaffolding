@@ -237,15 +237,15 @@ See [database_schema.md](./database_schema.md) for detailed schema documentation
 - `PUT /api/subtree/:id/collapse` - Toggle subtree collapse (creates snapshot with origin: `ui.subtree`)
 
 **Unified Flow Command Operations:**
-- `POST /api/node` - Create node (optionally with parent or group)
-- `PUT /api/node/:id` - Update node properties (label, description, position)
-- `DELETE /api/node/:id` - Delete node and connected edges
-- `POST /api/edge` - Create edge between nodes
-- `PUT /api/edge/:id` - Update edge label
-- `DELETE /api/edge/:id` - Delete edge
-- `POST /api/group` - Create group from selected nodes
-- `DELETE /api/group/:id` - Ungroup and restore member nodes
-- `PUT /api/group/:id/expand` - Toggle group expansion (collapse/expand)
+- `POST /api/flow/node` - Create node (optionally with parent or group)
+- `PUT /api/flow/node/:id` - Update node properties (label, description, position)
+- `DELETE /api/flow/node/:id` - Delete node and connected edges
+- `POST /api/flow/edge` - Create edge between nodes
+- `PUT /api/flow/edge/:id` - Update edge label
+- `DELETE /api/flow/edge/:id` - Delete edge
+- `POST /api/flow/group` - Create group from selected nodes
+- `DELETE /api/flow/group/:id` - Ungroup and restore member nodes
+- `PUT /api/flow/group/:id/expand` - Toggle group expansion (collapse/expand)
 
 **Conversation Operations:**
 - `POST /api/conversation/message` - Send message to AI
