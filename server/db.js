@@ -1,55 +1,7 @@
-// ABOUTME: SQLite database connection and query helpers
-// ABOUTME: Provides sync wrappers around better-sqlite3 for flow persistence
+// ABOUTME: Supabase database connection and query helpers
+// ABOUTME: Provides async wrappers around Supabase client for flow persistence
 
-import Database from 'better-sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { readFileSync, mkdirSync, existsSync } from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-let db = null;
-
-/**
- * Get or create database connection
- * Supports :memory: for tests via DB_PATH env var
- */
-export function getDb() {
-  if (!db) {
-    const dbPath = process.env.DB_PATH || join(__dirname, 'data', 'flow.db');
-    if (dbPath !== ':memory:' && !dbPath.startsWith(__dirname)) {
-      throw new Error('DB_PATH must reside within the server directory or use :memory:');
-    }
-    if (dbPath !== ':memory:') {
-      const dirPath = dirname(dbPath);
-      if (!existsSync(dirPath) && dirPath.startsWith(__dirname)) {
-        mkdirSync(dirPath, { recursive: true });
-      }
-    }
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL'); // Better concurrency
-    db.pragma('foreign_keys = ON');
-
-    // Run migrations in order
-    const migration001 = readFileSync(join(__dirname, 'migrations', '001_initial.sql'), 'utf-8');
-    db.exec(migration001);
-
-    const migration002 = readFileSync(join(__dirname, 'migrations', '002_remove_visual_settings.sql'), 'utf-8');
-    db.exec(migration002);
-  }
-  return db;
-}
-
-/**
- * Close database connection (for tests)
- */
-export function closeDb() {
-  if (db) {
-    db.close();
-    db = null;
-  }
-}
+import { supabase } from './supabase-client.js';
 
 // ==================== Flow Operations ====================
 
@@ -66,50 +18,67 @@ function sanitizeFlowData(flowData) {
   return { nodes, edges };
 }
 
-export function getFlow(userId = 'default', name = 'main') {
-  const row = getDb()
-    .prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-    .get(userId, name);
+export async function getFlow(userId = 'default', name = 'main') {
+  const { data, error } = await supabase
+    .from('flows')
+    .select('data')
+    .eq('user_id', userId)
+    .eq('name', name)
+    .maybeSingle();
 
-  if (!row) {
+  if (error && error.code !== 'PGRST116') {
+    throw error;
+  }
+
+  if (!data) {
     return { nodes: [], edges: [] };
   }
 
-  try {
-    const parsed = JSON.parse(row.data);
-    return sanitizeFlowData(parsed);
-  } catch (error) {
-    return { nodes: [], edges: [] };
-  }
+  return sanitizeFlowData(data.data);
 }
 
 /**
  * Save flow data (upsert)
  * Creates new flow or updates existing one
  */
-export function saveFlow(flowData, userId = 'default', name = 'main') {
+export async function saveFlow(flowData, userId = 'default', name = 'main') {
   const sanitized = sanitizeFlowData(flowData);
-  const data = JSON.stringify(sanitized);
 
-  getDb()
-    .prepare(`
-      INSERT INTO flows (user_id, name, data, updated_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(user_id, name)
-      DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP
-    `)
-    .run(userId, name, data);
+  const { error } = await supabase
+    .from('flows')
+    .upsert(
+      {
+        user_id: userId,
+        name: name,
+        data: sanitized,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: 'user_id,name'
+      }
+    );
+
+  if (error) {
+    throw error;
+  }
 }
 
 /**
  * Get flow ID for user+name (used by undo/redo)
  */
-export function getFlowId(userId = 'default', name = 'main') {
-  const row = getDb()
-    .prepare('SELECT id FROM flows WHERE user_id = ? AND name = ?')
-    .get(userId, name);
+export async function getFlowId(userId = 'default', name = 'main') {
+  const { data, error } = await supabase
+    .from('flows')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', name)
+    .maybeSingle();
 
-  return row ? row.id : null;
+  if (error && error.code !== 'PGRST116') {
+    throw error;
+  }
+
+  return data ? data.id : null;
 }
 
 // ==================== Conversation Operations ====================
@@ -117,20 +86,33 @@ export function getFlowId(userId = 'default', name = 'main') {
 /**
  * Add message to conversation history
  */
-export function addConversationMessage(role, content, toolCalls = null) {
-  getDb()
-    .prepare('INSERT INTO conversation_history (role, content, tool_calls) VALUES (?, ?, ?)')
-    .run(role, content, toolCalls ? JSON.stringify(toolCalls) : null);
+export async function addConversationMessage(role, content, toolCalls = null) {
+  const { error } = await supabase
+    .from('conversation_history')
+    .insert({
+      role,
+      content,
+      tool_calls: toolCalls || null
+    });
+
+  if (error) {
+    throw error;
+  }
 }
 
 /**
  * Get conversation history
  * If limit provided, returns last N interaction pairs (limit * 2 messages)
  */
-export function getConversationHistory(limit = null) {
-  let query = 'SELECT * FROM conversation_history ORDER BY id ASC';
+export async function getConversationHistory(limit = null) {
+  const { data: allRows, error } = await supabase
+    .from('conversation_history')
+    .select('*')
+    .order('id', { ascending: true });
 
-  const allRows = getDb().prepare(query).all();
+  if (error) {
+    throw error;
+  }
 
   // Apply limit (limit is interaction pairs, so multiply by 2 for messages)
   let rows = allRows;
@@ -144,7 +126,7 @@ export function getConversationHistory(limit = null) {
   return rows.map(row => ({
     role: row.role,
     content: row.content,
-    toolCalls: row.tool_calls ? JSON.parse(row.tool_calls) : [],
+    toolCalls: row.tool_calls || [],
     timestamp: row.timestamp
   }));
 }
@@ -152,8 +134,15 @@ export function getConversationHistory(limit = null) {
 /**
  * Clear all conversation history
  */
-export function clearConversationHistory() {
-  getDb().prepare('DELETE FROM conversation_history').run();
+export async function clearConversationHistory() {
+  const { error } = await supabase
+    .from('conversation_history')
+    .delete()
+    .neq('id', 0); // Delete all rows
+
+  if (error) {
+    throw error;
+  }
 }
 
 // ==================== Undo/Redo Operations ====================
@@ -162,24 +151,41 @@ export function clearConversationHistory() {
  * Push snapshot to undo history
  * Handles deduplication and truncation
  */
-export function pushUndoSnapshot(flowData) {
-  const db = getDb();
-  const cleanState = JSON.stringify(flowData);
+export async function pushUndoSnapshot(flowData) {
+  const cleanState = flowData;
 
   // Get current state
-  const stateRow = db.prepare('SELECT current_index FROM undo_state WHERE id = 1').get();
+  const { data: stateRow, error: stateError } = await supabase
+    .from('undo_state')
+    .select('current_index')
+    .eq('id', 1)
+    .single();
+
+  if (stateError) {
+    throw stateError;
+  }
+
   const currentIndex = stateRow.current_index;
 
   // Get last snapshot if exists
   let lastSnapshot = null;
   if (currentIndex > 0) {
-    const lastRow = db.prepare('SELECT snapshot FROM undo_history WHERE id = ?').get(currentIndex);
+    const { data: lastRow, error: lastError } = await supabase
+      .from('undo_history')
+      .select('snapshot')
+      .eq('id', currentIndex)
+      .maybeSingle();
+
+    if (lastError && lastError.code !== 'PGRST116') {
+      throw lastError;
+    }
+
     lastSnapshot = lastRow ? lastRow.snapshot : null;
   }
 
   // Skip if identical to last snapshot (compare flow state, not metadata)
   if (lastSnapshot) {
-    const lastData = JSON.parse(lastSnapshot);
+    const lastData = lastSnapshot;
     const currentData = flowData;
 
     // Remove metadata for comparison
@@ -193,86 +199,224 @@ export function pushUndoSnapshot(flowData) {
 
   // If we're not at the end, truncate future states
   if (currentIndex > 0) {
-    const maxRow = db.prepare('SELECT MAX(id) as maxId FROM undo_history').get();
-    if (maxRow.maxId && currentIndex < maxRow.maxId) {
-      db.prepare('DELETE FROM undo_history WHERE id > ?').run(currentIndex);
+    const { data: maxRow, error: maxError } = await supabase
+      .from('undo_history')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (maxError && maxError.code !== 'PGRST116') {
+      throw maxError;
+    }
+
+    const maxId = maxRow ? maxRow.id : 0;
+
+    if (maxId && currentIndex < maxId) {
+      const { error: deleteError } = await supabase
+        .from('undo_history')
+        .delete()
+        .gt('id', currentIndex);
+
+      if (deleteError) {
+        throw deleteError;
+      }
     }
   }
 
   // Add new snapshot
-  const result = db.prepare('INSERT INTO undo_history (snapshot) VALUES (?)').run(cleanState);
-  const newId = result.lastInsertRowid;
+  const { data: insertResult, error: insertError } = await supabase
+    .from('undo_history')
+    .insert({ snapshot: cleanState })
+    .select('id')
+    .single();
+
+  if (insertError) {
+    throw insertError;
+  }
+
+  const newId = insertResult.id;
 
   // Update current index
-  db.prepare('UPDATE undo_state SET current_index = ? WHERE id = 1').run(newId);
+  const { error: updateError } = await supabase
+    .from('undo_state')
+    .update({ current_index: newId })
+    .eq('id', 1);
+
+  if (updateError) {
+    throw updateError;
+  }
 
   // Limit to 50 snapshots
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM undo_history').get();
-  if (countRow.count > 50) {
-    db.prepare(`
-      DELETE FROM undo_history
-      WHERE id NOT IN (
-        SELECT id FROM undo_history ORDER BY id DESC LIMIT 50
-      )
-    `).run();
+  const { count, error: countError } = await supabase
+    .from('undo_history')
+    .select('*', { count: 'exact', head: true });
+
+  if (countError) {
+    throw countError;
+  }
+
+  if (count > 50) {
+    // Get IDs to keep (last 50)
+    const { data: keepRows, error: keepError } = await supabase
+      .from('undo_history')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(50);
+
+    if (keepError) {
+      throw keepError;
+    }
+
+    const keepIds = keepRows.map(row => row.id);
+
+    // Delete snapshots not in keep list
+    const { error: deleteOldError } = await supabase
+      .from('undo_history')
+      .delete()
+      .not('id', 'in', `(${keepIds.join(',')})`);
+
+    if (deleteOldError) {
+      throw deleteOldError;
+    }
   }
 }
 
 /**
  * Undo to previous state
  */
-export function undo() {
-  const db = getDb();
-  const stateRow = db.prepare('SELECT current_index FROM undo_state WHERE id = 1').get();
+export async function undo() {
+  const { data: stateRow, error: stateError } = await supabase
+    .from('undo_state')
+    .select('current_index')
+    .eq('id', 1)
+    .single();
+
+  if (stateError) {
+    throw stateError;
+  }
+
   const currentIndex = stateRow.current_index;
 
   if (currentIndex <= 1) return null; // Can't undo first snapshot or empty
 
   const newIndex = currentIndex - 1;
-  const snapshotRow = db.prepare('SELECT snapshot FROM undo_history WHERE id = ?').get(newIndex);
+  const { data: snapshotRow, error: snapshotError } = await supabase
+    .from('undo_history')
+    .select('snapshot')
+    .eq('id', newIndex)
+    .maybeSingle();
+
+  if (snapshotError && snapshotError.code !== 'PGRST116') {
+    throw snapshotError;
+  }
 
   if (!snapshotRow) return null;
 
-  db.prepare('UPDATE undo_state SET current_index = ? WHERE id = 1').run(newIndex);
+  const { error: updateError } = await supabase
+    .from('undo_state')
+    .update({ current_index: newIndex })
+    .eq('id', 1);
 
-  return JSON.parse(snapshotRow.snapshot);
+  if (updateError) {
+    throw updateError;
+  }
+
+  return snapshotRow.snapshot;
 }
 
 /**
  * Redo to next state
  */
-export function redo() {
-  const db = getDb();
-  const stateRow = db.prepare('SELECT current_index FROM undo_state WHERE id = 1').get();
+export async function redo() {
+  const { data: stateRow, error: stateError } = await supabase
+    .from('undo_state')
+    .select('current_index')
+    .eq('id', 1)
+    .single();
+
+  if (stateError) {
+    throw stateError;
+  }
+
   const currentIndex = stateRow.current_index;
 
-  const maxRow = db.prepare('SELECT MAX(id) as maxId FROM undo_history').get();
+  const { data: maxRow, error: maxError } = await supabase
+    .from('undo_history')
+    .select('id')
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (!maxRow.maxId || currentIndex >= maxRow.maxId) return null; // Can't redo
+  if (maxError && maxError.code !== 'PGRST116') {
+    throw maxError;
+  }
+
+  const maxId = maxRow ? maxRow.id : 0;
+
+  if (!maxId || currentIndex >= maxId) return null; // Can't redo
 
   const newIndex = currentIndex + 1;
-  const snapshotRow = db.prepare('SELECT snapshot FROM undo_history WHERE id = ?').get(newIndex);
+  const { data: snapshotRow, error: snapshotError } = await supabase
+    .from('undo_history')
+    .select('snapshot')
+    .eq('id', newIndex)
+    .maybeSingle();
+
+  if (snapshotError && snapshotError.code !== 'PGRST116') {
+    throw snapshotError;
+  }
 
   if (!snapshotRow) return null;
 
-  db.prepare('UPDATE undo_state SET current_index = ? WHERE id = 1').run(newIndex);
+  const { error: updateError } = await supabase
+    .from('undo_state')
+    .update({ current_index: newIndex })
+    .eq('id', 1);
 
-  return JSON.parse(snapshotRow.snapshot);
+  if (updateError) {
+    throw updateError;
+  }
+
+  return snapshotRow.snapshot;
 }
 
 /**
  * Get undo/redo status
  */
-export function getUndoStatus() {
-  const db = getDb();
-  const stateRow = db.prepare('SELECT current_index FROM undo_state WHERE id = 1').get();
+export async function getUndoStatus() {
+  const { data: stateRow, error: stateError } = await supabase
+    .from('undo_state')
+    .select('current_index')
+    .eq('id', 1)
+    .single();
+
+  if (stateError) {
+    throw stateError;
+  }
+
   const currentIndex = stateRow.current_index;
 
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM undo_history').get();
-  const totalSnapshots = countRow.count;
+  const { count: totalSnapshots, error: countError } = await supabase
+    .from('undo_history')
+    .select('*', { count: 'exact', head: true });
 
-  const maxRow = db.prepare('SELECT MAX(id) as maxId FROM undo_history').get();
-  const maxId = maxRow.maxId || 0;
+  if (countError) {
+    throw countError;
+  }
+
+  const { data: maxRow, error: maxError } = await supabase
+    .from('undo_history')
+    .select('id')
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (maxError && maxError.code !== 'PGRST116') {
+    throw maxError;
+  }
+
+  const maxId = maxRow ? maxRow.id : 0;
 
   return {
     canUndo: currentIndex > 1,
@@ -285,16 +429,30 @@ export function getUndoStatus() {
 /**
  * Clear all undo history
  */
-export function clearUndoHistory() {
-  const db = getDb();
-  db.prepare('DELETE FROM undo_history').run();
-  db.prepare('UPDATE undo_state SET current_index = -1 WHERE id = 1').run();
+export async function clearUndoHistory() {
+  const { error: deleteError } = await supabase
+    .from('undo_history')
+    .delete()
+    .neq('id', 0); // Delete all rows
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  const { error: updateError } = await supabase
+    .from('undo_state')
+    .update({ current_index: -1 })
+    .eq('id', 1);
+
+  if (updateError) {
+    throw updateError;
+  }
 }
 
 /**
  * Initialize undo history with initial flow state
  */
-export function initializeUndoHistory(flowData) {
-  clearUndoHistory();
-  pushUndoSnapshot(flowData);
+export async function initializeUndoHistory(flowData) {
+  await clearUndoHistory();
+  await pushUndoSnapshot(flowData);
 }
