@@ -1,92 +1,47 @@
 # SOP: Adding New Persistence Actions
 
-> **When to use this**: When adding a new user action that needs explicit backend persistence via the backend save funnel (not autosave).
+> **When to use this**: When adding a new user action that needs to persist to the backend database.
 
 ---
 
 ## Overview
 
-The backend save funnel provides explicit, API-driven persistence for user actions like drag-end and subtree collapse. This SOP guides you through adding a new persistence action following the established pattern.
+All flow persistence goes through explicit backend API calls. This SOP guides you through adding a new persistence action following the established backend-only pattern.
 
 **Key Principles:**
-- Feature-flagged: Defaults OFF for safe rollout
-- Explicit backend calls: Direct API persistence, not autosave
-- Origin tagging: Every action gets an origin tag for observability
-- Error handling: Revert UI state on failure
-- Comprehensive testing: Unit + integration + QA validation
+- Direct backend calls: Every action calls a specific API endpoint
+- Origin tagging: Every snapshot gets an origin tag for observability
+- Error handling: Failed operations revert UI state and alert user
+- Comprehensive testing: Unit + integration tests required
 
 ---
 
 ## Architecture Pattern
 
 ```
-User Action → Frontend Handler → Feature Flag Check → Backend API Call → Snapshot with Origin Tag
-                                       ↓ (flag OFF)
-                                   Autosave Fallback
+User Action → Frontend Handler → Backend API Call → Snapshot with Origin Tag
+                                       ↓ (on error)
+                                   Revert UI State + Alert User
 ```
 
 **Existing Examples:**
-- **Drag-end**: `ENABLE_BACKEND_DRAG_SAVE` → `updateNode` → origin: `'ui.node.update'`
-- **Subtree collapse**: `ENABLE_BACKEND_SUBTREE` → `toggleSubtreeCollapse` → origin: `'ui.subtree'`
+- **Drag position**: `onNodesChange` → `PUT /api/node/:id` → origin: `'ui.node.update'`
+- **Delete node**: `onNodesDelete` → `DELETE /api/node/:id` → origin: `'ui.node.delete'`
+- **Subtree collapse**: `onNodeClick` (Alt) → `PUT /api/subtree/:id/collapse` → origin: `'ui.subtree'`
 
 ---
 
 ## Step-by-Step Guide
 
-### 1. Add Feature Flag
-
-**File**: `server/config.js`
-
-```javascript
-export const config = {
-  // ... existing flags ...
-
-  // Enable backend persistence for [your action]
-  // When false: frontend autosave handles persistence
-  // When true: [action] calls [backend API] for explicit persistence
-  ENABLE_BACKEND_YOUR_ACTION: process.env.ENABLE_BACKEND_YOUR_ACTION === 'true',
-};
-```
-
-**Checklist:**
-- [ ] Flag defaults to `false`
-- [ ] Comment explains ON vs OFF behavior
-- [ ] Environment variable documented
-
----
-
-### 2. Expose Flag to Frontend
-
-**File**: `server/routes/flowRoutes.js`
-
-Add flag to config endpoint:
-
-```javascript
-router.get('/config', (req, res) => {
-  res.json({
-    ENABLE_BACKEND_DRAG_SAVE: config.ENABLE_BACKEND_DRAG_SAVE,
-    ENABLE_BACKEND_SUBTREE: config.ENABLE_BACKEND_SUBTREE,
-    ENABLE_BACKEND_YOUR_ACTION: config.ENABLE_BACKEND_YOUR_ACTION, // Add this
-  });
-});
-```
-
-**Checklist:**
-- [ ] Flag exposed in `/api/flow/config` endpoint
-- [ ] Frontend will fetch on mount via `getFeatureFlags()`
-
----
-
-### 3. Create Backend Tool Executor
+### 1. Create Backend Tool Executor
 
 **File**: `server/tools/executor.js`
 
 ```javascript
 case 'yourAction': {
-  // Extract parameters
+  // Extract and validate parameters
   const { param1, param2 } = params;
 
-  // Validate inputs
   if (!param1) {
     return {
       success: false,
@@ -95,7 +50,7 @@ case 'yourAction': {
   }
 
   // Load current flow
-  const currentFlow = loadFlowFromFile();
+  const currentFlow = dbGetFlow();
 
   // Execute your action logic
   const updatedFlow = performYourAction(
@@ -104,8 +59,8 @@ case 'yourAction': {
     param2
   );
 
-  // Save with origin tag
-  saveFlowToFile(updatedFlow);
+  // Save to DB and create snapshot
+  dbSaveFlow(updatedFlow);
   await pushSnapshot(updatedFlow, 'ui.your_action');
 
   return { success: true, flow: updatedFlow };
@@ -114,60 +69,44 @@ case 'yourAction': {
 
 **Checklist:**
 - [ ] Input validation
-- [ ] Load current flow state
+- [ ] Load current flow state via `dbGetFlow()`
 - [ ] Execute action logic
-- [ ] Save updated flow
+- [ ] Save via `dbSaveFlow(updatedFlow)`
 - [ ] Create snapshot with origin tag
-- [ ] Return success + updated flow
-- [ ] Handle errors gracefully
+- [ ] Return `{ success, flow }` or `{ success: false, error }`
 
 ---
 
-### 4. Add Backend API Route
+### 2. Add Backend API Route
 
 **File**: `server/routes/flowRoutes.js`
 
+Use the `toolEndpoint` helper for consistency:
+
 ```javascript
-// POST /api/flow/your-action
-router.post('/your-action', async (req, res) => {
-  try {
-    const { param1, param2 } = req.body;
-
-    const result = await executeTools([{
-      name: 'yourAction',
-      input: { param1, param2 }
-    }], 'ui.your_action');
-
-    if (result.results[0].success) {
-      res.json({ success: true, flow: result.results[0].flow });
-    } else {
-      res.status(400).json({
-        success: false,
-        error: result.results[0].error
-      });
-    }
-  } catch (error) {
-    console.error('Error in your-action route:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+// PUT /api/your-resource/:id
+router.put('/your-resource/:id', toolEndpoint({
+  toolName: 'yourAction',
+  action: 'your action description',
+  extractParams: (req) => ({
+    resourceId: req.params.id,
+    ...req.body
+  }),
+  origin: 'ui.your_action'
+}, readFlow, writeFlow));
 ```
 
 **Checklist:**
 - [ ] Route follows RESTful conventions
-- [ ] Input validation
-- [ ] Calls executor via `executeTools`
-- [ ] Returns standardized response (`{ success, flow/error }`)
-- [ ] Error handling with appropriate status codes
+- [ ] Uses `toolEndpoint` helper
+- [ ] Specifies correct `origin` tag
+- [ ] Returns standardized response
 
 ---
 
-### 5. Create Frontend API Helper
+### 3. Create Frontend API Client
 
-**File**: `src/services/api/flowApi.js`
+**File**: `src/services/api/flowApi.js` (or appropriate domain file)
 
 ```javascript
 /**
@@ -176,150 +115,153 @@ router.post('/your-action', async (req, res) => {
  * @param {any} param2 - Description
  * @returns {Promise<{success: boolean, flow?: object, error?: string}>}
  */
-export async function apiYourAction(param1, param2) {
+export async function yourAction(param1, param2) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/flow/your-action`, {
-      method: 'POST',
+    const response = await fetch(`${API_BASE_URL}/your-resource/${param1}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ param1, param2 }),
+      body: JSON.stringify({ param2 }),
     });
 
-    const data = await response.json();
     if (!response.ok) {
-      return { success: false, error: data.error };
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to execute action');
     }
-    return { success: true, flow: data.flow };
+
+    return await response.json();
   } catch (error) {
-    console.error('API call failed:', error);
-    return { success: false, error: error.message };
+    console.error('Error executing action:', error);
+    throw error;
   }
 }
 ```
 
 **Checklist:**
 - [ ] JSDoc documentation
-- [ ] Proper HTTP method (POST for mutations)
-- [ ] JSON content type
-- [ ] Error handling
-- [ ] Standardized return format
+- [ ] Proper HTTP method
+- [ ] Error handling with meaningful messages
+- [ ] Exported from `src/services/api/index.js`
 
 ---
 
-### 6. Create Helper for Feature Flag Check
-
-**File**: `src/utils/yourActionHelpers.js`
-
-```javascript
-// ABOUTME: Helper utilities for your action backend save funnel
-// ABOUTME: Feature flag checks and state transformations
-
-/**
- * Determine if backend API should be used for your action
- * @param {boolean} featureFlagEnabled - ENABLE_BACKEND_YOUR_ACTION flag
- * @param {Array} items - Items to process
- * @returns {boolean}
- */
-export function shouldUseBackendYourAction(featureFlagEnabled, items) {
-  return featureFlagEnabled && items.length > 0;
-}
-```
-
-**Checklist:**
-- [ ] Pure function (no side effects)
-- [ ] ABOUTME header comments
-- [ ] JSDoc documentation
-- [ ] Unit tests (see step 10)
-
----
-
-### 7. Wire Frontend Handler
+### 4. Wire Frontend Handler
 
 **File**: `src/App.jsx` (or relevant component)
 
-```javascript
-const handleYourAction = useCallback(async (param1, param2) => {
-  // Backend save funnel: When flag is ON, persist via API; when OFF, autosave handles it
-  if (shouldUseBackendYourAction(featureFlags.ENABLE_BACKEND_YOUR_ACTION, [param1])) {
-    try {
-      const result = await apiYourAction(param1, param2);
+Use the `handleMutation` pattern for consistency:
 
-      if (result.success && result.flow) {
-        // Update UI with backend response
-        handleFlowUpdate(result.flow);
-      } else {
-        console.error('Failed to execute action:', result.error);
-        alert(`Failed to execute action: ${result.error}`);
-        // Revert UI state if needed
+```javascript
+const handleYourAction = useCallback(
+  (param1, param2) => handleMutation(
+    () => yourAction(param1, param2),
+    {
+      errorContext: 'execute your action',
+      onSuccess: () => {
+        // Optional success callback
+      },
+      onError: (msg) => {
+        // Optional error handling beyond default alert
       }
-    } catch (error) {
-      console.error('Error executing action:', error);
-      alert(`Error executing action: ${error.message}`);
-      // Revert UI state if needed
     }
-  } else {
-    // Legacy path: local state update, autosave will persist
-    // ... local implementation ...
+  ),
+  [handleMutation]
+);
+```
+
+**Or for React Flow callbacks with state management:**
+
+```javascript
+const onYourEvent = useCallback(async (eventData) => {
+  // Capture original state for revert on error
+  const originalState = captureCurrentState();
+
+  try {
+    const result = await yourAction(eventData.id, eventData.value);
+
+    if (result.success && result.flow) {
+      handleFlowUpdate(result.flow);
+    } else {
+      console.error('Failed:', result.error);
+      alert(`Failed: ${result.error}`);
+      revertToState(originalState);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert(`Error: ${error.message}`);
+    revertToState(originalState);
   }
-}, [featureFlags.ENABLE_BACKEND_YOUR_ACTION, handleFlowUpdate]);
+}, [handleFlowUpdate]);
 ```
 
 **Checklist:**
-- [ ] Feature flag check using helper
-- [ ] Backend API call with error handling
-- [ ] UI update on success
-- [ ] UI revert on failure (if applicable)
-- [ ] Fallback to local + autosave when flag OFF
-- [ ] Comments explaining backend save funnel logic
+- [ ] Captures original state if needed for revert
+- [ ] Calls backend API
+- [ ] Updates UI on success via `handleFlowUpdate`
+- [ ] Reverts UI on failure
+- [ ] Shows user-friendly error messages
+- [ ] Registered with React Flow component (if applicable)
 
 ---
 
-### 8. Add Origin Tag to Tool Execution Logs
+### 5. Add Origin Tag to Logs
 
 **File**: `server/tools/executor.js`
 
-Ensure structured logging includes your action:
-
-```javascript
-// Log execution with origin tag
-logToolExecution(tool.name, origin, startTime, success, error);
-```
+The `logToolExecution` function already handles this, but verify your origin tag appears in logs:
 
 **Expected log format:**
 ```json
 {
-  "timestamp": "2025-10-20T19:13:28.177Z",
+  "timestamp": "2025-10-21T05:00:00.000Z",
   "tool": "yourAction",
   "origin": "ui.your_action",
-  "duration": "0ms",
+  "duration": "2ms",
   "success": true
 }
 ```
 
 **Checklist:**
-- [ ] Origin tag matches snapshot origin
-- [ ] Logged for success and failure
-- [ ] Includes duration measurement
+- [ ] Origin tag is descriptive and follows pattern `ui.[resource].[action]`
+- [ ] Logged for both success and failure
+- [ ] Includes execution duration
 
 ---
 
-### 9. Write Integration Tests
+### 6. Write Integration Tests
 
-**File**: `tests/integration/your-action-backend.test.js`
+**File**: `tests/integration/your-action.test.js`
 
 ```javascript
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
-import app from '../../server/app.js';
+import { closeDb, initializeHistory } from '../../server/historyService.js';
 
-describe('POST /api/flow/your-action', () => {
-  beforeEach(() => {
-    // Setup test data
-  });
+let app;
 
+beforeEach(async () => {
+  process.env.DB_PATH = ':memory:';
+  const serverModule = await import('../../server/server.js');
+  app = serverModule.default || serverModule.app;
+  await initializeHistory({ nodes: [], edges: [] });
+});
+
+afterEach(() => {
+  closeDb();
+});
+
+describe('PUT /api/your-resource/:id', () => {
   it('should execute action successfully', async () => {
+    // Setup test data
+    const setupResponse = await request(app)
+      .post('/api/node')
+      .send({ label: 'Test', description: '' });
+
+    const nodeId = setupResponse.body.nodeId;
+
+    // Execute action
     const response = await request(app)
-      .post('/api/flow/your-action')
-      .send({ param1: 'test', param2: 'value' });
+      .put(`/api/your-resource/${nodeId}`)
+      .send({ param2: 'value' });
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -328,75 +270,67 @@ describe('POST /api/flow/your-action', () => {
 
   it('should return error for invalid input', async () => {
     const response = await request(app)
-      .post('/api/flow/your-action')
-      .send({ param2: 'value' }); // Missing param1
+      .put('/api/your-resource/invalid-id')
+      .send({ param2: 'value' });
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.error).toContain('param1');
+    expect(response.body.error).toBeDefined();
   });
 
   it('should create snapshot with correct origin tag', async () => {
-    // Test that snapshot has origin: 'ui.your_action'
+    // Test implementation
   });
 });
 ```
 
 **Checklist:**
 - [ ] Success case tested
-- [ ] Error cases tested (validation, failures)
+- [ ] Error cases tested (validation, invalid IDs, etc.)
 - [ ] Snapshot origin tag verified
 - [ ] Response format validated
+- [ ] Uses in-memory DB for isolation
 
 ---
 
-### 10. Write Unit Tests
+### 7. Write Unit Tests (if needed)
+
+For complex helper functions, add unit tests:
 
 **File**: `tests/unit/shared/yourActionHelpers.test.js`
 
 ```javascript
 import { describe, it, expect } from 'vitest';
-import { shouldUseBackendYourAction } from '../../../src/utils/yourActionHelpers.js';
+import { yourHelper } from '../../../src/utils/yourActionHelpers.js';
 
-describe('shouldUseBackendYourAction', () => {
-  it('should return true when flag is true and items exist', () => {
-    expect(shouldUseBackendYourAction(true, ['item'])).toBe(true);
+describe('yourHelper', () => {
+  it('should handle valid input', () => {
+    expect(yourHelper('input')).toBe('expected');
   });
 
-  it('should return false when flag is false', () => {
-    expect(shouldUseBackendYourAction(false, ['item'])).toBe(false);
-  });
-
-  it('should return false when items array is empty', () => {
-    expect(shouldUseBackendYourAction(true, [])).toBe(false);
+  it('should handle edge cases', () => {
+    expect(yourHelper(null)).toBe(null);
+    expect(yourHelper([])).toEqual([]);
   });
 });
 ```
 
 **Checklist:**
-- [ ] Test flag ON + valid data
-- [ ] Test flag OFF
-- [ ] Test edge cases (empty arrays, null, etc.)
 - [ ] All helper functions covered
+- [ ] Edge cases tested (null, undefined, empty arrays, etc.)
+- [ ] Pure functions (no side effects)
 
 ---
 
-### 11. Run QA Validation
+### 8. Run QA Validation
 
-Use the Phase 4 QA script as a template:
-
-**Manual QA (flags OFF):**
-- [ ] Action works as before
-- [ ] Autosave persists changes
-- [ ] No backend logs for this action
-- [ ] Refresh preserves state
-
-**Manual QA (flags ON):**
-- [ ] Action works correctly
-- [ ] Backend API called (check logs)
+**Manual QA:**
+- [ ] Action works correctly in UI
+- [ ] Backend API called (check server logs for `[TOOL_EXECUTION]`)
 - [ ] Tool execution log shows correct origin
 - [ ] Snapshot created in database
-- [ ] Error handling works (test failures)
+- [ ] Error handling works (test with invalid data)
+- [ ] Undo/redo works for this action
 - [ ] Refresh preserves state
 
 **Database verification:**
@@ -406,32 +340,30 @@ sqlite3 server/data/flow.db "SELECT id, datetime(created_at, 'localtime'), json_
 ```
 
 **Checklist:**
-- [ ] All manual QA steps passed (flags OFF)
-- [ ] All manual QA steps passed (flags ON)
+- [ ] All manual QA steps passed
 - [ ] Snapshot origin tag verified in DB
 - [ ] Automated tests passing
-- [ ] No duplicate snapshots
+- [ ] No duplicate snapshots created
 
 ---
 
-### 12. Document Your Changes
+### 9. Document Your Changes
 
 **Update these files:**
 
-1. **Add comment to handler** (`src/App.jsx` or relevant file):
+1. **Add code comments**:
    ```javascript
-   // Backend save funnel: When ENABLE_BACKEND_YOUR_ACTION is true, persist via [API].
-   // When false, autosave handles persistence (legacy fallback).
+   // Persist action via backend API (creates snapshot with origin: 'ui.your_action')
    ```
 
-2. **Update server/config.js** (if not already done in step 1)
+2. **Update this SOP** if you discovered improvements to the process
 
-3. **Update this SOP** if you discovered improvements to the process
+3. **Update `.agent/analysis/saving-logic-analysis.md`** UI Mutation Inventory table
 
 **Checklist:**
-- [ ] Code comments added
-- [ ] Origin tag documented in `server/historyService.js` if new
-- [ ] README updated if major feature
+- [ ] Code comments added explaining backend call
+- [ ] Origin tag documented if new pattern
+- [ ] README updated if major user-facing feature
 
 ---
 
@@ -439,51 +371,39 @@ sqlite3 server/data/flow.db "SELECT id, datetime(created_at, 'localtime'), json_
 
 Before considering your persistence action complete:
 
-- [ ] Unit tests: Helper functions tested
+- [ ] Unit tests: Helper functions tested (if any)
 - [ ] Integration tests: API route tested (success + errors)
-- [ ] Manual QA: Both flag states validated
+- [ ] Manual QA: Action validated end-to-end
 - [ ] Snapshot verification: Origin tag correct in DB
-- [ ] Error handling: Failures revert UI state
+- [ ] Error handling: Failures revert UI state and alert user
+- [ ] Undo/redo: Action appears in history and can be undone
 - [ ] Performance: Action feels responsive
-- [ ] CI passing: All 716+ tests green
-
----
-
-## Rollback Strategy
-
-If issues arise in production:
-
-1. **Immediate**: Set flag to `false` via environment variable and redeploy
-   ```bash
-   ENABLE_BACKEND_YOUR_ACTION=false npm start
-   ```
-
-2. **Verify**: System reverts to autosave-based persistence
-
-3. **No code changes needed**: Autosave remains functional as fallback
+- [ ] CI passing: All tests green
 
 ---
 
 ## Common Pitfalls
 
-1. **Forgetting to expose flag to frontend**: Route won't know flag exists
-2. **Not handling errors**: UI state becomes inconsistent
-3. **Missing origin tag**: Observability lost
-4. **Skipping QA with flags OFF**: Rollback path untested
-5. **Not reverting UI on failure**: Users see incorrect state
-6. **Forgetting to clear loading states**: UI appears stuck
-7. **Not testing empty/null inputs**: Crashes in production
+1. **Not reverting UI on error**: Users see incorrect state after failures
+2. **Missing origin tag**: Observability lost
+3. **Not testing error cases**: Crashes in production
+4. **Forgetting to update handleFlowUpdate**: UI doesn't reflect changes
+5. **Not capturing original state**: Can't revert on error
+6. **Skipping undo/redo testing**: History breaks
+7. **Not using handleMutation pattern**: Inconsistent error handling
 
 ---
 
 ## References
 
 - **Implementation Plan**: [backend-save-funnel-implementation-plan.md](../tasks/backend-save-funnel-implementation-plan.md)
-- **Phase 4 QA Script**: [phase4-local-qa-script.md](../tasks/phase4-local-qa-script.md)
 - **Existing Examples**:
-  - Drag-end: `src/App.jsx:115-155`, `server/tools/executor.js`
-  - Subtree: `src/App.jsx:469-491`, `server/tools/executor.js`
+  - Drag-end: `src/App.jsx:89-143` (`onNodesChange` handler)
+  - Delete node: `src/App.jsx:243-254` (`onNodesDelete` handler)
+  - Subtree: `src/App.jsx:439-461` (`onNodeClick` with altKey)
+- **Backend Tools**: `server/tools/executor.js`
+- **API Routes**: `server/routes/flowRoutes.js`
 
 ---
 
-**Last Updated**: 2025-10-20
+**Last Updated**: 2025-10-21 (Phase 7 & 8 - Backend-only architecture)
