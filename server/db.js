@@ -161,7 +161,7 @@ export async function pushUndoSnapshot(flowData) {
   // Get current state
   const { data: stateRow, error: stateError } = await supabase
     .from('undo_state')
-    .select('current_index')
+    .select('current_snapshot_time')
     .eq('id', 1)
     .single();
 
@@ -169,15 +169,15 @@ export async function pushUndoSnapshot(flowData) {
     throw stateError;
   }
 
-  const currentIndex = stateRow.current_index;
+  const currentTime = stateRow.current_snapshot_time;
 
   // Get last snapshot if exists
   let lastSnapshot = null;
-  if (currentIndex > 0) {
+  if (currentTime !== null) {
     const { data: lastRow, error: lastError } = await supabase
       .from('undo_history')
       .select('snapshot')
-      .eq('id', currentIndex)
+      .eq('created_at', currentTime)
       .maybeSingle();
 
     if (lastError && lastError.code !== 'PGRST116') {
@@ -196,31 +196,48 @@ export async function pushUndoSnapshot(flowData) {
     const { _meta: lastMeta, ...lastFlow } = lastData;
     const { _meta: currentMeta, ...currentFlow } = currentData;
 
-    if (JSON.stringify(lastFlow) === JSON.stringify(currentFlow)) {
+    // Use stable JSON stringify to handle JSONB property reordering
+    // PostgreSQL JSONB stores properties in alphabetical order, so we need
+    // to sort keys before comparison (recursively)
+    const stableStringify = (obj) => {
+      if (obj === null) return 'null';
+      if (typeof obj !== 'object') return JSON.stringify(obj);
+      if (Array.isArray(obj)) {
+        return '[' + obj.map(item => stableStringify(item)).join(',') + ']';
+      }
+      const sorted = {};
+      Object.keys(obj).sort().forEach(key => {
+        sorted[key] = stableStringify(obj[key]);
+      });
+      return JSON.stringify(sorted);
+    };
+
+    const lastStr = stableStringify(lastFlow);
+    const currentStr = stableStringify(currentFlow);
+
+    if (lastStr === currentStr) {
       return;
     }
   }
 
   // If we're not at the end, truncate future states
-  if (currentIndex > 0) {
-    const { data: maxRow, error: maxError } = await supabase
+  if (currentTime !== null) {
+    // Check if there are any snapshots after current time
+    const { data: futureSnapshots, error: futureError } = await supabase
       .from('undo_history')
       .select('id')
-      .order('id', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .gt('created_at', currentTime)
+      .limit(1);
 
-    if (maxError && maxError.code !== 'PGRST116') {
-      throw maxError;
+    if (futureError) {
+      throw futureError;
     }
 
-    const maxId = maxRow ? maxRow.id : 0;
-
-    if (maxId && currentIndex < maxId) {
+    if (futureSnapshots && futureSnapshots.length > 0) {
       const { error: deleteError } = await supabase
         .from('undo_history')
         .delete()
-        .gt('id', currentIndex);
+        .gt('created_at', currentTime);
 
       if (deleteError) {
         throw deleteError;
@@ -232,20 +249,21 @@ export async function pushUndoSnapshot(flowData) {
   const { data: insertResult, error: insertError } = await supabase
     .from('undo_history')
     .insert({ snapshot: cleanState })
-    .select('id')
+    .select('id, created_at')
     .single();
 
   if (insertError) {
     throw insertError;
   }
 
-  const newId = insertResult.id;
+  const newTimestamp = insertResult.created_at;
 
-  // Update current index
+  // Update current snapshot time
   const { error: updateError } = await supabase
     .from('undo_state')
-    .update({ current_index: newId })
-    .eq('id', 1);
+    .update({ current_snapshot_time: newTimestamp })
+    .eq('id', 1)
+    .select();
 
   if (updateError) {
     throw updateError;
@@ -261,10 +279,11 @@ export async function pushUndoSnapshot(flowData) {
   }
 
   if (count > 50) {
-    // Get IDs to keep (last 50)
+    // Get timestamps to keep (last 50 by time)
     const { data: keepRows, error: keepError } = await supabase
       .from('undo_history')
-      .select('id')
+      .select('created_at, id')
+      .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(50);
 
@@ -292,7 +311,7 @@ export async function pushUndoSnapshot(flowData) {
 export async function undo() {
   const { data: stateRow, error: stateError } = await supabase
     .from('undo_state')
-    .select('current_index')
+    .select('current_snapshot_time')
     .eq('id', 1)
     .single();
 
@@ -300,33 +319,38 @@ export async function undo() {
     throw stateError;
   }
 
-  const currentIndex = stateRow.current_index;
+  const currentTime = stateRow.current_snapshot_time;
 
-  if (currentIndex <= 1) return null; // Can't undo first snapshot or empty
+  if (currentTime === null) return null; // Can't undo if no current state
 
-  const newIndex = currentIndex - 1;
-  const { data: snapshotRow, error: snapshotError } = await supabase
+  // Find previous snapshot by timestamp (with ID tie-breaker)
+  const { data: prevSnapshot, error: snapshotError } = await supabase
     .from('undo_history')
-    .select('snapshot')
-    .eq('id', newIndex)
+    .select('snapshot, created_at, id')
+    .lt('created_at', currentTime)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (snapshotError && snapshotError.code !== 'PGRST116') {
     throw snapshotError;
   }
 
-  if (!snapshotRow) return null;
+  if (!prevSnapshot) return null; // At first snapshot
 
+  // Update current time to previous snapshot's time
   const { error: updateError } = await supabase
     .from('undo_state')
-    .update({ current_index: newIndex })
-    .eq('id', 1);
+    .update({ current_snapshot_time: prevSnapshot.created_at })
+    .eq('id', 1)
+    .select();
 
   if (updateError) {
     throw updateError;
   }
 
-  return snapshotRow.snapshot;
+  return prevSnapshot.snapshot;
 }
 
 /**
@@ -335,7 +359,7 @@ export async function undo() {
 export async function redo() {
   const { data: stateRow, error: stateError } = await supabase
     .from('undo_state')
-    .select('current_index')
+    .select('current_snapshot_time')
     .eq('id', 1)
     .single();
 
@@ -343,46 +367,38 @@ export async function redo() {
     throw stateError;
   }
 
-  const currentIndex = stateRow.current_index;
+  const currentTime = stateRow.current_snapshot_time;
 
-  const { data: maxRow, error: maxError } = await supabase
+  if (currentTime === null) return null; // Can't redo if no current state
+
+  // Find next snapshot by timestamp (with ID tie-breaker)
+  const { data: nextSnapshot, error: snapshotError } = await supabase
     .from('undo_history')
-    .select('id')
-    .order('id', { ascending: false })
+    .select('snapshot, created_at, id')
+    .gt('created_at', currentTime)
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
     .limit(1)
-    .maybeSingle();
-
-  if (maxError && maxError.code !== 'PGRST116') {
-    throw maxError;
-  }
-
-  const maxId = maxRow ? maxRow.id : 0;
-
-  if (!maxId || currentIndex >= maxId) return null; // Can't redo
-
-  const newIndex = currentIndex + 1;
-  const { data: snapshotRow, error: snapshotError } = await supabase
-    .from('undo_history')
-    .select('snapshot')
-    .eq('id', newIndex)
     .maybeSingle();
 
   if (snapshotError && snapshotError.code !== 'PGRST116') {
     throw snapshotError;
   }
 
-  if (!snapshotRow) return null;
+  if (!nextSnapshot) return null; // At last snapshot
 
+  // Update current time to next snapshot's time
   const { error: updateError } = await supabase
     .from('undo_state')
-    .update({ current_index: newIndex })
-    .eq('id', 1);
+    .update({ current_snapshot_time: nextSnapshot.created_at })
+    .eq('id', 1)
+    .select();
 
   if (updateError) {
     throw updateError;
   }
 
-  return snapshotRow.snapshot;
+  return nextSnapshot.snapshot;
 }
 
 /**
@@ -391,7 +407,7 @@ export async function redo() {
 export async function getUndoStatus() {
   const { data: stateRow, error: stateError } = await supabase
     .from('undo_state')
-    .select('current_index')
+    .select('current_snapshot_time')
     .eq('id', 1)
     .single();
 
@@ -399,7 +415,7 @@ export async function getUndoStatus() {
     throw stateError;
   }
 
-  const currentIndex = stateRow.current_index;
+  const currentTime = stateRow.current_snapshot_time;
 
   const { count: totalSnapshots, error: countError } = await supabase
     .from('undo_history')
@@ -409,24 +425,43 @@ export async function getUndoStatus() {
     throw countError;
   }
 
-  const { data: maxRow, error: maxError } = await supabase
-    .from('undo_history')
-    .select('id')
-    .order('id', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Check if we can undo (any snapshots before current time)
+  let canUndo = false;
+  if (currentTime !== null) {
+    const { data: prevExists, error: prevError } = await supabase
+      .from('undo_history')
+      .select('id')
+      .lt('created_at', currentTime)
+      .limit(1);
 
-  if (maxError && maxError.code !== 'PGRST116') {
-    throw maxError;
+    if (prevError) {
+      throw prevError;
+    }
+
+    canUndo = prevExists && prevExists.length > 0;
   }
 
-  const maxId = maxRow ? maxRow.id : 0;
+  // Check if we can redo (any snapshots after current time)
+  let canRedo = false;
+  if (currentTime !== null) {
+    const { data: nextExists, error: nextError } = await supabase
+      .from('undo_history')
+      .select('id')
+      .gt('created_at', currentTime)
+      .limit(1);
+
+    if (nextError) {
+      throw nextError;
+    }
+
+    canRedo = nextExists && nextExists.length > 0;
+  }
 
   return {
-    canUndo: currentIndex > 1,
-    canRedo: totalSnapshots > 0 && currentIndex < maxId,
+    canUndo,
+    canRedo,
     snapshotCount: totalSnapshots,
-    currentIndex
+    currentTimestamp: currentTime
   };
 }
 
@@ -445,8 +480,9 @@ export async function clearUndoHistory() {
 
   const { error: updateError } = await supabase
     .from('undo_state')
-    .update({ current_index: -1 })
-    .eq('id', 1);
+    .update({ current_snapshot_time: null })
+    .eq('id', 1)
+    .select();
 
   if (updateError) {
     throw updateError;

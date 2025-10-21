@@ -32,20 +32,20 @@ export async function truncateAllTables() {
       console.error(`Failed to truncate ${table}:`, error);
       throw error;
     }
+
+    // Verify table is empty
+    const { count, error: countError } = await testSupabase
+      .from(table)
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error(`Failed to count ${table}:`, countError);
+    } else {
+      console.log(`[CLEANUP] ${table}: ${count} rows remaining`);
+    }
   }
 
-  // Reset undo_state to initial state
-  const { error: undoStateError } = await testSupabase
-    .from('undo_state')
-    .update({ current_index: -1 })
-    .eq('id', 1);
-
-  if (undoStateError) {
-    console.error('Failed to reset undo_state:', undoStateError);
-    throw undoStateError;
-  }
-
-  // Ensure undo_state row exists
+  // Ensure undo_state row exists first
   const { data: undoStateExists } = await testSupabase
     .from('undo_state')
     .select('id')
@@ -55,13 +55,34 @@ export async function truncateAllTables() {
   if (!undoStateExists) {
     const { error: insertError } = await testSupabase
       .from('undo_state')
-      .insert({ id: 1, current_index: -1 });
+      .insert({ id: 1, current_snapshot_time: null });
 
     if (insertError) {
       console.error('Failed to initialize undo_state:', insertError);
       throw insertError;
     }
+  } else {
+    // Reset undo_state to initial state
+    const { error: undoStateError } = await testSupabase
+      .from('undo_state')
+      .update({ current_snapshot_time: null })
+      .eq('id', 1)
+      .select();
+
+    if (undoStateError) {
+      console.error('Failed to reset undo_state:', undoStateError);
+      throw undoStateError;
+    }
   }
+
+  // Final verification
+  const { data: finalState } = await testSupabase
+    .from('undo_state')
+    .select('current_snapshot_time')
+    .eq('id', 1)
+    .single();
+
+  console.log(`[CLEANUP] undo_state.current_snapshot_time: ${finalState?.current_snapshot_time}`);
 }
 
 /**
