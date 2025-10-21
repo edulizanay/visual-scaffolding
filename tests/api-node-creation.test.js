@@ -60,7 +60,7 @@ describe('POST /api/flow/node', () => {
 
     let flow = await readFlow();
     flow.nodes[0].parentGroupId = 'test-group-123';
-    saveFlow(flow);
+    await saveFlow(flow);
 
     // Create child via API
     const response = await request(app)
