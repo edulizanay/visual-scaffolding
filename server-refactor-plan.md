@@ -420,38 +420,38 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 ## File Changes Summary
 
 ### New Files (7 created)
-- [ ] `server/repositories/flowRepository.js` (~100 lines)
-- [ ] `server/repositories/undoRepository.js` (~200 lines)
-- [ ] `server/repositories/conversationRepository.js` (~50 lines)
-- [ ] `server/repositories/notesRepository.js` (~70 lines)
-- [ ] `server/services/flowService.js` (~20 lines)
-- [ ] `server/llm/llmUtils.js` (~20 lines)
-- [ ] Migration: `create_notes_table` (~25 lines SQL)
+- [x] `server/repositories/flowRepository.js` (~100 lines)
+- [x] `server/repositories/undoRepository.js` (~200 lines)
+- [x] `server/repositories/conversationRepository.js` (~50 lines)
+- [x] `server/repositories/notesRepository.js` (~70 lines)
+- [x] `server/services/flowService.js` (~20 lines)
+- [x] `server/llm/llmUtils.js` (~20 lines)
+- [x] Migration: `create_notes_table` (~25 lines SQL)
 
 ### Modified Files (16 updated)
-- [ ] `server/db.js` - Reduced from 517 to ~10 lines
-- [ ] `server/app.js` - Import flowService
-- [ ] `server/tools/executor.js` - Import flowService
-- [ ] `server/routes/conversationRoutes.js` - Import llmUtils
-- [ ] `server/routes/notesRoutes.js` - Import llmUtils + notesRepository
-- [ ] `server/routes/index.js` - Remove legacy mounting
-- [ ] `tests/test-db-setup.js` - Add notes table handling
-- [ ] `tests/notesService.test.js` - Supabase assertions
-- [ ] `tests/api-notes.test.js` - Supabase assertions
-- [ ] `tests/integration/notesPanel.integration.test.js` - Supabase assertions
-- [ ] `tests/e2e/notesPanel.e2e.test.js` - Supabase assertions
-- [ ] `tests/api-node-creation.test.js` - Namespaced routes
-- [ ] `tests/api-edge-creation.test.js` - Namespaced routes
-- [ ] `tests/integration/workflow-state-sync.test.js` - Namespaced routes
-- [ ] `tests/integration/save-paths.test.js` - Namespaced routes
-- [ ] `tests/integration/drag-end-persistence.test.js` - Namespaced routes
-- [ ] `tests/integration/save-race-conditions.test.js` - Namespaced routes
-- [ ] `package.json` - Remove notes-debug ignore
-- [ ] `.gitignore` - Remove notes-debug.json (if present)
+- [x] `server/db.js` - Reduced from 517 to ~10 lines
+- [x] `server/app.js` - Import flowService
+- [x] `server/tools/executor.js` - Import flowService
+- [x] `server/routes/conversationRoutes.js` - Import llmUtils
+- [x] `server/routes/notesRoutes.js` - Import llmUtils + notesRepository
+- [x] `server/routes/index.js` - Remove legacy mounting
+- [x] `tests/test-db-setup.js` - Add notes table handling
+- [x] `tests/notesService.test.js` - Supabase assertions
+- [x] `tests/api-notes.test.js` - Supabase assertions
+- [x] `tests/integration/notesPanel.integration.test.js` - Supabase assertions
+- [x] `tests/e2e/notesPanel.e2e.test.js` - Supabase assertions
+- [x] `tests/api-node-creation.test.js` - Namespaced routes
+- [x] `tests/api-edge-creation.test.js` - Namespaced routes
+- [x] `tests/integration/workflow-state-sync.test.js` - Namespaced routes
+- [x] `tests/integration/save-paths.test.js` - Namespaced routes
+- [x] `tests/integration/drag-end-persistence.test.js` - Namespaced routes
+- [x] `tests/integration/save-race-conditions.test.js` - Namespaced routes
+- [x] `package.json` - Remove notes-debug ignore
+- [x] `.gitignore` - Remove notes-debug.json (if present)
 
 ### Deleted Files (2 removed)
-- [ ] `server/notesService.js` (73 lines)
-- [ ] `notes-debug.json` (if exists)
+- [x] `server/notesService.js` (73 lines)
+- [x] `notes-debug.json` (if exists)
 
 ### Net Line Change
 - **Lines added**: ~485 (new files)
@@ -485,20 +485,20 @@ Each task is independently reversible.
 
 ## Success Criteria (Final Checklist)
 
-- [ ] ✅ All 542 tests passing
-- [ ] ✅ Test coverage remains >86%
-- [ ] ✅ db.js reduced from 517 to ~10 lines
-- [ ] ✅ No duplicate readFlow/writeFlow implementations
-- [ ] ✅ Notes using Supabase (no more JSON file)
-- [ ] ✅ checkLLMAvailability centralized in llmUtils
-- [ ] ✅ All tests using namespaced routes (`/api/flow/*`)
-- [ ] ✅ Legacy route mounting removed
-- [ ] ✅ test-db-setup.js handles notes table
-- [ ] ✅ RLS policies configured for notes table
-- [ ] ✅ No references to notes-debug.json remain
-- [ ] ✅ Package.json cleaned up
-- [ ] ✅ Documentation updated (architecture, schema, migrations)
-- [ ] ✅ Follow-through plan documented (Task 6)
+- [x] ✅ All 542 tests passing
+- [x] ✅ Test coverage remains >86%
+- [x] ✅ db.js reduced from 517 to ~10 lines
+- [x] ✅ No duplicate readFlow/writeFlow implementations
+- [x] ✅ Notes using Supabase (no more JSON file)
+- [x] ✅ checkLLMAvailability centralized in llmUtils
+- [x] ✅ All tests using namespaced routes (`/api/flow/*`)
+- [x] ✅ Legacy route mounting removed
+- [x] ✅ test-db-setup.js handles notes table
+- [x] ✅ RLS policies configured for notes table
+- [x] ✅ No references to notes-debug.json remain
+- [x] ✅ Package.json cleaned up
+- [x] ✅ Documentation updated (architecture, schema, migrations)
+- [x] ✅ Follow-through plan documented (Task 6)
 
 ---
 
