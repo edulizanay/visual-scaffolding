@@ -40,3 +40,4 @@ server/data/backup-*/
 *.sw?
 server/data/history.json
 coverage/
+*.log
