@@ -293,25 +293,25 @@ After migrating from SQLite to Supabase, `server/db.js` has grown to 517 lines h
 
 - [x] **5.2: Update test files to use namespaced routes**
   - [ ] Update `tests/api-node-creation.test.js`
-    - [ ] Replace `/api/node` → `/api/flow/node` (4 instances)
-    - [ ] Run test, verify passes
+    - [x] Replace `/api/node` → `/api/flow/node` (4 instances)
+    - [x] Run test, verify passes
   - [ ] Update `tests/api-edge-creation.test.js`
-    - [ ] Replace `/api/edge` → `/api/flow/edge` (6 instances)
-    - [ ] Run test, verify passes
+    - [x] Replace `/api/edge` → `/api/flow/edge` (6 instances)
+    - [x] Run test, verify passes
   - [ ] Update `tests/integration/workflow-state-sync.test.js`
-    - [ ] Replace `/api/node` → `/api/flow/node` (14 instances)
-    - [ ] Run test, verify passes
+    - [x] Replace `/api/node` → `/api/flow/node` (14 instances)
+    - [x] Run test, verify passes
   - [ ] Update `tests/integration/save-paths.test.js`
-    - [ ] Replace `/api/node` → `/api/flow/node`
-    - [ ] Replace `/api/edge` → `/api/flow/edge`
-    - [ ] Replace `/api/group` → `/api/flow/group`
-    - [ ] Run test, verify passes
+    - [x] Replace `/api/node` → `/api/flow/node`
+    - [x] Replace `/api/edge` → `/api/flow/edge`
+    - [x] Replace `/api/group` → `/api/flow/group`
+    - [x] Run test, verify passes
   - [ ] Update `tests/integration/drag-end-persistence.test.js`
-    - [ ] Replace `/api/node` → `/api/flow/node` (4 instances)
-    - [ ] Run test, verify passes
+    - [x] Replace `/api/node` → `/api/flow/node` (4 instances)
+    - [x] Run test, verify passes
   - [ ] Update `tests/integration/save-race-conditions.test.js`
-    - [ ] Replace `/api/node` → `/api/flow/node` (2 instances)
-    - [ ] Run test, verify passes
+    - [x] Replace `/api/node` → `/api/flow/node` (2 instances)
+    - [x] Run test, verify passes
 
 - [x] **5.3: Verify no remaining legacy route usage**
   - [ ] Run: `rg "'/api/(node|edge|group)'" -g '*.js' -g '!node_modules'`
