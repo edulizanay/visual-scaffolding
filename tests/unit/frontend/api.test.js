@@ -318,7 +318,7 @@ describe('createNode', () => {
 
     const result = await createNode(params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/node', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/node', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -444,7 +444,7 @@ describe('createEdge', () => {
 
     const result = await createEdge(params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/edge', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/edge', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -561,7 +561,7 @@ describe('createGroup', () => {
 
     const result = await createGroup(params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/group', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/group', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

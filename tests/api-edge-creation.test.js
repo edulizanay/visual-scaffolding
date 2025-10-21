@@ -1,4 +1,4 @@
-// ABOUTME: Integration tests for POST /api/edge endpoint
+// ABOUTME: Integration tests for POST /api/flow/edge endpoint
 // ABOUTME: Tests manual edge creation via API with validation
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
@@ -28,7 +28,7 @@ afterEach(async () => {
   await cleanupTestDb();
 });
 
-describe('POST /api/edge', () => {
+describe('POST /api/flow/edge', () => {
   it('should create edge between two nodes', async () => {
     // Create two nodes first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -36,7 +36,7 @@ describe('POST /api/edge', () => {
 
     // Call API to create edge
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId,
         targetNodeId: targetResult.nodeId,
@@ -61,7 +61,7 @@ describe('POST /api/edge', () => {
     const targetResult = await executeTool('addNode', { label: 'Target' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId,
         targetNodeId: targetResult.nodeId
@@ -77,7 +77,7 @@ describe('POST /api/edge', () => {
     const targetResult = await executeTool('addNode', { label: 'Target' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         targetNodeId: targetResult.nodeId
       })
@@ -91,7 +91,7 @@ describe('POST /api/edge', () => {
     const sourceResult = await executeTool('addNode', { label: 'Source' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId
       })
@@ -105,7 +105,7 @@ describe('POST /api/edge', () => {
     const targetResult = await executeTool('addNode', { label: 'Target' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: 'nonexistent-source',
         targetNodeId: targetResult.nodeId
@@ -120,7 +120,7 @@ describe('POST /api/edge', () => {
     const sourceResult = await executeTool('addNode', { label: 'Source' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId,
         targetNodeId: 'nonexistent-target'

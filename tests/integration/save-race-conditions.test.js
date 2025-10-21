@@ -62,11 +62,11 @@ describe('Save race conditions', () => {
     it('should handle multiple simultaneous node creations', async () => {
       // Create 5 nodes simultaneously
       const promises = [
-        request(app).post('/api/node').send({ label: 'Node 1' }),
-        request(app).post('/api/node').send({ label: 'Node 2' }),
-        request(app).post('/api/node').send({ label: 'Node 3' }),
-        request(app).post('/api/node').send({ label: 'Node 4' }),
-        request(app).post('/api/node').send({ label: 'Node 5' })
+        request(app).post('/api/flow/node').send({ label: 'Node 1' }),
+        request(app).post('/api/flow/node').send({ label: 'Node 2' }),
+        request(app).post('/api/flow/node').send({ label: 'Node 3' }),
+        request(app).post('/api/flow/node').send({ label: 'Node 4' }),
+        request(app).post('/api/flow/node').send({ label: 'Node 5' })
       ];
 
       const results = await Promise.all(promises);
@@ -127,7 +127,7 @@ describe('Save race conditions', () => {
 
       // Mix of different operations
       const promises = [
-        request(app).post('/api/node').send({ label: 'New Node' }),
+        request(app).post('/api/flow/node').send({ label: 'New Node' }),
         request(app).put(`/api/node/${node1[0].nodeId}`).send({ label: 'Updated Node 1' }),
         request(app).post('/api/edge').send({
           sourceNodeId: node1[0].nodeId,

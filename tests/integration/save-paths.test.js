@@ -153,7 +153,7 @@ describe('Save path verification', () => {
       const statusBefore = await getHistoryStatus();
 
       await request(app)
-        .post('/api/node')
+        .post('/api/flow/node')
         .send({ label: 'API Node' })
         .expect(200);
 
@@ -172,7 +172,7 @@ describe('Save path verification', () => {
       const statusBefore = await getHistoryStatus();
 
       await request(app)
-        .post('/api/edge')
+        .post('/api/flow/edge')
         .send({
           sourceNodeId: node1[0].nodeId,
           targetNodeId: node2[0].nodeId
@@ -194,7 +194,7 @@ describe('Save path verification', () => {
       const statusBefore = await getHistoryStatus();
 
       await request(app)
-        .post('/api/group')
+        .post('/api/flow/group')
         .send({
           memberIds: [node1[0].nodeId, node2[0].nodeId]
         })

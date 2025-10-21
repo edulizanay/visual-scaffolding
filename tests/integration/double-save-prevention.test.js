@@ -47,7 +47,7 @@ describe('Double-save prevention', () => {
 
     // Create node via API
     await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 
@@ -201,9 +201,9 @@ describe('Double-save prevention', () => {
 
     // Make 3 rapid API calls
     await Promise.all([
-      request(app).post('/api/node').send({ label: 'Node 1' }),
-      request(app).post('/api/node').send({ label: 'Node 2' }),
-      request(app).post('/api/node').send({ label: 'Node 3' })
+      request(app).post('/api/flow/node').send({ label: 'Node 1' }),
+      request(app).post('/api/flow/node').send({ label: 'Node 2' }),
+      request(app).post('/api/flow/node').send({ label: 'Node 3' })
     ]);
 
     const finalCount = await getSnapshotCount();
@@ -218,7 +218,7 @@ describe('Double-save prevention', () => {
 
     // Create node
     await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 

@@ -51,7 +51,7 @@ describe('Drag-end Position Persistence', () => {
   it('should create snapshot with ui.node.update origin when updating node position', async () => {
     // Create initial node (defaults to position {x: 0, y: 0})
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         label: 'Draggable Node',
         description: ''
@@ -89,7 +89,7 @@ describe('Drag-end Position Persistence', () => {
   it('should allow undo of position change', async () => {
     // Create initial node (defaults to position {x: 0, y: 0})
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         label: 'Draggable Node',
         description: ''
@@ -117,7 +117,7 @@ describe('Drag-end Position Persistence', () => {
   it('should handle multiple position updates with separate snapshots', async () => {
     // Create initial node (defaults to position {x: 0, y: 0})
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         label: 'Draggable Node',
         description: ''
@@ -154,7 +154,7 @@ describe('Drag-end Position Persistence', () => {
   it('should deduplicate identical position updates', async () => {
     // Create initial node (defaults to position {x: 0, y: 0})
     const createResponse = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         label: 'Draggable Node',
         description: ''

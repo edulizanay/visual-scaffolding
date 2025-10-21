@@ -41,7 +41,7 @@ describe('POST /api/group', () => {
 
     // Create group
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node2Result.nodeId],
         label: 'Test Group'
@@ -85,7 +85,7 @@ describe('POST /api/group', () => {
     const node2Result = await executeTool('addNode', { label: 'Node 2' });
 
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node2Result.nodeId]
       })
@@ -100,7 +100,7 @@ describe('POST /api/group', () => {
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
 
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId]
       })
@@ -112,7 +112,7 @@ describe('POST /api/group', () => {
 
   it('should fail when memberIds is not an array', async () => {
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: 'not-an-array'
       })
@@ -126,7 +126,7 @@ describe('POST /api/group', () => {
     const node1Result = await executeTool('addNode', { label: 'Node 1' });
 
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, 'nonexistent-node']
       })
@@ -152,7 +152,7 @@ describe('POST /api/group', () => {
 
     // Try to group nodes from different parent groups
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node3Result.nodeId]
       })
@@ -174,7 +174,7 @@ describe('POST /api/group', () => {
 
     // Group two nodes from the same parent group into a sub-group
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result.nodeId, node2Result.nodeId],
         label: 'Sub Group'
@@ -223,7 +223,7 @@ describe('POST /api/group', () => {
 
     // Group the two group nodes together
     const response = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [group1Result.groupId, group2Result.groupId],
         label: 'Super Group'
@@ -300,7 +300,7 @@ describe('DELETE /api/group/:id', () => {
     expect(innerGroupResult.success).toBe(true);
 
     const outerGroupResponse = await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1.nodeId, node2.nodeId, innerGroupResult.groupId],
         label: 'Outer Group'
