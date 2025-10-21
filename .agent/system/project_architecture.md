@@ -14,7 +14,8 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 
 ### Backend
 - **Express.js** - REST API server
-- **Better-SQLite3** - Database (SQLite with sync operations)
+- **Supabase** - Database (PostgreSQL 15+ hosted, async operations)
+- **@supabase/supabase-js** - Supabase client SDK
 - **Groq SDK** - Primary LLM provider (gpt-oss-120b)
 - **Cerebras SDK** - Fallback LLM provider
 - **CORS** - Cross-origin support
@@ -26,7 +27,7 @@ Visual Scaffolding is an AI-powered visual flow builder that combines React Flow
 - **@testing-library/user-event** - User interaction simulation
 - **happy-dom 20.0.0** - Lightweight browser environment (faster than jsdom)
 - **Supertest** - Backend API integration testing
-- **In-memory SQLite** - Isolated database testing (`:memory:`)
+- **Supabase Test Database** - Isolated test environment with `setupTestDb()/cleanupTestDb()` helpers
 - **@vitest/coverage-v8** - Code coverage reporting (86.38% overall)
 
 ## Project Structure
@@ -51,32 +52,33 @@ visual-scaffolding/
 │
 ├── server/                       # Backend Express server
 │   ├── server.js                 # Main server & API routes
-│   ├── db.js                     # SQLite database layer with migration runner
+│   ├── db.js                     # Database abstraction layer (Supabase)
+│   ├── supabase-client.js        # Supabase PostgreSQL client configuration
 │   ├── conversationService.js    # Conversation history management
-│   ├── historyService.js         # Undo/redo state management
+│   ├── historyService.js         # Undo/redo state management (timestamp-based)
+│   ├── routes/
+│   │   ├── flowRoutes.js         # Flow domain endpoints
+│   │   └── conversationRoutes.js # Conversation endpoints
 │   ├── llm/
 │   │   ├── llmService.js         # LLM context building & parsing
 │   │   └── tools.js              # Tool definitions for AI
-│   ├── tools/
-│   │   └── executor.js           # Tool execution logic
-│   ├── migrations/
-│   │   ├── 001_initial.sql       # Initial database schema
-│   │   └── 002_remove_visual_settings.sql  # Remove visual customization
-│   └── data/
-│       └── flow.db               # SQLite database file
+│   └── tools/
+│       └── executor.js           # Tool execution logic
 │
 ├── tests/                        # Comprehensive test suite (542 tests)
-│   ├── db.test.js               # Database layer tests
-│   ├── conversationService.test.js
-│   ├── historyService.test.js
+│   ├── test-db-setup.js         # Supabase test helpers (setupTestDb/cleanupTestDb)
+│   ├── db.test.js               # Database layer tests (timestamp-based)
+│   ├── conversationService.test.js  # Conversation service tests
+│   ├── historyService.test.js   # Undo/redo tests (timestamp navigation)
 │   ├── toolExecution.test.js    # Tool execution with group tests
-│   ├── api-contracts.test.js
+│   ├── api-*.test.js            # API contract tests (Supabase cleanup)
 │   ├── groupHelpers.test.js     # Group utility functions
 │   ├── llm/                     # LLM service tests
-│   ├── integration/             # Integration tests (message retry, conversation)
+│   ├── integration/             # Integration tests (Supabase-aware)
+│   ├── e2e/                     # End-to-end tests
 │   ├── unit/
 │   │   ├── frontend/            # Frontend unit tests
-│   │   └── backend/             # Backend unit tests (hotkeys registry)
+│   │   └── backend/             # Backend unit tests (test-db-setup, hotkeys)
 │   ├── security/                # Security tests (XSS prevention)
 │   ├── setup-frontend.js        # Vitest setup for React component tests
 │   └── mocks/                   # Test mocks (styleMock.js)
@@ -141,11 +143,12 @@ visual-scaffolding/
 - Group management via natural language (create, ungroup, expand/collapse)
 
 ### 3. Persistence & History
-- SQLite database for all data
-- Undo/redo functionality (⌘Z / ⌘Y)
+- **Supabase (PostgreSQL)** for cloud-hosted data persistence
+- **Timestamp-based undo/redo** (⌘Z / ⌘Y) - navigates via `created_at` timestamps instead of sequential IDs
 - Conversation history tracking (last 6 interactions sent to LLM)
 - Auto-snapshot on every change (50 snapshot limit)
 - Deduplication for identical states
+- Backwards compatibility: `getUndoStatus()` returns both `currentTimestamp` and computed `currentIndex`
 
 ## Database Schema
 
@@ -289,7 +292,7 @@ Layout calculation uses Dagre algorithm without custom post-processing:
 - **Integration tests**: Message retry logic, API contracts, workflow state sync
 - **Security tests**: XSS prevention
 - **Frontend tests**: React component tests with happy-dom
-- **All tests use in-memory SQLite** (`DB_PATH=:memory:`)
+- **All tests use isolated Supabase test environment** (`setupTestDb()/cleanupTestDb()`)
 - **Test Execution**: ~7 seconds for 542 tests (2.95x faster than Jest)
 - **Coverage**: 86.38% overall (v8 provider)
 - **See**: [test_suite.md](./test_suite.md) for detailed test documentation

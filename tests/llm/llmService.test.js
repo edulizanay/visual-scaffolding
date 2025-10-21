@@ -2,11 +2,12 @@
 // ABOUTME: Tests context building and response parsing
 import { buildLLMContext, parseToolCalls } from '../../server/llm/llmService.js';
 import { clearHistory, addUserMessage, addAssistantMessage } from '../../server/conversationService.js';
-import { saveFlow, closeDb } from '../../server/db.js';
+import { saveFlow } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
 
 describe('llmService', () => {
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
+    await setupTestDb();
 
     // Create test flow
     await saveFlow({
@@ -17,8 +18,8 @@ describe('llmService', () => {
     });
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   describe('buildLLMContext', () => {

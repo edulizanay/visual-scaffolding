@@ -2,17 +2,17 @@
 // ABOUTME: Covers backend subtree collapse functionality added in Phase 2
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
-import { closeDb, getDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb, testSupabase } from './test-db-setup.js';
 import app from '../server/app.js';
 import { executeTool } from '../server/tools/executor.js';
 
 describe('toggleSubtreeCollapse executor', () => {
-  beforeEach(() => {
-    process.env.DB_PATH = ':memory:';
+  beforeEach(async () => {
+    await setupTestDb();
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   it('should return error when nodeId is missing', async () => {
@@ -129,11 +129,10 @@ describe('toggleSubtreeCollapse executor', () => {
 });
 
 describe('PUT /api/flow/subtree/:id/collapse endpoint', () => {
-  beforeEach(() => {
-    process.env.DB_PATH = ':memory:';
+  beforeEach(async () => {
+    await setupTestDb();
 
     // Initialize with test flow
-    const db = getDb();
     const initialFlow = {
       nodes: [
         { id: 'a', data: {}, position: { x: 0, y: 0 } },
@@ -143,15 +142,22 @@ describe('PUT /api/flow/subtree/:id/collapse endpoint', () => {
         { id: 'e1', source: 'a', target: 'b' },
       ],
     };
-    db.prepare('INSERT OR REPLACE INTO flows (user_id, name, data) VALUES (?, ?, ?)').run(
-      'default',
-      'main',
-      JSON.stringify(initialFlow)
-    );
+
+    const { error } = await testSupabase
+      .from('flows')
+      .insert({
+        user_id: 'default',
+        name: 'main',
+        data: initialFlow,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   it('should collapse subtree via API', async () => {
@@ -212,10 +218,10 @@ describe('PUT /api/flow/subtree/:id/collapse endpoint', () => {
   });
 
   it('should create snapshot with operation', async () => {
-    const db = getDb();
-
     // Get initial snapshot count
-    const beforeCount = db.prepare('SELECT COUNT(*) as count FROM undo_history').get().count;
+    const { count: beforeCount } = await testSupabase
+      .from('undo_history')
+      .select('*', { count: 'exact', head: true });
 
     // Collapse subtree
     await request(app)
@@ -224,13 +230,14 @@ describe('PUT /api/flow/subtree/:id/collapse endpoint', () => {
       .expect(200);
 
     // Check snapshot was created
-    const afterCount = db.prepare('SELECT COUNT(*) as count FROM undo_history').get().count;
+    const { count: afterCount } = await testSupabase
+      .from('undo_history')
+      .select('*', { count: 'exact', head: true });
+
     expect(afterCount).toBe(beforeCount + 1);
   });
 
   it('should tag snapshot with ui.subtree origin', async () => {
-    const db = getDb();
-
     // Collapse subtree
     await request(app)
       .put('/api/flow/subtree/a/collapse')
@@ -238,8 +245,15 @@ describe('PUT /api/flow/subtree/:id/collapse endpoint', () => {
       .expect(200);
 
     // Get the latest snapshot
-    const latestSnapshot = db.prepare('SELECT snapshot FROM undo_history ORDER BY id DESC LIMIT 1').get();
-    const snapshotData = JSON.parse(latestSnapshot.snapshot);
+    const { data: latestSnapshot } = await testSupabase
+      .from('undo_history')
+      .select('snapshot')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+
+    const snapshotData = latestSnapshot.snapshot;
 
     // Verify origin metadata
     expect(snapshotData._meta).toBeDefined();

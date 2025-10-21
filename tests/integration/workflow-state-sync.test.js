@@ -3,35 +3,35 @@
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
-import { closeDb, getDb } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb, testSupabase } from '../test-db-setup.js';
 import { clearHistory, initializeHistory } from '../../server/historyService.js';
 
 let app;
 
 beforeAll(async () => {
-  process.env.DB_PATH = ':memory:';
   const serverModule = await import('../../server/server.js');
   app = serverModule.default || serverModule.app;
 });
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
   await clearHistory();
   // Initialize baseline snapshot (empty flow) like production does
   await initializeHistory({ nodes: [], edges: [] });
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 /**
  * Get snapshot count
  */
-function getSnapshotCount() {
-  const db = getDb();
-  const result = db.prepare('SELECT COUNT(*) as count FROM undo_history').get();
-  return result.count;
+async function getSnapshotCount() {
+  const { count } = await testSupabase
+    .from('undo_history')
+    .select('*', { count: 'exact', head: true });
+  return count || 0;
 }
 
 /**
@@ -44,7 +44,7 @@ async function getCurrentFlow() {
 
 describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
   it('Backend creates node → Frontend does NOT double-save (identical state)', async () => {
-    const initialCount = getSnapshotCount();
+    const initialCount = await getSnapshotCount();
 
     // Step 1: Backend creates node (saves snapshot #1)
     const createResponse = await request(app)
@@ -52,7 +52,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
       .send({ label: 'Test Node' })
       .expect(200);
 
-    const countAfterBackend = getSnapshotCount();
+    const countAfterBackend = await getSnapshotCount();
     expect(countAfterBackend).toBe(initialCount + 1);
 
     // Step 2: Frontend receives flow and would trigger autosave
@@ -64,14 +64,14 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
       .send(currentFlow)
       .expect(200);
 
-    const countAfterFrontend = getSnapshotCount();
+    const countAfterFrontend = await getSnapshotCount();
 
     // CRITICAL: Should still be +1, not +2 (deduplication works)
     expect(countAfterFrontend).toBe(initialCount + 1);
   });
 
   it('Backend creates node → Layout changes positions → Frontend saves → Creates 2nd snapshot', async () => {
-    const initialCount = getSnapshotCount();
+    const initialCount = await getSnapshotCount();
 
     // Step 1: Backend creates node at default position
     const createResponse = await request(app)
@@ -80,7 +80,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
       .expect(200);
 
     const nodeId = createResponse.body.flow.nodes[0].id;
-    const countAfterBackend = getSnapshotCount();
+    const countAfterBackend = await getSnapshotCount();
 
     // Step 2: Simulate layout calculating new positions (what dagre does)
     const currentFlow = await getCurrentFlow();
@@ -98,7 +98,7 @@ describe('Workflow: Backend operation → Frontend autosave → Undo', () => {
       .send(layoutFlow)
       .expect(200);
 
-    const countAfterLayout = getSnapshotCount();
+    const countAfterLayout = await getSnapshotCount();
 
     // This SHOULD create 2nd snapshot (state actually changed)
     expect(countAfterLayout).toBe(countAfterBackend + 1);
@@ -142,7 +142,7 @@ describe('Workflow: LLM creates nodes → Layout → Undo → Retry', () => {
   // If they timeout, it may indicate rate limiting or slow API response
 
   it('LLM creates node → No extra saves happen', async () => {
-    const initialCount = getSnapshotCount();
+    const initialCount = await getSnapshotCount();
 
     // Simulate LLM conversation (uses tool executor)
     const response = await request(app)
@@ -156,7 +156,7 @@ describe('Workflow: LLM creates nodes → Layout → Undo → Retry', () => {
       return; // Skip assertions if LLM timed out
     }
 
-    const finalCount = getSnapshotCount();
+    const finalCount = await getSnapshotCount();
 
     // Should be exactly 1 snapshot (tool executor saves once after batch)
     expect(finalCount - initialCount).toBe(1);

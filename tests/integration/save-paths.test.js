@@ -3,36 +3,40 @@
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
-import { closeDb, getDb, getFlow as dbGetFlow } from '../../server/db.js';
+import { getFlow as dbGetFlow } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';
 import { clearHistory, getHistoryStatus } from '../../server/historyService.js';
+import { setupTestDb, cleanupTestDb, testSupabase } from '../test-db-setup.js';
 
 let app;
 
 beforeAll(async () => {
-  process.env.DB_PATH = ':memory:';
   const serverModule = await import('../../server/server.js');
   app = serverModule.default || serverModule.app;
 });
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
   await clearHistory();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 /**
  * Helper: Get all snapshots from undo_history
  */
 async function getAllSnapshots() {
-  const db = getDb();
-  const snapshots = db.prepare('SELECT id, snapshot FROM undo_history ORDER BY id').all();
+  const { data: snapshots } = await testSupabase
+    .from('undo_history')
+    .select('id, snapshot')
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
+
   return snapshots.map(row => ({
     id: row.id,
-    data: JSON.parse(row.snapshot)
+    data: row.snapshot
   }));
 }
 

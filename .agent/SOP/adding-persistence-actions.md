@@ -234,19 +234,20 @@ The `logToolExecution` function already handles this, but verify your origin tag
 ```javascript
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
-import { closeDb, initializeHistory } from '../../server/historyService.js';
+import { setupTestDb, cleanupTestDb } from '../../tests/test-db-setup.js';
+import { initializeUndoHistory } from '../../server/db.js';
 
 let app;
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
   const serverModule = await import('../../server/server.js');
   app = serverModule.default || serverModule.app;
-  await initializeHistory({ nodes: [], edges: [] });
+  await initializeUndoHistory({ nodes: [], edges: [] });
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 describe('PUT /api/your-resource/:id', () => {
@@ -289,7 +290,7 @@ describe('PUT /api/your-resource/:id', () => {
 - [ ] Error cases tested (validation, invalid IDs, etc.)
 - [ ] Snapshot origin tag verified
 - [ ] Response format validated
-- [ ] Uses in-memory DB for isolation
+- [ ] Uses Supabase test environment via setupTestDb/cleanupTestDb
 
 ---
 
@@ -334,14 +335,17 @@ describe('yourHelper', () => {
 - [ ] Refresh preserves state
 
 **Database verification:**
-```bash
-# Check snapshot was created with correct origin
-sqlite3 server/data/flow.db "SELECT id, datetime(created_at, 'localtime'), json_extract(snapshot, '$._meta.origin') FROM undo_history ORDER BY id DESC LIMIT 5;"
+Check Supabase dashboard or use the Supabase MCP tool to verify snapshots:
+```sql
+SELECT id, created_at, snapshot->'_meta'->>'origin' as origin
+FROM undo_history
+ORDER BY created_at DESC
+LIMIT 5;
 ```
 
 **Checklist:**
 - [ ] All manual QA steps passed
-- [ ] Snapshot origin tag verified in DB
+- [ ] Snapshot origin tag verified in Supabase
 - [ ] Automated tests passing
 - [ ] No duplicate snapshots created
 

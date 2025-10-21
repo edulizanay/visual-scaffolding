@@ -9,15 +9,15 @@ import {
   clearHistory,
   initializeHistory
 } from '../server/historyService.js';
-import { closeDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 describe('historyService', () => {
-  beforeEach(() => {
-    process.env.DB_PATH = ':memory:';
+  beforeEach(async () => {
+    await setupTestDb();
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   describe('pushSnapshot', () => {
@@ -27,7 +27,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(1);
-      expect(status.currentIndex).toBe(1); // DB uses 1-based IDs
+      expect(status.currentTimestamp).not.toBeNull(); // Has timestamp
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
     });
@@ -37,11 +37,12 @@ describe('historyService', () => {
       const state2 = { nodes: [{ id: '1', position: { x: 0, y: 0 }, data: { label: 'B' } }], edges: [] };
 
       await pushSnapshot(state1);
+      const statusAfterFirst = await getHistoryStatus();
       await pushSnapshot(state2);
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(2);
-      expect(status.currentIndex).toBe(2); // Second snapshot has ID 2
+      expect(new Date(status.currentTimestamp).getTime()).toBeGreaterThan(new Date(statusAfterFirst.currentTimestamp).getTime()); // Second snapshot has later timestamp
       expect(status.canUndo).toBe(true);
       expect(status.canRedo).toBe(false);
     });
@@ -53,24 +54,30 @@ describe('historyService', () => {
 
       await pushSnapshot(state1);
       await pushSnapshot(state2);
-      await undo(); // Back to state1 (index 1)
+      const statusBeforeUndo = await getHistoryStatus();
+      await undo(); // Back to state1
       await pushSnapshot(state3); // Should remove state2, add state3
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(2); // state1 and state3
-      expect(status.currentIndex).toBe(3); // state3 gets new ID 3 (auto-increment continues)
+      expect(new Date(status.currentTimestamp).getTime()).toBeGreaterThan(new Date(statusBeforeUndo.currentTimestamp).getTime()); // state3 gets newer timestamp
     });
 
     it('should limit snapshots to 50', async () => {
       // Push 60 snapshots
+      let lastTimestamp;
       for (let i = 0; i < 60; i++) {
         await pushSnapshot({ nodes: [{ id: `${i}` }], edges: [] });
+        if (i === 59) {
+          const finalStatus = await getHistoryStatus();
+          lastTimestamp = finalStatus.currentTimestamp;
+        }
       }
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(50);
-      expect(status.currentIndex).toBe(60); // Last snapshot ID is 60
-    });
+      expect(status.currentTimestamp).toBe(lastTimestamp); // Verify we're at the last snapshot
+    }, 120000); // 2 minute timeout for this slow test
   });
 
   describe('undo', () => {
@@ -92,14 +99,17 @@ describe('historyService', () => {
       const state2 = { nodes: [{ id: '1' }, { id: '2' }], edges: [] };
 
       await pushSnapshot(state1);
+      const statusAfterFirst = await getHistoryStatus();
+      const firstTimestamp = statusAfterFirst.currentTimestamp;
+
       await pushSnapshot(state2);
 
       const result = await undo();
       expect(result).toEqual(state1);
 
       const status = await getHistoryStatus();
-      expect(status.currentIndex).toBe(1); // Back to first snapshot (ID 1)
-      expect(status.canUndo).toBe(false);
+      expect(status.currentTimestamp).toBe(firstTimestamp); // Back to first snapshot
+      expect(status.canUndo).toBe(false); // Can't undo first snapshot
       expect(status.canRedo).toBe(true);
     });
 
@@ -138,13 +148,15 @@ describe('historyService', () => {
 
       await pushSnapshot(state1);
       await pushSnapshot(state2);
+      const statusBeforeUndo = await getHistoryStatus();
+      const secondSnapshotTimestamp = statusBeforeUndo.currentTimestamp;
       await undo();
 
       const result = await redo();
       expect(result).toEqual(state2);
 
       const status = await getHistoryStatus();
-      expect(status.currentIndex).toBe(2); // Back to second snapshot (ID 2)
+      expect(status.currentTimestamp).toBe(secondSnapshotTimestamp); // Back to second snapshot
       expect(status.canUndo).toBe(true);
       expect(status.canRedo).toBe(false);
     });
@@ -212,7 +224,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(0);
-      expect(status.currentIndex).toBe(-1); // Cleared state
+      expect(status.currentTimestamp).toBeNull(); // Cleared state
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
     });
@@ -226,7 +238,7 @@ describe('historyService', () => {
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(1);
-      expect(status.currentIndex).toBe(1); // First snapshot gets ID 1
+      expect(status.currentTimestamp).not.toBeNull(); // Has timestamp
       expect(status.canUndo).toBe(false);
       expect(status.canRedo).toBe(false);
     });
@@ -236,11 +248,12 @@ describe('historyService', () => {
       const newState = { nodes: [{ id: 'new' }], edges: [] };
 
       await pushSnapshot(oldState);
+      const statusAfterOld = await getHistoryStatus();
       await initializeHistory(newState);
 
       const status = await getHistoryStatus();
       expect(status.snapshotCount).toBe(1);
-      expect(status.currentIndex).toBe(2); // New snapshot gets next ID
+      expect(new Date(status.currentTimestamp).getTime()).toBeGreaterThan(new Date(statusAfterOld.currentTimestamp).getTime()); // New snapshot gets newer timestamp
     });
   });
 });

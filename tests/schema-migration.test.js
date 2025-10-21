@@ -2,21 +2,19 @@
 // ABOUTME: Ensures existing flows load correctly with new fields
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { getDb, closeDb } from '../server/db.js';
+import { saveFlow, getFlow } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 describe('Group Fields Schema Migration', () => {
-  beforeEach(() => {
-    // Fresh in-memory database for each test
-    process.env.DB_PATH = ':memory:';
+  beforeEach(async () => {
+    await setupTestDb();
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
-  test('old flows load with default type="regular"', () => {
-    const db = getDb();
-
+  test('old flows load with default type="regular"', async () => {
     // Simulate old flow without type field
     const oldFlowData = {
       nodes: [
@@ -25,24 +23,17 @@ describe('Group Fields Schema Migration', () => {
       edges: [],
     };
 
-    db.prepare(`
-      INSERT INTO flows (user_id, name, data)
-      VALUES ('default', 'main', ?)
-    `).run(JSON.stringify(oldFlowData));
+    await saveFlow(oldFlowData);
 
     // Retrieve flow
-    const row = db.prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-      .get('default', 'main');
+    const flow = await getFlow();
 
-    const flow = JSON.parse(row.data);
     expect(flow.nodes[0]).toBeDefined();
     // Node without type field should still work (defaults handled in app logic)
     expect(flow.nodes[0].type).toBeUndefined(); // DB doesn't add it, app does
   });
 
-  test('can save flows with new type field', () => {
-    const db = getDb();
-
+  test('can save flows with new type field', async () => {
     const flowData = {
       nodes: [
         { id: 'node-1', type: 'regular', data: { label: 'Regular' }, position: { x: 0, y: 0 } },
@@ -51,22 +42,15 @@ describe('Group Fields Schema Migration', () => {
       edges: [],
     };
 
-    db.prepare(`
-      INSERT INTO flows (user_id, name, data)
-      VALUES ('default', 'main', ?)
-    `).run(JSON.stringify(flowData));
+    await saveFlow(flowData);
 
-    const row = db.prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-      .get('default', 'main');
+    const flow = await getFlow();
 
-    const flow = JSON.parse(row.data);
     expect(flow.nodes[0].type).toBe('regular');
     expect(flow.nodes[1].type).toBe('group');
   });
 
-  test('can save flows with parentGroupId field', () => {
-    const db = getDb();
-
+  test('can save flows with parentGroupId field', async () => {
     const flowData = {
       nodes: [
         { id: 'group-1', type: 'group', data: { label: 'Group' }, position: { x: 0, y: 0 } },
@@ -75,21 +59,14 @@ describe('Group Fields Schema Migration', () => {
       edges: [],
     };
 
-    db.prepare(`
-      INSERT INTO flows (user_id, name, data)
-      VALUES ('default', 'main', ?)
-    `).run(JSON.stringify(flowData));
+    await saveFlow(flowData);
 
-    const row = db.prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-      .get('default', 'main');
+    const flow = await getFlow();
 
-    const flow = JSON.parse(row.data);
     expect(flow.nodes[1].parentGroupId).toBe('group-1');
   });
 
-  test('can save flows with isExpanded field on group nodes', () => {
-    const db = getDb();
-
+  test('can save flows with isExpanded field on group nodes', async () => {
     const flowData = {
       nodes: [
         { id: 'group-1', type: 'group', isExpanded: false, data: { label: 'Collapsed Group' }, position: { x: 0, y: 0 } },
@@ -98,22 +75,15 @@ describe('Group Fields Schema Migration', () => {
       edges: [],
     };
 
-    db.prepare(`
-      INSERT INTO flows (user_id, name, data)
-      VALUES ('default', 'main', ?)
-    `).run(JSON.stringify(flowData));
+    await saveFlow(flowData);
 
-    const row = db.prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-      .get('default', 'main');
+    const flow = await getFlow();
 
-    const flow = JSON.parse(row.data);
     expect(flow.nodes[0].isExpanded).toBe(false);
     expect(flow.nodes[1].hidden).toBe(true);
   });
 
-  test('old flows without type/parentGroupId still work', () => {
-    const db = getDb();
-
+  test('old flows without type/parentGroupId still work', async () => {
     // Old flow structure
     const oldFlow = {
       nodes: [
@@ -125,24 +95,17 @@ describe('Group Fields Schema Migration', () => {
       ],
     };
 
-    db.prepare(`
-      INSERT INTO flows (user_id, name, data)
-      VALUES ('default', 'main', ?)
-    `).run(JSON.stringify(oldFlow));
+    await saveFlow(oldFlow);
 
-    const row = db.prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-      .get('default', 'main');
+    const flow = await getFlow();
 
-    const flow = JSON.parse(row.data);
     expect(flow.nodes).toHaveLength(2);
     expect(flow.edges).toHaveLength(1);
     // Should load successfully even without new fields
     expect(flow.nodes[0].id).toBe('login');
   });
 
-  test('mixed flows with old and new nodes work together', () => {
-    const db = getDb();
-
+  test('mixed flows with old and new nodes work together', async () => {
     const mixedFlow = {
       nodes: [
         // Old-style node (no type field)
@@ -157,15 +120,10 @@ describe('Group Fields Schema Migration', () => {
       edges: [],
     };
 
-    db.prepare(`
-      INSERT INTO flows (user_id, name, data)
-      VALUES ('default', 'main', ?)
-    `).run(JSON.stringify(mixedFlow));
+    await saveFlow(mixedFlow);
 
-    const row = db.prepare('SELECT data FROM flows WHERE user_id = ? AND name = ?')
-      .get('default', 'main');
+    const flow = await getFlow();
 
-    const flow = JSON.parse(row.data);
     expect(flow.nodes).toHaveLength(4);
     expect(flow.nodes[0].type).toBeUndefined(); // Old node
     expect(flow.nodes[1].type).toBe('regular');

@@ -3,43 +3,42 @@
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
-import { closeDb, getDb } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb, testSupabase } from '../test-db-setup.js';
 import { executeToolCalls } from '../../server/tools/executor.js';
-import { clearHistory } from '../../server/historyService.js';
+import { clearHistory, getHistoryStatus } from '../../server/historyService.js';
 
 let app;
 
 beforeAll(async () => {
-  process.env.DB_PATH = ':memory:';
   const serverModule = await import('../../server/server.js');
   app = serverModule.default || serverModule.app;
 });
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
   await clearHistory();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 /**
  * Helper: Get snapshot count from undo_history table
  */
 async function getSnapshotCount() {
-  const db = getDb();
-  const result = db.prepare('SELECT COUNT(*) as count FROM undo_history').get();
-  return result.count;
+  const { count } = await testSupabase
+    .from('undo_history')
+    .select('*', { count: 'exact', head: true });
+  return count || 0;
 }
 
 /**
  * Helper: Get current snapshot index
  */
 async function getCurrentSnapshotIndex() {
-  const db = getDb();
-  const result = db.prepare('SELECT current_index FROM undo_state WHERE id = 1').get();
-  return result?.current_index ?? -1;
+  const status = await getHistoryStatus();
+  return status.currentIndex;
 }
 
 describe('Double-save prevention', () => {

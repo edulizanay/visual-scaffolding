@@ -3,43 +3,48 @@
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
-import { closeDb, getDb } from '../../server/db.js';
+import { setupTestDb, cleanupTestDb, testSupabase } from '../test-db-setup.js';
 import { clearHistory, initializeHistory } from '../../server/historyService.js';
 
 let app;
 
 beforeAll(async () => {
-  process.env.DB_PATH = ':memory:';
   const serverModule = await import('../../server/server.js');
   app = serverModule.default || serverModule.app;
 });
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
   await clearHistory();
   await initializeHistory({ nodes: [], edges: [] });
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 /**
  * Get the most recent snapshot from undo_history
  */
-function getLatestSnapshot() {
-  const db = getDb();
-  const result = db.prepare('SELECT snapshot FROM undo_history ORDER BY id DESC LIMIT 1').get();
-  return result ? JSON.parse(result.snapshot) : null;
+async function getLatestSnapshot() {
+  const { data: result } = await testSupabase
+    .from('undo_history')
+    .select('snapshot')
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return result?.snapshot || null;
 }
 
 /**
  * Get snapshot count
  */
-function getSnapshotCount() {
-  const db = getDb();
-  const result = db.prepare('SELECT COUNT(*) as count FROM undo_history').get();
-  return result.count;
+async function getSnapshotCount() {
+  const { count } = await testSupabase
+    .from('undo_history')
+    .select('*', { count: 'exact', head: true });
+  return count || 0;
 }
 
 describe('Drag-end Position Persistence', () => {
@@ -55,7 +60,7 @@ describe('Drag-end Position Persistence', () => {
 
     expect(createResponse.body.success).toBe(true);
     const nodeId = createResponse.body.nodeId;
-    const initialCount = getSnapshotCount();
+    const initialCount = await getSnapshotCount();
 
     // Update node position (simulating drag-end)
     const updateResponse = await request(app)
@@ -66,11 +71,11 @@ describe('Drag-end Position Persistence', () => {
     expect(updateResponse.body.success).toBe(true);
 
     // Verify snapshot was created
-    const finalCount = getSnapshotCount();
+    const finalCount = await getSnapshotCount();
     expect(finalCount).toBe(initialCount + 1);
 
     // Verify snapshot has correct origin metadata
-    const latestSnapshot = getLatestSnapshot();
+    const latestSnapshot = await getLatestSnapshot();
     expect(latestSnapshot).toBeDefined();
     expect(latestSnapshot._meta).toBeDefined();
     expect(latestSnapshot._meta.origin).toBe('ui.node.update');
@@ -120,7 +125,7 @@ describe('Drag-end Position Persistence', () => {
       .expect(200);
 
     const nodeId = createResponse.body.nodeId;
-    const initialCount = getSnapshotCount();
+    const initialCount = await getSnapshotCount();
 
     // First position update
     await request(app)
@@ -135,7 +140,7 @@ describe('Drag-end Position Persistence', () => {
       .expect(200);
 
     // Verify two new snapshots were created
-    const finalCount = getSnapshotCount();
+    const finalCount = await getSnapshotCount();
     expect(finalCount).toBe(initialCount + 2);
 
     // Undo twice should restore original position (0, 0)
@@ -157,7 +162,7 @@ describe('Drag-end Position Persistence', () => {
       .expect(200);
 
     const nodeId = createResponse.body.nodeId;
-    const initialCount = getSnapshotCount();
+    const initialCount = await getSnapshotCount();
 
     // Update position
     await request(app)
@@ -165,7 +170,7 @@ describe('Drag-end Position Persistence', () => {
       .send({ position: { x: 200, y: 200 } })
       .expect(200);
 
-    const afterFirstUpdate = getSnapshotCount();
+    const afterFirstUpdate = await getSnapshotCount();
     expect(afterFirstUpdate).toBe(initialCount + 1);
 
     // Update to same position again (should be deduplicated)
@@ -174,7 +179,7 @@ describe('Drag-end Position Persistence', () => {
       .send({ position: { x: 200, y: 200 } })
       .expect(200);
 
-    const afterSecondUpdate = getSnapshotCount();
+    const afterSecondUpdate = await getSnapshotCount();
     expect(afterSecondUpdate).toBe(afterFirstUpdate); // No new snapshot
   });
 });

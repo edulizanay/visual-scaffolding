@@ -6,15 +6,15 @@ import {
   getHistory,
   clearHistory,
 } from '../server/conversationService.js';
-import { closeDb } from '../server/db.js';
+import { setupTestDb, cleanupTestDb } from './test-db-setup.js';
 
 describe('conversationService', () => {
-  beforeEach(() => {
-    process.env.DB_PATH = ':memory:';
+  beforeEach(async () => {
+    await setupTestDb();
   });
 
-  afterEach(() => {
-    closeDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   describe('addUserMessage', () => {
@@ -28,8 +28,8 @@ describe('conversationService', () => {
       });
       expect(history[0].timestamp).toBeDefined();
       expect(typeof history[0].timestamp).toBe('string');
-      // SQLite CURRENT_TIMESTAMP format is like "2025-10-07 12:05:42"
-      expect(history[0].timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+      // Supabase TIMESTAMPTZ format is ISO8601: "2025-10-07T12:05:42+00:00" or "2025-10-07T12:05:42Z"
+      expect(history[0].timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
     });
 
     test('stores message in database', async () => {

@@ -22,11 +22,11 @@ server/data/conversation.json
 tests/test-data/
 notes-debug.json
 
-# SQLite database files
-# *.db
-# *.db-shm
-# *.db-wal
-# server/data/backup-*/
+# SQLite database files (legacy - kept for reference)
+*.db
+*.db-shm
+*.db-wal
+server/data/backup-*/
 
 # Editor directories and files
 .vscode/*
@@ -40,3 +40,4 @@ notes-debug.json
 *.sw?
 server/data/history.json
 coverage/
+*.log

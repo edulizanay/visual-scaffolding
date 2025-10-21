@@ -3,25 +3,25 @@
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import request from 'supertest';
-import { closeDb, getDb, getFlow as dbGetFlow } from '../../server/db.js';
+import { getFlow as dbGetFlow } from '../../server/db.js';
 import { executeToolCalls } from '../../server/tools/executor.js';
 import { clearHistory, getHistoryStatus, undo, redo } from '../../server/historyService.js';
+import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
 
 let app;
 
 beforeAll(async () => {
-  process.env.DB_PATH = ':memory:';
   const serverModule = await import('../../server/server.js');
   app = serverModule.default || serverModule.app;
 });
 
 beforeEach(async () => {
-  process.env.DB_PATH = ':memory:';
+  await setupTestDb();
   await clearHistory();
 });
 
-afterEach(() => {
-  closeDb();
+afterEach(async () => {
+  await cleanupTestDb();
 });
 
 /**

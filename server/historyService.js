@@ -24,7 +24,7 @@ export async function pushSnapshot(flowState, origin = null) {
     ? { ...flowState, _meta: { origin } }
     : flowState;
 
-  pushUndoSnapshot(snapshotData);
+  await pushUndoSnapshot(snapshotData);
 }
 
 /**
@@ -38,33 +38,33 @@ function stripMetadata(snapshot) {
 }
 
 export async function undo() {
-  const snapshot = dbUndo();
+  const snapshot = await dbUndo();
   return stripMetadata(snapshot);
 }
 
 export async function redo() {
-  const snapshot = dbRedo();
+  const snapshot = await dbRedo();
   return stripMetadata(snapshot);
 }
 
 export async function canUndo() {
-  const status = getUndoStatus();
+  const status = await getUndoStatus();
   return status.canUndo;
 }
 
 export async function canRedo() {
-  const status = getUndoStatus();
+  const status = await getUndoStatus();
   return status.canRedo;
 }
 
 export async function getHistoryStatus() {
-  return getUndoStatus();
+  return await getUndoStatus();
 }
 
 export async function clearHistory() {
-  clearUndoHistory();
+  await clearUndoHistory();
 }
 
 export async function initializeHistory(currentFlow) {
-  initializeUndoHistory(currentFlow);
+  await initializeUndoHistory(currentFlow);
 }

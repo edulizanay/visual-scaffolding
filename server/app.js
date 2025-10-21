@@ -16,11 +16,11 @@ app.use(express.json());
 // ==================== CORE DATA ACCESS ====================
 
 export async function readFlow() {
-  return dbGetFlow();
+  return await dbGetFlow();
 }
 
 export async function writeFlow(flowData, skipSnapshot = false, origin = null) {
-  dbSaveFlow(flowData);
+  await dbSaveFlow(flowData);
 
   if (!skipSnapshot) {
     await pushSnapshot(flowData, origin);

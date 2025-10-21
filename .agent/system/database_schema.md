@@ -1,13 +1,21 @@
 # Database Schema
 
-Visual Scaffolding uses SQLite with Better-SQLite3 for synchronous database operations. The database file is located at `server/data/flow.db`.
+Visual Scaffolding uses **Supabase (PostgreSQL)** for cloud-hosted database operations. Legacy SQLite support remains for local development.
 
 ## Database Configuration
 
+### Supabase (Production)
+- **Database**: PostgreSQL 15+ via Supabase
+- **Client**: `@supabase/supabase-js` SDK (async)
+- **Connection**: Configured via environment variables (see `.env`)
+- **Migrations**: Applied via Supabase MCP tools
+- **Test Mode**: Uses dedicated Supabase project with `setupTestDb()/cleanupTestDb()` helpers
+
+### SQLite (Legacy/Local)
 - **Mode**: WAL (Write-Ahead Logging) for better concurrency
 - **Foreign Keys**: Enabled
 - **Migrations**: Located in `server/migrations/`
-- **Test Mode**: Uses `:memory:` database via `DB_PATH` env var
+- **Adapter**: `server/db-adapters/sqlite.js` wraps Better-SQLite3 with async interface
 
 ## Tables (4 total)
 
@@ -17,6 +25,22 @@ The database contains 4 tables after the removal of `visual_settings` in migrati
 
 Stores flow graph data (nodes and edges) as JSON.
 
+**PostgreSQL (Supabase):**
+```sql
+CREATE TABLE flows (
+  id BIGSERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL DEFAULT 'default',
+  name TEXT NOT NULL DEFAULT 'main',
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, name)
+);
+
+CREATE INDEX idx_flows_user_name ON flows(user_id, name);
+```
+
+**SQLite (Legacy):**
 ```sql
 CREATE TABLE flows (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,16 +51,14 @@ CREATE TABLE flows (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, name)
 );
-
-CREATE INDEX idx_flows_user_name ON flows(user_id, name);
 ```
 
 **Fields:**
-- `id` - Auto-incrementing primary key
+- `id` - Auto-incrementing primary key (BIGSERIAL in PostgreSQL, INTEGER in SQLite)
 - `user_id` - User identifier (currently always 'default')
 - `name` - Flow name (currently always 'main')
-- `data` - JSON object containing `{nodes: [], edges: []}`
-- `created_at` - Timestamp of first creation
+- `data` - JSON object containing `{nodes: [], edges: []}` (JSONB in PostgreSQL for better indexing)
+- `created_at` - Timestamp of first creation (TIMESTAMPTZ in PostgreSQL, DATETIME in SQLite)
 - `updated_at` - Timestamp of last update
 
 **Data Structure:**
@@ -72,6 +94,18 @@ CREATE INDEX idx_flows_user_name ON flows(user_id, name);
 
 Stores all LLM interactions (user messages and assistant responses).
 
+**PostgreSQL (Supabase):**
+```sql
+CREATE TABLE conversation_history (
+  id BIGSERIAL PRIMARY KEY,
+  role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  tool_calls JSONB,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**SQLite (Legacy):**
 ```sql
 CREATE TABLE conversation_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,11 +117,11 @@ CREATE TABLE conversation_history (
 ```
 
 **Fields:**
-- `id` - Auto-incrementing primary key
+- `id` - Auto-incrementing primary key (BIGSERIAL in PostgreSQL, INTEGER in SQLite)
 - `role` - Either 'user' or 'assistant'
 - `content` - Message text (user request or LLM response)
-- `tool_calls` - JSON array of tool calls (for assistant messages only)
-- `timestamp` - Message timestamp
+- `tool_calls` - JSON array of tool calls (JSONB in PostgreSQL, for assistant messages only)
+- `timestamp` - Message timestamp (TIMESTAMPTZ in PostgreSQL, DATETIME in SQLite)
 
 **API Functions:**
 - `addConversationMessage(role, content, toolCalls)` - Add message
@@ -103,6 +137,18 @@ CREATE TABLE conversation_history (
 
 Stores flow snapshots for undo/redo functionality.
 
+**PostgreSQL (Supabase):**
+```sql
+CREATE TABLE undo_history (
+  id BIGSERIAL PRIMARY KEY,
+  snapshot JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_undo_history_created_at ON undo_history(created_at);
+```
+
+**SQLite (Legacy):**
 ```sql
 CREATE TABLE undo_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,9 +158,9 @@ CREATE TABLE undo_history (
 ```
 
 **Fields:**
-- `id` - Auto-incrementing primary key (used as snapshot index)
-- `snapshot` - Complete flow state JSON (same format as `flows.data`)
-- `created_at` - Snapshot timestamp
+- `id` - Auto-incrementing primary key (BIGSERIAL in PostgreSQL; note: may have gaps after deletions)
+- `snapshot` - Complete flow state JSON (JSONB in PostgreSQL, same format as `flows.data`)
+- `created_at` - Snapshot timestamp (TIMESTAMPTZ in PostgreSQL; used for timestamp-based navigation)
 
 **Snapshot Management:**
 - Maximum 50 snapshots retained
@@ -134,28 +180,47 @@ CREATE TABLE undo_history (
 
 Single-row table tracking current position in undo history.
 
+**PostgreSQL (Supabase):**
 ```sql
 CREATE TABLE undo_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  current_index INTEGER NOT NULL DEFAULT -1
+  current_snapshot_time TIMESTAMPTZ DEFAULT NULL,
+  current_index BIGINT DEFAULT NULL  -- DEPRECATED: Use current_snapshot_time instead
 );
 
-INSERT OR IGNORE INTO undo_state (id, current_index) VALUES (1, -1);
+INSERT INTO undo_state (id, current_snapshot_time, current_index)
+VALUES (1, NULL, NULL)
+ON CONFLICT DO NOTHING;
+```
+
+**SQLite (Legacy):**
+```sql
+CREATE TABLE undo_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  current_snapshot_time TEXT DEFAULT NULL,
+  current_index INTEGER DEFAULT NULL  -- DEPRECATED: Use current_snapshot_time instead
+);
+
+INSERT OR IGNORE INTO undo_state (id, current_snapshot_time, current_index) VALUES (1, NULL, NULL);
 ```
 
 **Fields:**
 - `id` - Always 1 (enforced by CHECK constraint)
-- `current_index` - ID of current snapshot in `undo_history`, or -1 if no snapshots
+- `current_snapshot_time` - Timestamp of current snapshot in `undo_history`, or NULL if no snapshots
+- `current_index` - **DEPRECATED** (kept for backwards compatibility, always NULL)
 
 **State Management:**
-- `-1` = No snapshots exist yet
-- `N` = Currently at snapshot with `undo_history.id = N`
-- When new snapshot added, `current_index` updated to new snapshot ID
-- On undo, decremented to previous ID
-- On redo, incremented to next ID
-- On truncate (new change after undo), future snapshots deleted
+- `NULL` = No snapshots exist yet
+- `<timestamp>` = Currently at snapshot with `undo_history.created_at = <timestamp>`
+- When new snapshot added, `current_snapshot_time` updated to new snapshot's `created_at`
+- On undo, set to previous snapshot's `created_at` (found via `WHERE created_at < current_snapshot_time ORDER BY created_at DESC LIMIT 1`)
+- On redo, set to next snapshot's `created_at` (found via `WHERE created_at > current_snapshot_time ORDER BY created_at ASC LIMIT 1`)
+- On truncate (new change after undo), snapshots with `created_at > current_snapshot_time` are deleted
 
-**Undo/Redo Logic:** Can undo if `current_index > 1`. Can redo if not at latest snapshot.
+**Undo/Redo Logic:**
+- Can undo if there exists a snapshot with `created_at < current_snapshot_time`
+- Can redo if there exists a snapshot with `created_at > current_snapshot_time`
+- Uses timestamp-based navigation instead of sequential IDs to handle PostgreSQL auto-increment gaps
 
 ## Data Flow
 
