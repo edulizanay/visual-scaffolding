@@ -100,7 +100,7 @@ import app from '../server/server.js';
 
 it('should create a new node', async () => {
   const response = await request(app)
-    .post('/api/node')
+    .post('/api/flow/node')
     .send({ label: 'Test Node' })
     .expect(201);
 
@@ -196,7 +196,7 @@ it('should add node via tool execution', async () => {
 ```javascript
 it('should return 400 for invalid node data', async () => {
   const response = await request(app)
-    .post('/api/node')
+    .post('/api/flow/node')
     .send({}) // missing required label
     .expect(400);
 

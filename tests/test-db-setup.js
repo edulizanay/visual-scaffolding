@@ -24,7 +24,7 @@ export const testSupabase = createClient(supabaseUrl, supabaseServiceRoleKey);
  * Uses service_role key to bypass RLS policies
  */
 export async function truncateAllTables() {
-  const tables = ['conversation_history', 'undo_history', 'flows'];
+  const tables = ['conversation_history', 'undo_history', 'flows', 'notes'];
 
   for (const table of tables) {
     const { error } = await testSupabase.from(table).delete().neq('id', 0);
@@ -83,6 +83,36 @@ export async function truncateAllTables() {
     .single();
 
   console.log(`[CLEANUP] undo_state.current_snapshot_time: ${finalState?.current_snapshot_time}`);
+
+  // Ensure notes row exists with empty state
+  const { data: notesExists } = await testSupabase
+    .from('notes')
+    .select('id')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if (!notesExists) {
+    const { error: notesInsertError } = await testSupabase
+      .from('notes')
+      .insert({ id: 1, bullets: [], conversation_history: [] });
+
+    if (notesInsertError) {
+      console.error('Failed to initialize notes:', notesInsertError);
+      throw notesInsertError;
+    }
+  } else {
+    // Reset notes to empty state
+    const { error: notesResetError } = await testSupabase
+      .from('notes')
+      .update({ bullets: [], conversation_history: [] })
+      .eq('id', 1)
+      .select();
+
+    if (notesResetError) {
+      console.error('Failed to reset notes:', notesResetError);
+      throw notesResetError;
+    }
+  }
 }
 
 /**
@@ -128,6 +158,31 @@ export async function seedConversationHistory(messages) {
     .from('conversation_history')
     .insert(messages)
     .select();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Seed notes for testing
+ */
+export async function seedNotes(bullets = [], conversationHistory = []) {
+  const { data, error } = await testSupabase
+    .from('notes')
+    .upsert(
+      {
+        id: 1,
+        bullets,
+        conversation_history: conversationHistory,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'id' }
+    )
+    .select()
+    .single();
 
   if (error) {
     throw error;

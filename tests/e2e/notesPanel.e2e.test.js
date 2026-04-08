@@ -5,32 +5,15 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { saveFlow } from '../../server/db.js';
 import { setupTestDb, cleanupTestDb } from '../test-db-setup.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Notes file path
-const NOTES_FILE_PATH = path.join(__dirname, '../../notes-debug.json');
 
 beforeEach(async () => {
   await setupTestDb();
   // Initialize with empty flow
   await saveFlow({ nodes: [], edges: [] });
-  // Clean up notes file before each test
-  if (fs.existsSync(NOTES_FILE_PATH)) {
-    fs.unlinkSync(NOTES_FILE_PATH);
-  }
 });
 
 afterEach(async () => {
   await cleanupTestDb();
-  // Clean up notes file after each test
-  if (fs.existsSync(NOTES_FILE_PATH)) {
-    fs.unlinkSync(NOTES_FILE_PATH);
-  }
 });
 
 describe('Notes Panel E2E User Workflows', () => {
@@ -171,42 +154,23 @@ describe('Notes Panel E2E User Workflows', () => {
     // 4. User sees edited content persisted
     expect(reloadResponse.body.bullets).toEqual(editedBullets);
     expect(reloadResponse.body.bullets[1]).toBe('Create user registration with email verification');
-
-    // 5. Verify file was actually updated
-    expect(fs.existsSync(NOTES_FILE_PATH)).toBe(true);
-    const savedData = JSON.parse(fs.readFileSync(NOTES_FILE_PATH, 'utf-8'));
-    expect(savedData.bullets).toEqual(editedBullets);
   });
 
-  // E2E4: Delete notes file → open panel → app shows empty state (no crash)
-  it('E2E4: User deletes notes file, opens panel, sees empty state without crash', async () => {
+  // E2E4: Empty state → open panel → app shows empty state (no crash)
+  it('E2E4: User opens panel with empty state, sees empty bullets without crash', async () => {
     const { default: app } = await import('../../server/server.js');
 
     // User workflow (edge case):
-    // 1. User has some notes saved
-    const initialBullets = ['Test bullet 1', 'Test bullet 2'];
-    await request(app)
-      .put('/api/notes')
-      .send({ bullets: initialBullets })
-      .expect(200);
-
-    // Verify file exists
-    expect(fs.existsSync(NOTES_FILE_PATH)).toBe(true);
-
-    // 2. User manually deletes notes file (or it gets corrupted)
-    fs.unlinkSync(NOTES_FILE_PATH);
-    expect(fs.existsSync(NOTES_FILE_PATH)).toBe(false);
-
-    // 3. User opens panel (app should not crash)
+    // 1. User opens panel with no prior data (setupTestDb ensures empty state)
     const openPanelResponse = await request(app)
       .get('/api/notes')
       .expect(200);
 
-    // 4. User sees empty state (not an error)
+    // 2. User sees empty state (not an error)
     expect(openPanelResponse.body.bullets).toEqual([]);
     expect(openPanelResponse.body.conversationHistory).toEqual([]);
 
-    // 5. User can still use panel normally (send a message)
+    // 3. User can still use panel normally (send a message or edit)
     if (process.env.GROQ_API_KEY || process.env.CEREBRAS_API_KEY) {
       const sendMessageResponse = await request(app)
         .post('/api/notes')
@@ -215,18 +179,15 @@ describe('Notes Panel E2E User Workflows', () => {
 
       expect(sendMessageResponse.body.success).toBe(true);
       expect(sendMessageResponse.body.bullets.length).toBeGreaterThan(0);
-
-      // File should be recreated
-      expect(fs.existsSync(NOTES_FILE_PATH)).toBe(true);
     } else {
       // Even without LLM, user can still edit bullets
       const editResponse = await request(app)
         .put('/api/notes')
-        .send({ bullets: ['New bullet after deletion'] })
+        .send({ bullets: ['New bullet from empty state'] })
         .expect(200);
 
       expect(editResponse.body.success).toBe(true);
-      expect(fs.existsSync(NOTES_FILE_PATH)).toBe(true);
+      expect(editResponse.body.bullets).toEqual(['New bullet from empty state']);
     }
   }, 30000);
 
@@ -329,9 +290,5 @@ describe('Notes Panel E2E User Workflows', () => {
     // 6. User refreshes - all changes persist
     const reloadResponse = await request(app).get('/api/notes').expect(200);
     expect(reloadResponse.body.bullets).toEqual(bullets);
-
-    // Verify file reflects final state
-    const savedData = JSON.parse(fs.readFileSync(NOTES_FILE_PATH, 'utf-8'));
-    expect(savedData.bullets).toEqual(bullets);
   });
 });

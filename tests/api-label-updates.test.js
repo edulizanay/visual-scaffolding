@@ -28,14 +28,14 @@ afterEach(async () => {
   await cleanupTestDb();
 });
 
-describe('PUT /api/node/:id - Label Updates', () => {
+describe('PUT /api/flow/node/:id - Label Updates', () => {
   it('should update node label', async () => {
     // Create node first
     const nodeResult = await executeTool('addNode', { label: 'Original Label' });
 
     // Update label
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: 'Updated Label'
       })
@@ -53,7 +53,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
     });
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         description: 'Updated description'
       })
@@ -71,7 +71,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
     });
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: 'Updated Label',
         description: 'Updated description'
@@ -88,7 +88,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
     const nodeResult = await executeTool('addNode', { label: 'Test Node' });
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         position: { x: 100, y: 200 }
       })
@@ -102,7 +102,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
 
   it('should fail when node does not exist', async () => {
     const response = await request(app)
-      .put('/api/node/nonexistent-node')
+      .put('/api/flow/node/nonexistent-node')
       .send({
         label: 'Updated Label'
       })
@@ -116,7 +116,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
     const nodeResult = await executeTool('addNode', { label: 'Original Label' });
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: ''
       })
@@ -134,7 +134,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
     });
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         description: ''
       })
@@ -150,7 +150,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
 
     // This should not create a new snapshot (skipSnapshot=true)
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: 'Updated Label'
       })
@@ -161,7 +161,7 @@ describe('PUT /api/node/:id - Label Updates', () => {
   });
 });
 
-describe('PUT /api/edge/:id - Label Updates', () => {
+describe('PUT /api/flow/edge/:id - Label Updates', () => {
   it('should update edge label', async () => {
     // Create edge first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -174,7 +174,7 @@ describe('PUT /api/edge/:id - Label Updates', () => {
 
     // Update edge label
     const response = await request(app)
-      .put(`/api/edge/${edgeResult.edgeId}`)
+      .put(`/api/flow/edge/${edgeResult.edgeId}`)
       .send({
         label: 'Updated Edge Label'
       })
@@ -187,7 +187,7 @@ describe('PUT /api/edge/:id - Label Updates', () => {
 
   it('should fail when edge does not exist', async () => {
     const response = await request(app)
-      .put('/api/edge/nonexistent-edge')
+      .put('/api/flow/edge/nonexistent-edge')
       .send({
         label: 'Updated Label'
       })
@@ -207,7 +207,7 @@ describe('PUT /api/edge/:id - Label Updates', () => {
     });
 
     const response = await request(app)
-      .put(`/api/edge/${edgeResult.edgeId}`)
+      .put(`/api/flow/edge/${edgeResult.edgeId}`)
       .send({
         label: ''
       })
@@ -229,7 +229,7 @@ describe('PUT /api/edge/:id - Label Updates', () => {
 
     // This should not create a new snapshot (skipSnapshot=true)
     const response = await request(app)
-      .put(`/api/edge/${edgeResult.edgeId}`)
+      .put(`/api/flow/edge/${edgeResult.edgeId}`)
       .send({
         label: 'Updated Label'
       })
@@ -246,7 +246,7 @@ describe('Label Update Validation', () => {
     const longLabel = 'A'.repeat(1000);
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: longLabel
       })
@@ -262,7 +262,7 @@ describe('Label Update Validation', () => {
     const specialLabel = 'Label with émojis 🚀 and spëcial çhars!';
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: specialLabel
       })
@@ -278,7 +278,7 @@ describe('Label Update Validation', () => {
     const htmlLabel = '<script>alert("test")</script>';
 
     const response = await request(app)
-      .put(`/api/node/${nodeResult.nodeId}`)
+      .put(`/api/flow/node/${nodeResult.nodeId}`)
       .send({
         label: htmlLabel
       })

@@ -3,16 +3,12 @@
 import { Router } from 'express';
 import { addUserMessage, addAssistantMessage, getHistory, clearHistory } from '../conversationService.js';
 import { buildLLMContext, callConversationLLM, buildRetryMessage } from '../llm/llmService.js';
+import { checkLLMAvailability, logError } from '../llm/llmUtils.js';
 import { executeToolCalls } from '../tools/executor.js';
 
 const router = Router();
 
 const MAX_LLM_RETRY_ITERATIONS = 3;
-
-// Logs errors with consistent formatting
-function logError(operation, error) {
-  console.error(`Error ${operation}:`, error);
-}
 
 // Logs iteration progress with consistent formatting
 function logIteration(iteration, event, details = {}) {
@@ -24,11 +20,6 @@ function logIteration(iteration, event, details = {}) {
     retry: () => console.log(`🔄 Retrying with message:\n${details.message}`)
   };
   messages[event]?.();
-}
-
-// Checks if LLM API keys are configured
-function checkLLMAvailability() {
-  return Boolean(process.env.GROQ_API_KEY || process.env.CEREBRAS_API_KEY);
 }
 
 /**

@@ -47,7 +47,7 @@ describe('Double-save prevention', () => {
 
     // Create node via API
     await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 
@@ -69,7 +69,7 @@ describe('Double-save prevention', () => {
 
     // Update node via API
     await request(app)
-      .put(`/api/node/${nodeId}`)
+      .put(`/api/flow/node/${nodeId}`)
       .send({ label: 'Updated' })
       .expect(200);
 
@@ -93,7 +93,7 @@ describe('Double-save prevention', () => {
 
     // Create edge via API
     await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: node1Result[0].nodeId,
         targetNodeId: node2Result[0].nodeId,
@@ -120,7 +120,7 @@ describe('Double-save prevention', () => {
 
     // Create group via API
     await request(app)
-      .post('/api/group')
+      .post('/api/flow/group')
       .send({
         memberIds: [node1Result[0].nodeId, node2Result[0].nodeId],
         label: 'Test Group'
@@ -155,7 +155,7 @@ describe('Double-save prevention', () => {
 
     // Toggle expansion via API
     await request(app)
-      .put(`/api/group/${groupResult[0].groupId}/expand`)
+      .put(`/api/flow/group/${groupResult[0].groupId}/expand`)
       .send({ expand: true })
       .expect(200);
 
@@ -201,9 +201,9 @@ describe('Double-save prevention', () => {
 
     // Make 3 rapid API calls
     await Promise.all([
-      request(app).post('/api/node').send({ label: 'Node 1' }),
-      request(app).post('/api/node').send({ label: 'Node 2' }),
-      request(app).post('/api/node').send({ label: 'Node 3' })
+      request(app).post('/api/flow/node').send({ label: 'Node 1' }),
+      request(app).post('/api/flow/node').send({ label: 'Node 2' }),
+      request(app).post('/api/flow/node').send({ label: 'Node 3' })
     ]);
 
     const finalCount = await getSnapshotCount();
@@ -218,7 +218,7 @@ describe('Double-save prevention', () => {
 
     // Create node
     await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({ label: 'Test Node' })
       .expect(200);
 

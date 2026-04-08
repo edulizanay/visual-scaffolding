@@ -1,25 +1,16 @@
 // ABOUTME: Notes domain routes - handles note-taking with LLM assistance
 // ABOUTME: Manages notes CRUD, bullet extraction, and conversation history
 import { Router } from 'express';
-import { loadNotes, saveNotes, updateBullets } from '../notesService.js';
+import { getNotes, saveNotes, updateBullets } from '../repositories/notesRepository.js';
 import { buildNotesContext, callNotesLLM } from '../llm/llmService.js';
+import { checkLLMAvailability, logError } from '../llm/llmUtils.js';
 
 const router = Router();
-
-// Logs errors with consistent formatting
-function logError(operation, error) {
-  console.error(`Error ${operation}:`, error);
-}
-
-// Checks if LLM API keys are configured
-function checkLLMAvailability() {
-  return Boolean(process.env.GROQ_API_KEY || process.env.CEREBRAS_API_KEY);
-}
 
 export function registerNotesRoutes(router) {
   router.get('/', async (req, res) => {
     try {
-      const notes = loadNotes();
+      const notes = await getNotes();
       res.json(notes);
     } catch (error) {
       logError('loading notes', error);
@@ -48,7 +39,7 @@ export function registerNotesRoutes(router) {
       }
 
       // Load current notes
-      const currentNotes = loadNotes();
+      const currentNotes = await getNotes();
       const currentBullets = currentNotes.bullets;
       const conversationHistory = currentNotes.conversationHistory || [];
 
@@ -87,7 +78,7 @@ export function registerNotesRoutes(router) {
       ];
 
       // Save notes
-      saveNotes(allBullets, updatedConversationHistory);
+      await saveNotes(allBullets, updatedConversationHistory);
 
       res.json({
         success: true,
@@ -117,7 +108,7 @@ export function registerNotesRoutes(router) {
       }
 
       // Update bullets only
-      updateBullets(bullets);
+      await updateBullets(bullets);
 
       res.json({
         success: true,

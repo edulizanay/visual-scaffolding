@@ -1,4 +1,4 @@
-// ABOUTME: Integration tests for POST /api/edge endpoint
+// ABOUTME: Integration tests for POST /api/flow/edge endpoint
 // ABOUTME: Tests manual edge creation via API with validation
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
@@ -28,7 +28,7 @@ afterEach(async () => {
   await cleanupTestDb();
 });
 
-describe('POST /api/edge', () => {
+describe('POST /api/flow/edge', () => {
   it('should create edge between two nodes', async () => {
     // Create two nodes first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -36,7 +36,7 @@ describe('POST /api/edge', () => {
 
     // Call API to create edge
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId,
         targetNodeId: targetResult.nodeId,
@@ -61,7 +61,7 @@ describe('POST /api/edge', () => {
     const targetResult = await executeTool('addNode', { label: 'Target' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId,
         targetNodeId: targetResult.nodeId
@@ -77,7 +77,7 @@ describe('POST /api/edge', () => {
     const targetResult = await executeTool('addNode', { label: 'Target' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         targetNodeId: targetResult.nodeId
       })
@@ -91,7 +91,7 @@ describe('POST /api/edge', () => {
     const sourceResult = await executeTool('addNode', { label: 'Source' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId
       })
@@ -105,7 +105,7 @@ describe('POST /api/edge', () => {
     const targetResult = await executeTool('addNode', { label: 'Target' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: 'nonexistent-source',
         targetNodeId: targetResult.nodeId
@@ -120,7 +120,7 @@ describe('POST /api/edge', () => {
     const sourceResult = await executeTool('addNode', { label: 'Source' });
 
     const response = await request(app)
-      .post('/api/edge')
+      .post('/api/flow/edge')
       .send({
         sourceNodeId: sourceResult.nodeId,
         targetNodeId: 'nonexistent-target'
@@ -132,7 +132,7 @@ describe('POST /api/edge', () => {
   });
 });
 
-describe('PUT /api/edge/:id', () => {
+describe('PUT /api/flow/edge/:id', () => {
   it('should update edge label', async () => {
     // Create edge first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -145,7 +145,7 @@ describe('PUT /api/edge/:id', () => {
 
     // Update edge label
     const response = await request(app)
-      .put(`/api/edge/${edgeResult.edgeId}`)
+      .put(`/api/flow/edge/${edgeResult.edgeId}`)
       .send({
         label: 'Updated'
       })
@@ -158,7 +158,7 @@ describe('PUT /api/edge/:id', () => {
 
   it('should fail when edge does not exist', async () => {
     const response = await request(app)
-      .put('/api/edge/nonexistent-edge')
+      .put('/api/flow/edge/nonexistent-edge')
       .send({
         label: 'Updated'
       })
@@ -169,7 +169,7 @@ describe('PUT /api/edge/:id', () => {
   });
 });
 
-describe('DELETE /api/edge/:id', () => {
+describe('DELETE /api/flow/edge/:id', () => {
   it('should delete edge', async () => {
     // Create edge first
     const sourceResult = await executeTool('addNode', { label: 'Source' });
@@ -181,7 +181,7 @@ describe('DELETE /api/edge/:id', () => {
 
     // Delete edge
     const response = await request(app)
-      .delete(`/api/edge/${edgeResult.edgeId}`)
+      .delete(`/api/flow/edge/${edgeResult.edgeId}`)
       .expect(200);
 
     expect(response.body.success).toBe(true);
@@ -190,7 +190,7 @@ describe('DELETE /api/edge/:id', () => {
 
   it('should fail when edge does not exist', async () => {
     const response = await request(app)
-      .delete('/api/edge/nonexistent-edge')
+      .delete('/api/flow/edge/nonexistent-edge')
       .expect(400);
 
     expect(response.body.success).toBe(false);

@@ -1,37 +1,21 @@
-// ABOUTME: Unit tests for notes storage service
-// ABOUTME: Tests file-based CRUD operations for notes data
-import { loadNotes, saveNotes, updateBullets } from '../server/notesService.js';
-import { readFileSync, unlinkSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+// ABOUTME: Unit tests for notes repository
+// ABOUTME: Tests Supabase-based CRUD operations for notes data
+import { getNotes, saveNotes, updateBullets } from '../server/repositories/notesRepository.js';
+import { setupTestDb, cleanupTestDb, testSupabase } from './test-db-setup.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Path to test notes file
-const TEST_NOTES_PATH = join(__dirname, '..', 'notes-debug.json');
-
-describe('notesService', () => {
-  beforeEach(() => {
-    // Clean up test file before each test
-    if (existsSync(TEST_NOTES_PATH)) {
-      unlinkSync(TEST_NOTES_PATH);
-    }
+describe('notesRepository', () => {
+  beforeEach(async () => {
+    await setupTestDb();
   });
 
-  afterEach(() => {
-    // Clean up test file after each test
-    if (existsSync(TEST_NOTES_PATH)) {
-      unlinkSync(TEST_NOTES_PATH);
-    }
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
-  describe('loadNotes - T1.6, T1.7', () => {
-    test('T1.6: returns empty state when file does not exist (ENOENT)', () => {
-      // Ensure file doesn't exist
-      expect(existsSync(TEST_NOTES_PATH)).toBe(false);
-
-      const result = loadNotes();
+  describe('getNotes - T1.6, T1.7', () => {
+    test('T1.6: returns empty state when notes table is empty', async () => {
+      // setupTestDb already ensures notes row exists with empty arrays
+      const result = await getNotes();
 
       expect(result).toEqual({
         bullets: [],
@@ -39,8 +23,8 @@ describe('notesService', () => {
       });
     });
 
-    test('T1.7: parses existing JSON file correctly', async () => {
-      // Create a test notes file manually
+    test('T1.7: retrieves existing notes from Supabase correctly', async () => {
+      // Insert test notes into Supabase
       const testData = {
         bullets: ['Bullet 1', 'Bullet 2', 'Bullet 3'],
         conversationHistory: [
@@ -57,11 +41,15 @@ describe('notesService', () => {
         ]
       };
 
-      // Write test file using Node.js fs
-      const fs = await import('fs');
-      fs.writeFileSync(TEST_NOTES_PATH, JSON.stringify(testData, null, 2));
+      await testSupabase
+        .from('notes')
+        .upsert({
+          id: 1,
+          bullets: testData.bullets,
+          conversation_history: testData.conversationHistory
+        }, { onConflict: 'id' });
 
-      const result = loadNotes();
+      const result = await getNotes();
 
       expect(result).toEqual(testData);
       expect(result.bullets).toHaveLength(3);
@@ -70,21 +58,25 @@ describe('notesService', () => {
       expect(result.conversationHistory[0].role).toBe('user');
     });
 
-    test('T1.7b: handles corrupted JSON file gracefully', async () => {
-      // Write invalid JSON
-      const fs = await import('fs');
-      fs.writeFileSync(TEST_NOTES_PATH, '{invalid json}');
+    test('T1.7b: handles missing row gracefully (returns empty state)', async () => {
+      // Delete the notes row to simulate missing data
+      await testSupabase
+        .from('notes')
+        .delete()
+        .eq('id', 1);
 
-      // Should throw or return empty state - let's test it returns empty
-      const result = loadNotes();
+      // Should return empty state (graceful degradation)
+      const result = await getNotes();
 
-      // If implementation throws, we can catch it, or it returns empty state
-      expect(result).toBeDefined();
+      expect(result).toEqual({
+        bullets: [],
+        conversationHistory: []
+      });
     });
   });
 
   describe('saveNotes - T1.8', () => {
-    test('T1.8: writes correct JSON structure to file', () => {
+    test('T1.8: writes correct structure to Supabase', async () => {
       const bullets = ['New bullet 1', 'New bullet 2'];
       const conversationHistory = [
         {
@@ -99,53 +91,56 @@ describe('notesService', () => {
         }
       ];
 
-      saveNotes(bullets, conversationHistory);
+      await saveNotes(bullets, conversationHistory);
 
-      // Verify file was created
-      expect(existsSync(TEST_NOTES_PATH)).toBe(true);
+      // Verify data was saved to Supabase
+      const { data: saved } = await testSupabase
+        .from('notes')
+        .select('bullets, conversation_history')
+        .eq('id', 1)
+        .single();
 
-      // Read and parse file
-      const fileContent = readFileSync(TEST_NOTES_PATH, 'utf-8');
-      const parsed = JSON.parse(fileContent);
-
-      expect(parsed.bullets).toEqual(bullets);
-      expect(parsed.conversationHistory).toEqual(conversationHistory);
-      expect(parsed.bullets).toHaveLength(2);
-      expect(parsed.conversationHistory).toHaveLength(2);
+      expect(saved.bullets).toEqual(bullets);
+      expect(saved.conversation_history).toEqual(conversationHistory);
+      expect(saved.bullets).toHaveLength(2);
+      expect(saved.conversation_history).toHaveLength(2);
     });
 
-    test('T1.8b: overwrites existing file', () => {
+    test('T1.8b: overwrites existing data (upsert)', async () => {
       // Save initial data
-      saveNotes(['Old bullet'], []);
+      await saveNotes(['Old bullet'], []);
 
       // Save new data
       const newBullets = ['New bullet 1', 'New bullet 2'];
-      saveNotes(newBullets, [{ role: 'user', content: 'test', timestamp: '2025-10-18T10:00:00Z' }]);
+      await saveNotes(newBullets, [{ role: 'user', content: 'test', timestamp: '2025-10-18T10:00:00Z' }]);
 
-      // Read file
-      const fileContent = readFileSync(TEST_NOTES_PATH, 'utf-8');
-      const parsed = JSON.parse(fileContent);
+      // Read from Supabase
+      const { data: saved } = await testSupabase
+        .from('notes')
+        .select('bullets')
+        .eq('id', 1)
+        .single();
 
-      expect(parsed.bullets).toEqual(newBullets);
-      expect(parsed.bullets).not.toContain('Old bullet');
+      expect(saved.bullets).toEqual(newBullets);
+      expect(saved.bullets).not.toContain('Old bullet');
     });
   });
 
   describe('updateBullets - T1.9', () => {
-    test('T1.9: updates only bullets array, preserves conversationHistory', () => {
+    test('T1.9: updates only bullets array, preserves conversationHistory', async () => {
       // Set up initial state
       const initialConversationHistory = [
         { role: 'user', content: 'msg1', timestamp: '2025-10-18T10:00:00Z' },
         { role: 'assistant', content: 'resp1', timestamp: '2025-10-18T10:00:01Z' }
       ];
-      saveNotes(['Old bullet 1', 'Old bullet 2'], initialConversationHistory);
+      await saveNotes(['Old bullet 1', 'Old bullet 2'], initialConversationHistory);
 
       // Update only bullets
       const newBullets = ['Updated bullet 1', 'Updated bullet 2', 'New bullet 3'];
-      updateBullets(newBullets);
+      await updateBullets(newBullets);
 
       // Load and verify
-      const result = loadNotes();
+      const result = await getNotes();
 
       expect(result.bullets).toEqual(newBullets);
       expect(result.bullets).toHaveLength(3);
@@ -153,14 +148,17 @@ describe('notesService', () => {
       expect(result.conversationHistory).toHaveLength(2);
     });
 
-    test('T1.9b: creates file if it does not exist', () => {
-      // Ensure file doesn't exist
-      expect(existsSync(TEST_NOTES_PATH)).toBe(false);
+    test('T1.9b: creates row if it does not exist (upsert)', async () => {
+      // Delete the notes row to simulate missing data
+      await testSupabase
+        .from('notes')
+        .delete()
+        .eq('id', 1);
 
-      updateBullets(['First bullet']);
+      await updateBullets(['First bullet']);
 
-      // Verify file was created with correct structure
-      const result = loadNotes();
+      // Verify row was created with correct structure
+      const result = await getNotes();
       expect(result.bullets).toEqual(['First bullet']);
       expect(result.conversationHistory).toEqual([]);
     });

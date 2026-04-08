@@ -25,8 +25,8 @@ User Action → Frontend Handler → Backend API Call → Snapshot with Origin T
 ```
 
 **Existing Examples:**
-- **Drag position**: `onNodesChange` → `PUT /api/node/:id` → origin: `'ui.node.update'`
-- **Delete node**: `onNodesDelete` → `DELETE /api/node/:id` → origin: `'ui.node.delete'`
+- **Drag position**: `onNodesChange` → `PUT /api/flow/node/:id` → origin: `'ui.node.update'`
+- **Delete node**: `onNodesDelete` → `DELETE /api/flow/node/:id` → origin: `'ui.node.delete'`
 - **Subtree collapse**: `onNodeClick` (Alt) → `PUT /api/subtree/:id/collapse` → origin: `'ui.subtree'`
 
 ---

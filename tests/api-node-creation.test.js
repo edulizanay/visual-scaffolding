@@ -1,4 +1,4 @@
-// ABOUTME: Integration tests for POST /api/node endpoint
+// ABOUTME: Integration tests for POST /api/flow/node endpoint
 // ABOUTME: Tests manual node creation via API with group membership inheritance
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
@@ -28,14 +28,14 @@ afterEach(async () => {
   await cleanupTestDb();
 });
 
-describe('POST /api/node', () => {
+describe('POST /api/flow/node', () => {
   it('should create node with parent and return updated flow', async () => {
     // Create a parent node first
     const parentResult = await executeTool('addNode', { label: 'Parent' });
 
     // Call API to create child
     const response = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         parentNodeId: parentResult.nodeId,
         label: 'Child'
@@ -60,11 +60,11 @@ describe('POST /api/node', () => {
 
     let flow = await readFlow();
     flow.nodes[0].parentGroupId = 'test-group-123';
-    saveFlow(flow);
+    await saveFlow(flow);
 
     // Create child via API
     const response = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         parentNodeId: parentResult.nodeId,
         label: 'Child'
@@ -83,7 +83,7 @@ describe('POST /api/node', () => {
     const parentResult = await executeTool('addNode', { label: 'Parent' });
 
     const response = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         parentNodeId: parentResult.nodeId
       })
@@ -96,7 +96,7 @@ describe('POST /api/node', () => {
 
   it('should fail when parentNodeId does not exist', async () => {
     const response = await request(app)
-      .post('/api/node')
+      .post('/api/flow/node')
       .send({
         parentNodeId: 'nonexistent-id',
         label: 'Child'

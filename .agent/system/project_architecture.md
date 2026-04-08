@@ -52,15 +52,26 @@ visual-scaffolding/
 │
 ├── server/                       # Backend Express server
 │   ├── server.js                 # Main server & API routes
-│   ├── db.js                     # Database abstraction layer (Supabase)
+│   ├── app.js                    # Express app configuration
+│   ├── db.js                     # Compatibility layer (re-exports from repositories)
 │   ├── supabase-client.js        # Supabase PostgreSQL client configuration
+│   ├── repositories/             # Domain-specific data access layer
+│   │   ├── flowRepository.js     # Flow CRUD operations
+│   │   ├── undoRepository.js     # Undo/redo history management
+│   │   ├── conversationRepository.js  # Conversation history operations
+│   │   └── notesRepository.js    # Notes CRUD operations
+│   ├── services/                 # Business logic layer
+│   │   └── flowService.js        # Flow read/write with snapshot integration
 │   ├── conversationService.js    # Conversation history management
 │   ├── historyService.js         # Undo/redo state management (timestamp-based)
 │   ├── routes/
+│   │   ├── index.js              # Central route registration
 │   │   ├── flowRoutes.js         # Flow domain endpoints
-│   │   └── conversationRoutes.js # Conversation endpoints
+│   │   ├── conversationRoutes.js # Conversation endpoints
+│   │   └── notesRoutes.js        # Notes panel endpoints
 │   ├── llm/
 │   │   ├── llmService.js         # LLM context building & parsing
+│   │   ├── llmUtils.js           # Shared LLM utilities
 │   │   └── tools.js              # Tool definitions for AI
 │   └── tools/
 │       └── executor.js           # Tool execution logic
@@ -150,6 +161,66 @@ visual-scaffolding/
 - Deduplication for identical states
 - Backwards compatibility: `getUndoStatus()` returns both `currentTimestamp` and computed `currentIndex`
 
+## Backend Architecture
+
+### Repository Layer
+
+The backend uses a layered architecture with domain-specific repositories for data access:
+
+**Domain Repositories:**
+- **flowRepository.js** - Flow CRUD operations
+  - `getFlow(userId, name)` - Retrieve flow by user and name
+  - `saveFlow(flowData, userId, name)` - Save/update flow data
+  - `sanitizeFlowData(flowData)` - Validate and clean flow structure
+  - `getFlowId(userId, name)` - Get flow ID for joins
+
+- **undoRepository.js** - Undo/redo history management
+  - `pushUndoSnapshot(flowData, origin)` - Create snapshot with deduplication
+  - `undo()` - Navigate to previous snapshot by timestamp
+  - `redo()` - Navigate to next snapshot by timestamp
+  - `getUndoStatus()` - Get current position and availability
+  - `clearUndoHistory()` - Remove all snapshots
+  - `initializeUndoHistory()` - Ensure singleton row exists
+
+- **conversationRepository.js** - Conversation history operations
+  - `addConversationMessage(role, content, toolCalls)` - Add message with limit
+  - `getConversationHistory()` - Retrieve last 6 messages
+  - `clearConversationHistory()` - Remove all messages
+
+- **notesRepository.js** - Notes CRUD operations (singleton pattern)
+  - `getNotes()` - Retrieve notes with graceful empty state fallback
+  - `saveNotes(bullets, conversationHistory)` - Upsert notes data
+  - `updateBullets(bullets)` - Update bullets while preserving conversation history
+
+**Service Layer:**
+- **flowService.js** - Consolidates flow read/write logic
+  - `readFlow(userId, name)` - Wrapper around flowRepository.getFlow
+  - `writeFlow(flowData, skipSnapshot, origin, userId, name)` - Save flow + create snapshot
+  - Used by: app.js, executor.js (eliminates duplicate implementations)
+
+**Compatibility Layer:**
+- **db.js** - Re-exports from repositories for backward compatibility
+  - Allows gradual migration to direct repository imports
+  - See [migration-plan.md](../migration-plan.md) for future removal plan
+
+**Shared Utilities:**
+- **llmUtils.js** - Common LLM helpers
+  - `checkLLMAvailability()` - Verify API keys configured
+  - `logError(operation, error)` - Consistent error logging
+
+### Route Organization
+
+Routes are namespaced and mounted via central registration:
+
+- **Namespaced Routes:** All routes under `/api/<domain>/*`
+  - `/api/flow/*` - Flow operations (node, edge, group CRUD)
+  - `/api/conversation/*` - Chat and history
+  - `/api/notes/*` - Notes panel operations
+
+- **Route Registration:** `routes/index.js` mounts all domain routers
+  - Dependency injection pattern for `readFlow`/`writeFlow`
+  - Each domain has dedicated route file
+
 ## Database Schema
 
 See [database_schema.md](./database_schema.md) for detailed schema documentation.
@@ -166,15 +237,15 @@ See [database_schema.md](./database_schema.md) for detailed schema documentation
 - `PUT /api/subtree/:id/collapse` - Toggle subtree collapse (creates snapshot with origin: `ui.subtree`)
 
 **Unified Flow Command Operations:**
-- `POST /api/node` - Create node (optionally with parent or group)
-- `PUT /api/node/:id` - Update node properties (label, description, position)
-- `DELETE /api/node/:id` - Delete node and connected edges
-- `POST /api/edge` - Create edge between nodes
-- `PUT /api/edge/:id` - Update edge label
-- `DELETE /api/edge/:id` - Delete edge
-- `POST /api/group` - Create group from selected nodes
-- `DELETE /api/group/:id` - Ungroup and restore member nodes
-- `PUT /api/group/:id/expand` - Toggle group expansion (collapse/expand)
+- `POST /api/flow/node` - Create node (optionally with parent or group)
+- `PUT /api/flow/node/:id` - Update node properties (label, description, position)
+- `DELETE /api/flow/node/:id` - Delete node and connected edges
+- `POST /api/flow/edge` - Create edge between nodes
+- `PUT /api/flow/edge/:id` - Update edge label
+- `DELETE /api/flow/edge/:id` - Delete edge
+- `POST /api/flow/group` - Create group from selected nodes
+- `DELETE /api/flow/group/:id` - Ungroup and restore member nodes
+- `PUT /api/flow/group/:id/expand` - Toggle group expansion (collapse/expand)
 
 **Conversation Operations:**
 - `POST /api/conversation/message` - Send message to AI

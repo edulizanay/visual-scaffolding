@@ -1,6 +1,6 @@
 // ABOUTME: Group API client for group operations
 // ABOUTME: Handles group creation, deletion, and expansion
-const API_BASE_URL = '/api';
+const API_BASE_URL = '/api/flow';
 
 export const createGroup = async (params) => {
   try {

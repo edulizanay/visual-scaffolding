@@ -318,7 +318,7 @@ describe('createNode', () => {
 
     const result = await createNode(params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/node', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/node', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -367,7 +367,7 @@ describe('updateNode', () => {
 
     const result = await updateNode(nodeId, params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/node/node-123', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/node/node-123', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -406,7 +406,7 @@ describe('deleteNode', () => {
 
     const result = await deleteNode(nodeId);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/node/node-123', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/node/node-123', {
       method: 'DELETE',
     });
     expect(result).toEqual(mockResponse);
@@ -444,7 +444,7 @@ describe('createEdge', () => {
 
     const result = await createEdge(params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/edge', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/edge', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -484,7 +484,7 @@ describe('updateEdge', () => {
 
     const result = await updateEdge(edgeId, params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/edge/edge-123', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/edge/edge-123', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -523,7 +523,7 @@ describe('deleteEdge', () => {
 
     const result = await deleteEdge(edgeId);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/edge/edge-123', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/edge/edge-123', {
       method: 'DELETE',
     });
     expect(result).toEqual(mockResponse);
@@ -561,7 +561,7 @@ describe('createGroup', () => {
 
     const result = await createGroup(params);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/group', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/group', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -609,7 +609,7 @@ describe('ungroup', () => {
 
     const result = await ungroup(groupId);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/group/group-123', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/group/group-123', {
       method: 'DELETE',
     });
     expect(result).toEqual(mockResponse);
@@ -653,7 +653,7 @@ describe('toggleGroupExpansion', () => {
 
     const result = await toggleGroupExpansion(groupId, true);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/group/group-123/expand', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/group/group-123/expand', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -677,7 +677,7 @@ describe('toggleGroupExpansion', () => {
 
     const result = await toggleGroupExpansion(groupId, false);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/group/group-123/expand', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/flow/group/group-123/expand', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
